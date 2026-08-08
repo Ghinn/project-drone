@@ -39,7 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-apps/server/serviceAccountKey.json
-/src/generated/prisma
-apps/server/serviceAccountKey.json

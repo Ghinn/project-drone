@@ -1,0 +1,238 @@
+{
+  "Header": {
+    "brandMark": "PS",
+    "brand": "Drone",
+    "tagline": "Sistem Pemantauan IoT",
+    "nav": {
+      "home": "Beranda",
+      "monitoringFarmer": "Dasbor Petani",
+      "monitoringOperator": "Dasbor Operator",
+      "admin": "Dasbor Admin"
+    },
+    "actions": {
+      "loginGetStarted": "Masuk / Mulai Sekarang",
+      "logout": "Keluar"
+    },
+    "menu": {
+      "openUserMenu": "Buka menu pengguna",
+      "userFallback": "Pengguna",
+      "noEmail": "Email tidak tersedia",
+      "avatarAlt": "Avatar {name}",
+      "roleLabel": "Peran Sistem",
+      "emailLabel": "Alamat Email",
+      "workspaceHome": "Kembali ke Beranda",
+      "workspaceFarmer": "Buka Dasbor Petani",
+      "workspaceOperator": "Buka Dasbor Operator",
+      "workspaceAdmin": "Buka Dasbor Admin"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "farmer": "Petani",
+      "operator": "Operator",
+      "unknown": "Tamu"
+    },
+    "avatarFallback": "U"
+  },
+  "Landing": {
+    "nav": {
+      "about": "Tentang",
+      "research": "Riset",
+      "features": "Fitur",
+      "partners": "Kolaborasi",
+      "contact": "Kontak"
+    },
+    "hero": {
+      "eyebrow": "Riset AgriTech · IoT & AI",
+      "title": "Deteksi Dini Penyakit<br></br>untuk Perkebunan<br></br><highlight>Kelapa Sawit</highlight>",
+      "description": "Drone menggabungkan pencitraan UAV multispektral dan inferensi AI terintegrasi untuk mengidentifikasi Busuk Pangkal Batang akibat Ganoderma pada tahap awal — sebelum gejala fisik terlihat.",
+      "learnMore": "Pelajari Lanjut",
+      "primaryAction": "Akses Dasbor",
+      "metrics": {
+        "accuracy": "Akurasi klasifikasi",
+        "coverage": "Cakupan per penerbangan",
+        "sensor": "Sensor multispektral",
+        "latency": "Latensi inferensi"
+      }
+    },
+    "about": {
+      "eyebrow": "Latar Belakang Riset",
+      "title": "Pertanian digital untuk<br></br>kelapa sawit berkelanjutan",
+      "description1": "Busuk Pangkal Batang (BPB), yang disebabkan oleh <em>Ganoderma boninense</em>, bertanggung jawab atas hilangnya jutaan pohon kelapa sawit setiap tahun di seluruh Asia Tenggara. Pemantauan lapangan konvensional terlalu lambat dan memakan biaya tinggi untuk menangani penyakit sebelum menyebar.",
+      "description2": "Drone menggantikan pencarian reaktif dengan pemantauan proaktif berbasis data. Sistem ini memasang kamera multispektral ringkas pada platform UAV khusus, menangkap citra kanopi pada jadwal penerbangan rutin, dan menjalankan klasifikasi AI lokal secara langsung — memberikan rekomendasi perawatan ber-tag geolokasi dalam hitungan menit.",
+      "stats": {
+        "hectares": { "label": "Hektar disurvei", "note": "Total uji lapangan" },
+        "f1score": { "label": "F1-score Model", "note": "Dataset validasi" },
+        "endurance": { "label": "Daya tahan terbang", "note": "Per siklus baterai" },
+        "gps": { "label": "Akurasi GPS", "note": "Dengan modul RTK" }
+      }
+    },
+    "research": {
+      "imageAlt": "Drone penelitian",
+      "imageCaption": "Platform UAV Drone · Modul Multispektral & Penyemprotan RC",
+      "eyebrow": "Tinjauan Platform",
+      "title": "UAV yang dirancang khusus<br></br>untuk pemantauan perkebunan",
+      "description": "Drone Drone mengintegrasikan sensor multispektral 5-band, NVIDIA Jetson Nano terintegrasi untuk inferensi real-time, RTK-GPS untuk penentuan posisi sub-meter, dan tangki semprot 2 liter yang diaktifkan oleh perintah RC untuk aplikasi fungisida presisi.",
+      "specs": {
+        "specSensor": "Sensor", "valSensor": "Multispektral 5-band (NIR, RedEdge, NDVI, RGB)",
+        "specAi": "Modul AI", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
+        "specPositioning": "Posisi", "valPositioning": "RTK-GPS · Horizontal ±0.8 m",
+        "specEndurance": "Daya Tahan", "valEndurance": "28 menit · 5,200 mAh LiPo 6S",
+        "specSpray": "Tangki semprot", "valSpray": "2 L · Susunan nosel dipicu RC",
+        "specComm": "Link Komun.", "valComm": "Video 5.8 GHz + telemetri 915 MHz"
+      }
+    },
+    "features": {
+      "eyebrow": "Kemampuan Sistem",
+      "title": "Deteksi ujung-ke-ujung<br></br>dalam satu penerbangan",
+      "items": {
+        "classification": {
+          "title": "Klasifikasi Multispektral AI",
+          "body": "Model YOLOv8-Small yang dilatih pada 8,000 bingkai kanopi sawit beranotasi mengklasifikasikan keparahan penyakit ke dalam empat tahap — Sehat, Ringan, Sedang, dan Parah — di seluruh lima pita spektral dalam latensi di bawah 80 ms per siklus inferensi."
+        },
+        "monitoring": {
+          "title": "Pemantauan Video Real-Time",
+          "body": "Video H.264 langsung dengan anotasi deteksi AI dialirkan melalui downlink 5.8 GHz ke web dasbor stasiun darat. Operator dapat mengintervensi dari jarak jauh dan memicu penyemprotan presisi melalui perintah RC."
+        },
+        "mapping": {
+          "title": "Pemetaan GPS Presisi",
+          "body": "Setiap deteksi ditandai dengan koordinat RTK-GPS akurat hingga ±0.8 m. Pasca-penerbangan, klaster penyakit dirender sebagai overlay perkebunan yang dapat diekspor agronomis untuk perencanaan perawatan."
+        }
+      },
+      "specialFeature": {
+        "title": "Penyemprotan Presisi Dipicu RC",
+        "body": "Ketika AI menandai klaster penyakit, operator darat dapat mengaktifkan tangki semprot melalui perintah RC. Susunan nosel yang digerakkan servo melepaskan fungisida tepat di atas sawit terinfeksi, mengurangi konsumsi bahan kimia hingga 60% dibandingkan metode tabur konvensional. Data geolokasi dan waktu log disimpan di dasbor untuk pelacakan."
+      }
+    },
+    "photoBreak": {
+      "imageAlt": "Kanopi perkebunan",
+      "quote": "Mendeteksi penyakit berminggu-minggu sebelum<br></br>gejala fisik mulai terlihat."
+    },
+    "partners": {
+      "eyebrow": "Mitra Institusional",
+      "title": "Kolaborasi riset",
+      "list": {
+        "itb": { "name": "Institut Teknologi Bandung", "dept": "Dept. Teknik Elektro" },
+        "ipb": { "name": "Institut Pertanian Bogor", "dept": "Fakultas Pertanian" },
+        "poltek": { "name": "Politeknik Negeri", "dept": "Dept. Mekatronika" },
+        "brin": { "name": "Badan Riset dan Inovasi", "dept": "Pusat Riset Agroindustri" }
+      },
+      "footnote": "* Nama mitra yang ditampilkan adalah penanda letak untuk dokumentasi riset."
+    },
+    "contact": {
+      "eyebrow": "Hubungi Kami",
+      "title": "Berkolaborasi dengan<br></br>tim Drone",
+      "description": "Kami menyambut baik pertanyaan dari peneliti, ahli agronomi, manajer perkebunan, dan mitra teknologi yang tertarik dengan uji coba lapangan bersama, pertukaran data, atau kolaborasi publikasi.",
+      "emailLabel": "Email",
+      "locationLabel": "Lokasi",
+      "locationValue": "Departemen Teknik Elektro, Indonesia",
+      "accessDashboard": "Akses Dasbor →",
+      "form": {
+        "name": { "label": "Nama Lengkap", "placeholder": "Dr. Budi Santoso" },
+        "email": { "label": "Email Institusi", "placeholder": "b.santoso@universitas.ac.id" },
+        "org": { "label": "Organisasi", "placeholder": "Universitas / Institut Riset" },
+        "message": { "label": "Pesan", "placeholder": "Jelaskan minat kolaborasi Anda..." },
+        "submit": "Kirim Pesan"
+      }
+    },
+    "footer": {
+      "brand": "Drone",
+      "tagline": "Proyek Riset",
+      "copyright": "© {year} Drone · Penggunaan Khusus Riset Akademis · Semua data disimulasikan",
+      "links": {
+        "privacy": "Privasi",
+        "terms": "Syarat",
+        "contact": "Kontak"
+      }
+    }
+  },
+  "LocaleToggle": {
+    "label": "Ganti Bahasa",
+    "indonesian": "Indonesia",
+    "english": "Inggris",
+    "switchTo": "Beralih ke {locale}"
+  },
+  "LoginModal": {
+    "title": "Masuk ke akun Anda",
+    "subtitle": "Masuk untuk memantau kesegaran pangan secara real-time.",
+    "fields": {
+      "email": "Alamat email",
+      "password": "Masukkan Kata sandi",
+      "captcha": "Kode Keamanan"
+    },
+    "placeholders": {
+      "email": "Alamat email",
+      "password": "Masukkan kata sandi"
+    },
+    "divider": "atau lanjutkan dengan",
+    "actions": {
+      "login": "Masuk",
+      "google": "Google",
+      "apple": "Apple",
+      "close": "Tutup",
+      "resendVerification": "Kirim ulang verifikasi",
+      "checkVerification": "Cek status verifikasi",
+      "openDashboard": "Buka dashboard",
+      "forgotPassword": "Lupa kata sandi?",
+      "rememberMe": "Ingat saya",
+      "registrationAccount": "Butuh akun baru? Daftar sekarang",
+      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+    },
+    "terms": "Saya telah membaca dan menyetujui Syarat Penggunaan.",
+    "states": {
+      "successTitle": "Berhasil masuk",
+      "successBody": "Sesi Anda siap. Mengarahkan dalam {seconds} detik…",
+      "verifyTitle": "Email Verifikasi Terkirim",
+      "verifyBody": "Kami telah mengirim tautan verifikasi ke {email}. Mengarahkan dalam {seconds} detik…",
+      "verifyPendingTitle": "Menunggu Verifikasi",
+      "verifyPendingBody": "Kami sudah mengirim email verifikasi ke {email}. Setelah verifikasi selesai, silakan cek status verifikasi di bawah ini.",
+      "verifySuccessTitle": "Verifikasi Berhasil",
+      "verifySuccessBody": "Email Anda telah terverifikasi. Mengarahkan ke dashboard dalam {seconds} detik…",
+      "signedInAs": "Masuk sebagai {email}"
+    },
+    "hints": {
+      "verificationStillPending": "Verifikasi belum terdeteksi. Periksa email Anda lalu coba lagi."
+    },
+    "errors": {
+      "invalidCredentials": "Email atau kata sandi salah.",
+      "popupClosed": "Jendela Google Sign-In ditutup sebelum selesai.",
+      "tooManyRequests": "Terlalu banyak percobaan. Coba lagi sebentar lagi.",
+      "userDisabled": "Akun ini telah dinonaktifkan.",
+      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
+      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    }
+  },
+  "RoleGate": {
+    "unauthorized": "Anda tidak memiliki akses ke halaman ini."
+  },
+  "RegistrationModal": {
+    "title": "Buat Akun Anda",
+    "fields": {
+      "email": "Alamat email",
+      "createPassword": "Buat Kata Sandi Baru",
+      "confirmPassword": "Konfirmasi Kata Sandi Baru"
+    },
+    "placeholders": {
+      "email": "Alamat email",
+      "createPassword": "Buat Kata Sandi Baru",
+      "confirmPassword": "Konfirmasi Kata Sandi Baru"
+    },
+    "actions": {
+      "close": "Tutup",
+      "register": "Daftar Sekarang",
+      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+    },
+    "terms": "Saya menyetujui Syarat dan Ketentuan Penggunaan.",
+    "errors": {
+      "passwordMismatch": "Kata sandi dan konfirmasi kata sandi tidak cocok.",
+      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
+      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "successTitle": "Registrasi Berhasil",
+      "successBody": "Akun Anda telah berhasil dibuat. Silakan periksa email Anda untuk memverifikasi akun sebelum masuk.",
+      "backToLogin": "Kembali ke Halaman Masuk"
+    }
+  }
+}

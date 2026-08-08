@@ -1,0 +1,237 @@
+{
+  "Header": {
+    "brandMark": "PS",
+    "brand": "Drone",
+    "tagline": "IoT Monitoring System",
+    "nav": {
+      "home": "Home",
+      "monitoringFarmer": "Farmer Dashboard",
+      "monitoringOperator": "Operator Dashboard",
+      "admin": "Admin Dashboard"
+    },
+    "actions": {
+      "loginGetStarted": "Login / Get Started",
+      "logout": "Log out"
+    },
+    "menu": {
+      "openUserMenu": "Open user menu",
+      "userFallback": "User",
+      "noEmail": "No email provided",
+      "avatarAlt": "{name}'s avatar",
+      "roleLabel": "System Role",
+      "emailLabel": "Email Address",
+      "workspaceHome": "Return to Home",
+      "workspaceFarmer": "Open Dashboard Farmer",
+      "workspaceOperator": "Open Dashboard Operator",
+      "workspaceAdmin": "Open Dashboard Admin"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "farmer": "Farmer",
+      "operator": "Operator",
+      "unknown": "Guest"
+    },
+    "avatarFallback": "U"
+  },
+  "Landing": {
+    "nav": {
+      "about": "About",
+      "research": "Research",
+      "features": "Features",
+      "partners": "Partners",
+      "contact": "Contact"
+    },
+    "hero": {
+      "eyebrow": "AgriTech Research · IoT & AI",
+      "title": "Early Disease Detection<br></br>for Palm Oil<br></br><highlight>Plantations</highlight>",
+      "description": "Drone combines multispectral UAV imaging and onboard AI inference to identify Ganoderma-driven Basal Stem Rot at early stages — before visible symptoms appear.",
+      "learnMore": "Learn More",
+      "primaryAction": "Enter Dashboard",
+      "metrics": {
+        "accuracy": "Classification accuracy",
+        "coverage": "Coverage per sortie",
+        "sensor": "Multispectral sensor",
+        "latency": "Inference latency"
+      }
+    },
+    "about": {
+      "eyebrow": "Research Background",
+      "title": "Digital agriculture for<br></br>sustainable oil palm",
+      "description1": "Basal Stem Rot (BSR), caused by <em>Ganoderma boninense</em>, is responsible for the loss of millions of oil palm trees annually across Southeast Asia. Conventional field scouting is too slow and too costly to catch the disease before it becomes systemic.",
+      "description2": "Drone replaces reactive scouting with proactive, data-driven monitoring. The system mounts a compact multispectral camera on a custom UAV platform, captures canopy-level imagery on a regular flight schedule, and runs an edge-AI classifier onboard — delivering geolocation-tagged treatment recommendations within minutes.",
+      "stats": {
+        "hectares": { "label": "Hectares surveyed", "note": "Field trial total" },
+        "f1score": { "label": "Model F1-score", "note": "Validation dataset" },
+        "endurance": { "label": "Flight endurance", "note": "Per battery cycle" },
+        "gps": { "label": "GPS accuracy", "note": "With RTK module" }
+      }
+    },
+    "research": {
+      "imageAlt": "Research drone",
+      "imageCaption": "Drone UAV Platform · Multispectral & RC Spray Module",
+      "eyebrow": "Platform Overview",
+      "title": "A purpose-built UAV<br></br>for plantation monitoring",
+      "description": "The Drone drone integrates a 5-band multispectral sensor, an onboard NVIDIA Jetson Nano for real-time inference, RTK-GPS for sub-metre positioning, and a 2-litre spray tank actuated by RC command for precision fungicide application.",
+      "specs": {
+        "specSensor": "Sensor", "valSensor": "5-band multispectral (NIR, RedEdge, NDVI, RGB)",
+        "specAi": "AI module", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
+        "specPositioning": "Positioning", "valPositioning": "RTK-GPS · ±0.8 m horizontal",
+        "specEndurance": "Endurance", "valEndurance": "28 min · 5,200 mAh LiPo 6S",
+        "specSpray": "Spray tank", "valSpray": "2 L · RC-triggered nozzle array",
+        "specComm": "Comm. link", "valComm": "5.8 GHz video + 915 MHz telemetry"
+      }
+    },
+    "features": {
+      "eyebrow": "System Capabilities",
+      "title": "End-to-end detection<br></br>in a single flight",
+      "items": {
+        "classification": {
+          "title": "AI Multispectral Classification",
+          "body": "A YOLOv8-Small model trained on 8,000 annotated palm canopy frames classifies disease severity into four stages — Healthy, Mild, Moderate, and Severe — across five spectral bands in under 80 ms per inference cycle."
+        },
+        "monitoring": {
+          "title": "Real-Time Video Monitoring",
+          "body": "Live H.264 video with AI detection annotations is streamed over a 5.8 GHz downlink to the ground station web dashboard. Operators can intervene remotely and trigger precision spraying via RC command."
+        },
+        "mapping": {
+          "title": "Precision GPS Mapping",
+          "body": "Each detection event is geo-tagged with RTK-GPS coordinates accurate to ±0.8 m. Post-flight, disease clusters are rendered as a plantation overlay that agronomists can export for field treatment planning."
+        }
+      },
+      "specialFeature": {
+        "title": "RC-Triggered Precision Spraying",
+        "body": "When the AI flags a disease cluster, the ground operator can activate the onboard spray tank via RC command. A servo-actuated nozzle array releases fungicide directly above infected palms, reducing chemical consumption by up to 60% compared to conventional broadcast application. The spray event timestamp and GPS coordinate are logged to the dashboard for traceability."
+      }
+    },
+    "photoBreak": {
+      "imageAlt": "Plantation canopy",
+      "quote": "Detecting disease weeks before<br></br>symptoms become visible."
+    },
+    "partners": {
+      "eyebrow": "Institutional Partners",
+      "title": "Research collaboration",
+      "list": {
+        "itb": { "name": "Institut Teknologi Bandung", "dept": "Dept. of Electrical Engineering" },
+        "ipb": { "name": "IPB University", "dept": "Faculty of Agriculture" },
+        "poltek": { "name": "State Polytechnic", "dept": "Dept. of Mechatronics" },
+        "brin": { "name": "National R&D Agency", "dept": "Agro-Industry Research Center" }
+      },
+      "footnote": "* Partner names shown are placeholders for research documentation."
+    },
+    "contact": {
+      "eyebrow": "Get in Touch",
+      "title": "Collaborate with<br></br>the Drone team",
+      "description": "We welcome inquiries from researchers, agronomists, plantation managers, and technology partners interested in joint field trials, data sharing, or publication collaboration.",
+      "emailLabel": "Email",
+      "locationLabel": "Location",
+      "locationValue": "Department of Electrical Engineering, Indonesia",
+      "accessDashboard": "Access Dashboard →",
+      "form": {
+        "name": { "label": "Full Name", "placeholder": "Dr. Jane Smith" },
+        "email": { "label": "Institutional Email", "placeholder": "j.smith@university.ac.id" },
+        "org": { "label": "Organisation", "placeholder": "University / Research Institute" },
+        "message": { "label": "Message", "placeholder": "Describe your collaboration interest..." },
+        "submit": "Send Message"
+      }
+    },
+    "footer": {
+      "brand": "Drone",
+      "tagline": "Research Project",
+      "copyright": "© {year} Drone · Academic Research Use Only · All data is simulated",
+      "links": {
+        "privacy": "Privacy",
+        "terms": "Terms",
+        "contact": "Contact"
+      }
+    }
+  },
+  "LocaleToggle": {
+    "label": "Switch Language",
+    "indonesian": "Indonesian",
+    "english": "English",
+    "switchTo": "Switch to {locale}"
+  },
+  "LoginModal": {
+    "title": "Sign in to your account",
+    "fields": {
+      "email": "Email address",
+      "password": "Password",
+      "captcha": "Security Code"
+    },
+    "placeholders": {
+      "email": "Email address",
+      "password": "Enter your password"
+    },
+    "divider": "or continue with",
+    "actions": {
+      "login": "Sign In",
+      "google": "Google",
+      "apple": "Apple",
+      "close": "Close",
+      "resendVerification": "Resend verification",
+      "checkVerification": "Check verification status",
+      "openDashboard": "Open dashboard",
+      "forgotPassword": "Forgot password?",
+      "rememberMe": "Remember me",
+      "registrationAccount": "Need new account? Sign up now",
+      "loginAccount": "Already have an account? Sign In"
+    },
+    "terms": "I have read and accept the Terms of Use.",
+    "states": {
+      "successTitle": "Signed in successfully",
+      "successBody": "Your session is ready. Redirecting in {seconds}s…",
+      "verifyTitle": "Email Verification Sent",
+      "verifyBody": "We've sent a verification link to {email}. Redirecting in {seconds}s…",
+      "verifyPendingTitle": "Waiting for Verification",
+      "verifyPendingBody": "We sent a verification email to {email}. Once verification is complete, please check the verification status below.",
+      "verifySuccessTitle": "Verification Successful",
+      "verifySuccessBody": "Your email has been verified. Redirecting to the dashboard in {seconds}s…",
+      "signedInAs": "Signed in as {email}"
+    },
+    "hints": {
+      "verificationStillPending": "Verification is not detected yet. Please check your email and try again."
+    },
+    "errors": {
+      "invalidCredentials": "The email or password is incorrect.",
+      "popupClosed": "The Google sign-in window was closed before completion.",
+      "tooManyRequests": "Too many attempts. Please try again later.",
+      "userDisabled": "This account has been disabled.",
+      "termsNotAccepted": "You must accept the Terms of Use first.",
+      "invalidCaptcha": "Security code (Captcha) is incorrect.",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
+  "RoleGate": {
+    "unauthorized": "You do not have access to this area."
+  },
+  "RegistrationModal": {
+    "title": "Create Your Account",
+    "fields": {
+      "email": "Email address",
+      "createPassword": "Password",
+      "confirmPassword": "Confirm Create New Password"
+    },
+    "placeholders": {
+      "email": "Email address",
+      "createPassword": "Create New Password",
+      "confirmPassword": "Confirm New Password"
+    },
+    "actions": {
+      "close": "Close",
+      "register": "Daftar Sekarang",
+      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+    },
+    "terms": "Saya menyetujui Syarat dan Ketentuan Penggunaan.",
+    "errors": {
+      "passwordMismatch": "Kata sandi dan konfirmasi kata sandi tidak cocok.",
+      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
+      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "successTitle": "Registrasi Berhasil",
+      "successBody": "Akun Anda telah berhasil dibuat. Silakan periksa email Anda untuk memverifikasi akun sebelum masuk.",
+      "backToLogin": "Kembali ke Halaman Masuk"
+    }
+  }
+}
