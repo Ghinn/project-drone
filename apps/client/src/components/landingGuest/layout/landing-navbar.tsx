@@ -1,12 +1,12 @@
 'use client';
 
-import {useTranslations} from 'next-intl';
-import {UserProfileDropdown} from '@/components/landingGuest/layout/user-profile-dropdown';
-import {useLandingContext} from '@/components/landingGuest/layout/landing-context';
-import {type LandingSectionId} from '@/components/landingGuest/layout/landing-types';
-import {ThemeToggle} from '@/components/theme-toggle';
-import {LocaleToggle} from '@/components/locale-toggle';
-import {useAuth} from '@/providers/auth-provider';
+import { useTranslations } from 'next-intl';
+import { UserProfileDropdown } from '@/components/landingGuest/layout/user-profile-dropdown';
+import { useLandingContext } from '@/components/landingGuest/layout/landing-context';
+import { type LandingSectionId } from '@/components/landingGuest/layout/landing-types';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LocaleToggle } from '@/components/locale-toggle';
+import { useAuth } from '@/providers/auth-provider';
 import { useState, useEffect } from 'react';
 
 const NAV_ORDER: LandingSectionId[] = [
@@ -20,12 +20,12 @@ const NAV_ORDER: LandingSectionId[] = [
 export function LandingNavbar() {
   const t = useTranslations('Landing');
   const { activeSection, initialSession, openAuthModal } = useLandingContext();
-  const {status, user, role} = useAuth();
+  const { status, user, role } = useAuth();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-   useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -56,12 +56,12 @@ export function LandingNavbar() {
       ? role ?? initialSession?.role ?? null
       : initialSession?.role ?? null;
 
-  const headerBgClass = scrolled 
-    ? 'bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md' 
+  const headerBgClass = scrolled
+    ? 'bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md'
     : 'bg-transparent';
-  
-  const headerBorderClass = scrolled 
-    ? 'border-b border-[#e5e7eb] dark:border-[#2a2a2a]' 
+
+  const headerBorderClass = scrolled
+    ? 'border-b border-[#e5e7eb] dark:border-[#2a2a2a]'
     : 'border-b border-transparent';
 
   const textColorClass = scrolled
@@ -73,14 +73,14 @@ export function LandingNavbar() {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBgClass} ${headerBorderClass}`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        
+
         {/* BRANDING / LOGO KIRI */}
         <a href="#home" className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded bg-[#84994F] text-xs font-bold text-white">
-            PS
+            DP
           </span>
           <span className={`text-base font-bold tracking-tight ${textColorClass}`}>
-            Drone
+            DREAMPALM
           </span>
         </a>
 
@@ -88,7 +88,7 @@ export function LandingNavbar() {
         <nav className="hidden md:flex items-center gap-8">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
-            
+
             return (
               <a
                 key={item.id}
@@ -127,12 +127,12 @@ export function LandingNavbar() {
           )}
 
           {/* Tombol Hamburger Mobile */}
-          <button 
-            className={`md:hidden p-2 ${textColorClass}`} 
+          <button
+            className={`md:hidden p-2 ${textColorClass}`}
             onClick={() => setMobileMenuOpen(o => !o)}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeWidth="2" d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}/>
+              <path strokeLinecap="round" strokeWidth="2" d={mobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
             </svg>
           </button>
         </div>
@@ -151,7 +151,7 @@ export function LandingNavbar() {
               {item.label}
             </a>
           ))}
-          
+
           <div className="flex items-center gap-4 py-2">
             <ThemeToggle />
             <LocaleToggle />
