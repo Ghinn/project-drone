@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import { LoginModal } from '@/components/auth/login-modal';
+import { useRouter } from 'next/navigation';
 import { LandingContext } from '@/components/landingGuest/layout/landing-context';
 import { LandingNavbar } from '@/components/landingGuest/layout/landing-navbar';
 import {
@@ -24,8 +24,8 @@ export function LandingShell({
   children,
   initialSession
 }: LandingShellProps) {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState<LandingSectionId>('home');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     function handleScroll() {
@@ -44,7 +44,7 @@ export function LandingShell({
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 10
       ) {
-        nextSection = 'footer';
+        nextSection = 'contact';
       }
 
       setActiveSection(nextSection);
@@ -63,10 +63,10 @@ export function LandingShell({
     () => ({
       activeSection,
       initialSession,
-      openAuthModal: () => setIsAuthModalOpen(true),
-      closeAuthModal: () => setIsAuthModalOpen(false)
+      openAuthModal: () => router.push('/login'),
+      closeAuthModal: () => {}
     }),
-    [activeSection, initialSession]
+    [activeSection, initialSession, router]
   );
 
   return (
@@ -74,10 +74,6 @@ export function LandingShell({
       <div style={{ fontFamily: 'Montserrat, sans-serif' }}>
         <LandingNavbar />
         <div className="relative">{children}</div>
-        <LoginModal
-          open={isAuthModalOpen}
-          onOpenChange={setIsAuthModalOpen}
-        />
       </div>
     </LandingContext.Provider>
   );
