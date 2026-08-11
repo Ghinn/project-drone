@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: 'DREAMPALM',
+  name: 'AgriSpectra',
   shortTagline: 'Smart Drone Management System',
   description: 'Sistem cerdas pemantauan dan manajemen armada drone',
   defaultLocale: 'id',
