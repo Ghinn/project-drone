@@ -1,8 +1,7 @@
 'use client';
 
-import { useContext } from 'react';
 import { useTranslations } from 'next-intl';
-import { LandingContext } from '@/components/landingGuest/layout/landing-context';
+import { useLandingContext } from '@/components/landingGuest/layout/landing-context';
 
 const FORM_FIELDS = [
   { id: 'name', type: 'text' },
@@ -12,7 +11,7 @@ const FORM_FIELDS = [
 
 export function ContactSection() {
   const t = useTranslations('Landing.contact');
-  const { openAuthModal } = useContext(LandingContext);
+  const { openAuthModal } = useLandingContext();
 
   return (
     <section 
