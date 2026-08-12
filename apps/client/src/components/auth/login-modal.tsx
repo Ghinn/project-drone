@@ -3,7 +3,7 @@
 import {
   useEffect,
   useState,
-  useCallback,
+  useRef,
   type FormEvent
 } from 'react';
 import {
@@ -17,9 +17,9 @@ import {
   browserSessionPersistence
 } from 'firebase/auth';
 import ReCAPTCHA from 'react-google-recaptcha';
-import {BadgeCheck, Clock3, X} from 'lucide-react';
+import {BadgeCheck, Clock3, X, Eye, EyeOff} from 'lucide-react';
 import {useLocale, useTranslations} from 'next-intl';
-import {useRouter} from 'next/navigation';
+import {useRouter, usePathname} from 'next/navigation';
 import {homeForRole} from '@/lib/auth/roles';
 import {auth as firebaseAuth, googleProvider} from '@/lib/firebase/client';
 import {useAuth} from '@/providers/auth-provider';
@@ -29,11 +29,6 @@ type AuthView =
   | 'success'
   | 'verify-pending'
   | 'verify-success';
-
-type LoginModalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
 
 const REDIRECT_SECONDS = 5;
 
@@ -56,18 +51,21 @@ function getFirebaseErrorCode(error: unknown): string | null {
   return null;
 }
 
-export function LoginModal({open, onOpenChange}: LoginModalProps) {
+export function LoginModal() {
   const router = useRouter();
+  const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('LoginModal');
   
-  const {syncSession} = useAuth(); 
+  const {syncSession} = useAuth();
+  const [isModalVisible, setIsModalVisible] = useState(true);
   const [view, setView] = useState<AuthView>('form');
   const [email, setEmail] = useState('');
   const [signedInEmail, setSignedInEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // State untuk Validasi Email onBlur
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -78,36 +76,35 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   const appleProvider = new OAuthProvider('apple.com');
 
-  function resetState() {
-    setView('form');
-    setEmail('');
-    setSignedInEmail('');
-    setPassword('');
-    setIsLoading(false);
-    setErrorMessage(null);
-    setCountdown(null);
-    setRedirectPath('/monitoring');
-    setAcceptTerms(false);
-    setRememberMe(false);
-    setRecaptchaToken(null);
-  }
-
   useEffect(() => {
-    if (!open) {
-      resetState();
+    if (pathname === '/login') {
+      setIsModalVisible(true);
+      setView('form');
     }
-  }, [open]);
+  }, [pathname]);
 
   useEffect(() => {
-    if (!open || countdown === null) {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsModalVisible(false);
+        router.replace('/');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
+
+  useEffect(() => {
+    if (countdown === null) {
       return;
     }
 
     if (countdown <= 0) {
-      onOpenChange(false);
       router.replace(redirectPath);
       return;
     }
@@ -119,7 +116,7 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [countdown, onOpenChange, open, redirectPath, router]);
+  }, [countdown, redirectPath, router]);
 
   function beginRedirect(path: string) {
     setRedirectPath(path);
@@ -187,7 +184,9 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
       if (!captchaVerifyData.success) {
         setErrorMessage(captchaVerifyData.message || 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.');
         setIsLoading(false);
-        // Reset reCAPTCHA jika Anda menggunakan useRef untuk ReCAPTCHA instance
+
+        recaptchaRef.current?.reset();
+        setRecaptchaToken(null);
         return; 
       }
 
@@ -203,6 +202,16 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
         password
       );
 
+      if (!credential.user.emailVerified) {
+        await signOut(firebaseAuth);
+        setErrorMessage(t('hints.verificationStillPending'));
+        setIsLoading(false);
+
+        recaptchaRef.current?.reset();
+        setRecaptchaToken(null);
+        return;
+      }
+
       const nextRole = await syncSession(credential.user);
       
       setSignedInEmail(credential.user.email ?? email);
@@ -216,8 +225,9 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
         setView('verify-pending');
       } else {
         setErrorMessage(mapError(error));
-        // Reset reCAPTCHA on error if needed by using a ref, 
-        // tapi untuk pendekatan state dasar, kita paksa user isi ulang (atau biarkan token aktif jika server mengizinkan)
+        
+        recaptchaRef.current?.reset();
+        setRecaptchaToken(null);
       }
     } finally {
       setIsLoading(false);
@@ -290,18 +300,17 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
   }
 
   function closeModal() {
-    onOpenChange(false);
+    setIsModalVisible(false);
+    router.replace('/');
   }
 
   function goToDashboardNow() {
-    onOpenChange(false);
+    setIsModalVisible(false);
     router.replace(redirectPath);
   }
 
-  if (!open) {
-    return null;
-  }
-
+  if (!isModalVisible) return null;
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
       <div
@@ -345,6 +354,8 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
                   onBlur={(e) => {
                     if (e.target.value && !e.target.validity.valid) {
                       setEmailError(e.target.validationMessage);
+                    } else {
+                      setEmailError(null);
                     }
                   }}
                   placeholder={t('placeholders.email')}
@@ -359,17 +370,25 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
                 ) : null}
               </div>
 
-              <div>
+              <div className="relative">
                 <input
                   autoComplete="current-password"
                   className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
                   disabled={isLoading}
                   placeholder={t('placeholders.password')}
                   required
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                 />
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6A717F] hover:text-[#191919]"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
 
               {/* REMEMBER ME & FORGOT PASSWORD */}
@@ -386,14 +405,19 @@ export function LoginModal({open, onOpenChange}: LoginModalProps) {
                     {t('actions.rememberMe')}
                   </span>
                 </label>
-                <a href="#" className="text-[13px] font-semibold text-[#191919] hover:text-[#FF5C01] hover:underline">
+                <button
+                  type="button"
+                  onClick={() => router.replace('/forgot-password')}
+                  className="text-[13px] font-semibold text-[#191919] hover:text-[#FF5C01] hover:underline"
+                >
                   {t('actions.forgotPassword')}
-                </a>
+                </button>
               </div>
 
               {/* RECAPTCHA SECTION */}
               <div className="flex justify-center py-2">
                 <ReCAPTCHA
+                ref={recaptchaRef}
                   sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ""}
                   onChange={(token) => setRecaptchaToken(token)}
                 />

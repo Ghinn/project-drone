@@ -1,1 +1,25 @@
-{}
+{
+  "SetupPasswordModal": {
+    "title": "Atur Kata Sandi",
+    "placeholders": {
+      "newPassword": "Kata Sandi",
+      "confirmNewPassword": "Konfirmasi Kata Sandi"
+    },
+    "actions": {
+      "close": "Tutup",
+      "submit": "Buat Akun",
+      "backToHome": "Kembali ke Beranda"
+    },
+    "errors": {
+      "passwordMismatch": "Konfirmasi kata sandi tidak cocok dengan kata sandi.",
+      "weakPassword": "Sandi Lemah",
+      "mediumPassword": "Sandi Sedang",
+      "strongPassword": "Sandi Kuat",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "successTitle": "Akun Berhasil Dibuat",
+      "successBody": "Kata sandi Anda telah berhasil diperbarui. Silakan masuk menggunakan Akun Anda."
+    }
+  }
+}

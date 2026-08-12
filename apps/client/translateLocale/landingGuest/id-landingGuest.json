@@ -153,10 +153,9 @@
   },
   "LoginModal": {
     "title": "Masuk ke akun Anda",
-    "subtitle": "Masuk untuk memantau kesegaran pangan secara real-time.",
     "fields": {
-      "email": "Alamat email",
-      "password": "Masukkan Kata sandi",
+      "email": "Alamat Email",
+      "password": "Kata sandi",
       "captcha": "Kode Keamanan"
     },
     "placeholders": {
@@ -170,23 +169,20 @@
       "apple": "Apple",
       "close": "Tutup",
       "resendVerification": "Kirim ulang verifikasi",
-      "checkVerification": "Cek status verifikasi",
-      "openDashboard": "Buka dashboard",
+      "checkVerification": "Cek Status Verifikasi",
+      "openDashboard": "Buka Dashboard",
       "forgotPassword": "Lupa kata sandi?",
       "rememberMe": "Ingat saya",
-      "registrationAccount": "Butuh akun baru? Daftar sekarang",
-      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+      "registrationAccount": "Butuh akun baru? Daftar sekarang"
     },
-    "terms": "Saya telah membaca dan menyetujui Syarat Penggunaan.",
+    "terms": "Saya telah membaca dan menyetujui Ketentuan Penggunaan dan Kebijakan Privasi.",
     "states": {
       "successTitle": "Berhasil masuk",
-      "successBody": "Sesi Anda siap. Mengarahkan dalam {seconds} detik…",
-      "verifyTitle": "Email Verifikasi Terkirim",
-      "verifyBody": "Kami telah mengirim tautan verifikasi ke {email}. Mengarahkan dalam {seconds} detik…",
+      "successBody": "Akun Anda siap. Mengarahkan dalam {seconds} detik…",
       "verifyPendingTitle": "Menunggu Verifikasi",
-      "verifyPendingBody": "Kami sudah mengirim email verifikasi ke {email}. Setelah verifikasi selesai, silakan cek status verifikasi di bawah ini.",
+      "verifyPendingBody": "Silakan cek status verifikasi di bawah ini.",
       "verifySuccessTitle": "Verifikasi Berhasil",
-      "verifySuccessBody": "Email Anda telah terverifikasi. Mengarahkan ke dashboard dalam {seconds} detik…",
+      "verifySuccessBody": "Email Anda telah terverifikasi. Kami akan mengarahkan ke dashboard dalam {seconds} detik…",
       "signedInAs": "Masuk sebagai {email}"
     },
     "hints": {
@@ -197,8 +193,8 @@
       "popupClosed": "Jendela Google Sign-In ditutup sebelum selesai.",
       "tooManyRequests": "Terlalu banyak percobaan. Coba lagi sebentar lagi.",
       "userDisabled": "Akun ini telah dinonaktifkan.",
-      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
-      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
+      "termsNotAccepted": "Anda harus menyetujui Syarat dan Ketentuan terlebih dahulu.",
+      "invalidCaptcha": "Selesaikan reCAPTCHA terlebih dahulu.",
       "unknown": "Terjadi kesalahan. Silakan coba lagi."
     }
   },
@@ -209,8 +205,8 @@
     "title": "Buat Akun Anda",
     "fields": {
       "email": "Alamat email",
-      "createPassword": "Buat Kata Sandi Baru",
-      "confirmPassword": "Konfirmasi Kata Sandi Baru"
+      "createPassword": "Buat Kata Sandi",
+      "confirmPassword": "Konfirmasi Kata Sandi"
     },
     "placeholders": {
       "email": "Alamat email",
@@ -220,18 +216,101 @@
     "actions": {
       "close": "Tutup",
       "register": "Daftar Sekarang",
-      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+      "openDashboard": "Buka Dashboard",
+      "loginAccount": "Sudah memiliki akun? Masuk di sini",
+      "checkVerification": "Cek Status Verifikasi"
     },
-    "terms": "Saya menyetujui Syarat dan Ketentuan Penggunaan.",
+    "terms": "Saya menyetujui Ketentuan Penggunaan dan Kebijakan Privasi.",
     "errors": {
-      "passwordMismatch": "Kata sandi dan konfirmasi kata sandi tidak cocok.",
-      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
-      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
+      "passwordMismatch": "Konfirmasi kata sandi tidak cocok dengan kata sandi.",
+      "termsNotAccepted": "Anda harus menyetujui Syarat dan Ketentuan terlebih dahulu.",
+      "invalidCaptcha": "Selesaikan reCAPTCHA terlebih dahulu.",
+      "weakPassword": "Sandi Lemah",
+      "mediumPassword": "Sandi Sedang",
+      "strongPassword": "Sandi Kuat",
       "unknown": "Terjadi kesalahan. Silakan coba lagi."
     },
     "states": {
+      "verifyTitle": "Menunggu Verifikasi",
+      "verifyBody": "Kami telah mengirim tautan verifikasi ke {email}.",
+      "verifyPendingBody": "Silakan cek status verifikasi di bawah ini.",
+      "errorTitle": "Verifikasi Gagal",
+      "successTitle": "Verifikasi Berhasil",
+      "backToLogin": "Kembali ke Halaman Masuk"
+    }
+  },
+  "VerificationModal": {
+    "actions": {
+      "close": "Tutup",
+      "backToHome": "Kembali ke Beranda",
+      "openDashboard": "Open Dashboard",
+      "checkVerification": "Cek Status Verifikasi"
+    },
+    "errors": {
+      "missingToken": "Token verifikasi tidak ditemukan.",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "verifyingTitle": "Memverifikasi Akun",
+      "verifyingBody": "Mohon tunggu sebentar, kami sedang memvalidasi akun {email}.",
+      "verifyTitle": "Memverifikasi Akun",
+      "verifyBody": "Akun Anda sedang dilakukan verifikasi. Kami akan mengarahkan ke {email} dalam {seconds} detik… untuk memverifikasi Akun Anda.",
+      "verifyPendingBody": "Silakan cek status verifikasi di bawah ini.",
       "successTitle": "Registrasi Berhasil",
-      "successBody": "Akun Anda telah berhasil dibuat. Silakan periksa email Anda untuk memverifikasi akun sebelum masuk.",
+      "errorTitle": "Verifikasi Gagal",
+      "successBody": "Akun Anda telah berhasil dibuat. Kami akan mengarahkan ke dashboard dalam {seconds} detik…",
+      "signedInAs": "Masuk sebagai {email}"
+    }
+  },
+  "ForgotPasswordModal": {
+    "title": "Atur Ulang Kata Sandi",
+    "placeholders": {
+      "email": "Alamat Email",
+      "newPassword": "Kata Sandi Baru",
+      "confirmNewPassword": "Konfirmasi Kata Sandi Baru",
+      "confirmationCode": "Kode Konfirmasi"
+    },
+    "actions": {
+      "close": "Tutup",
+      "sendCode": "Kirim Kode",
+      "submit": "Simpan Sandi"
+    },
+    "errors": {
+      "invalidEmail": "Alamat email tidak valid.",
+      "invalidCaptcha": "Selesaikan reCAPTCHA terlebih dahulu.",
+      "passwordMismatch": "Konfirmasi kata sandi tidak cocok dengan kata sandi.",
+      "missingCode": "Harap masukkan kode konfirmasi yang dikirim ke email Anda.",
+      "weakPassword": "Sandi Lemah",
+      "mediumPassword": "Sandi Sedang",
+      "strongPassword": "Sandi Kuat",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "successTitle": "Kata Sandi Diperbarui",
+      "successBody": "Kata sandi Anda telah berhasil diperbarui. Silakan masuk menggunakan kata sandi baru.",
+      "backToLogin": "Kembali ke Halaman Masuk"
+    }
+  },
+  "SetupPasswordModal": {
+    "title": "Atur Kata Sandi",
+    "placeholders": {
+      "newPassword": "Kata Sandi",
+      "confirmNewPassword": "Konfirmasi Kata Sandi"
+    },
+    "actions": {
+      "close": "Tutup",
+      "submit": "Buat Akun"
+    },
+    "errors": {
+      "passwordMismatch": "Konfirmasi kata sandi tidak cocok dengan kata sandi.",
+      "weakPassword": "Sandi Lemah",
+      "mediumPassword": "Sandi Sedang",
+      "strongPassword": "Sandi Kuat",
+      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+    },
+    "states": {
+      "successTitle": "Akun Berhasil Dibuat",
+      "successBody": "Kata sandi Anda telah berhasil diperbarui. Silakan masuk menggunakan Akun Anda.",
       "backToLogin": "Kembali ke Halaman Masuk"
     }
   }

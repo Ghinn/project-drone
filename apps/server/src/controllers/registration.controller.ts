@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import admin from '../lib/firebase/admin';
+import { sendVerificationEmail } from '../lib/mailer';
 
 export const registerFarmer = async (req: Request, res: Response) => {
     try {
@@ -11,7 +12,7 @@ export const registerFarmer = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email dan kata sandi diwajibkan.' });
         }
 
-        // 1. Cek duplikasi di Prisma untuk menghindari proses ke Firebase jika sudah terdaftar
+        // Cek duplikasi di Prisma untuk menghindari proses ke Firebase jika sudah terdaftar
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
             return res.status(400).json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' });
@@ -19,7 +20,7 @@ export const registerFarmer = async (req: Request, res: Response) => {
 
         let firebaseUid = '';
 
-        // 2. Buat Pengguna di Firebase Auth
+        // Buat Pengguna di Firebase Auth
         try {
             // Jika nama tidak disediakan dari UI, gunakan default atau prefix email
             const defaultName = email.split('@')[0];
@@ -39,12 +40,12 @@ export const registerFarmer = async (req: Request, res: Response) => {
                 return res.status(400).json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' });
             }
             if (firebaseError.code === 'auth/weak-password') {
-                return res.status(400).json({ error: 'Kata sandi terlalu lemah (minimal 6 karakter).' });
+                return res.status(400).json({ error: 'Kata sandi terlalu lemah menurut kebijakan server.' });
             }
             throw firebaseError; // Teruskan error lain ke blok catch utama
         }
 
-        // 3. Buat Entri Pengguna di Prisma
+        // Buat Entri Pengguna di Prisma
         const newUser = await prisma.user.create({
             data: {
                 email,
@@ -56,7 +57,7 @@ export const registerFarmer = async (req: Request, res: Response) => {
             }
         });
 
-        // 4. Buat Token Verifikasi Kustom (Opsional jika Anda tidak memakai verifikasi bawaan Firebase)
+        // Buat Token Verifikasi Kustom
         const token = crypto.randomBytes(32).toString('hex');
         const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // Kedaluwarsa 24 jam
 
@@ -68,9 +69,16 @@ export const registerFarmer = async (req: Request, res: Response) => {
             }
         });
 
-        // TODO: Panggil utilitas pengirim email Anda di sini (misal Nodemailer/Resend)
-        // const verificationLink = `${process.env.CLIENT_URL}/verify?token=${token}`;
-        // await sendEmail(email, "Verifikasi Akun Drone Tech Anda", verificationLink);
+        // Panggil utilitas Nodemailer
+        try {
+            await sendVerificationEmail(email, token);
+        } catch (emailError) {
+            console.error('Gagal mengirim email verifikasi:', emailError);
+            return res.status(201).json({ 
+                message: 'Akun berhasil dibuat, tetapi kami mengalami kendala saat mengirim email verifikasi. Silakan hubungi dukungan.',
+                data: { id: newUser.id, email: newUser.email }
+            });
+        }
 
         return res.status(201).json({ 
             message: 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi.',

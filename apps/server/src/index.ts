@@ -4,11 +4,11 @@ import { app } from './app.js';
 const port = Number(process.env.PORT ?? 4000);
 
 const server = app.listen(port, () => {
-  console.log(`Drone Tech API running on http://localhost:${port}`);
+  console.log(`DreamPalm Backend running on http://localhost:${port}`);
 });
 
 const shutdown = async (signal: string) => {
-  console.info(`${signal} received. Closing Drone Tech API service...`);
+  console.info(`${signal} received. Closing DreamPalm Backend service...`);
 
   server.close(() => {
     console.log("Server successfully shut down.");

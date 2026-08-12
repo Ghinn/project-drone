@@ -7,7 +7,7 @@ import {
   initializeApp,
   type AppOptions
 } from 'firebase-admin/app';
-import {getAuth} from 'firebase-admin/auth';
+import { getAuth } from 'firebase-admin/auth';
 
 function getAdminOptions(): AppOptions {
   const projectId =
@@ -44,3 +44,4 @@ const adminApp = getApps().length
   : initializeApp(getAdminOptions());
 
 export const adminAuth = getAuth(adminApp);
+export const auth = adminAuth;

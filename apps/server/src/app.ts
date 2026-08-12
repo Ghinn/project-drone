@@ -5,7 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import { env } from "./config/env";
-import routes from "./routes/index";
+import routes from "./routes/admin.route";
 import { errorHandler, notFoundHandler } from "./lib/http";
 
 export const app = express();

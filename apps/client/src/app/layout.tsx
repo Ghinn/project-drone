@@ -17,18 +17,21 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({
-  children
-}: {
+  children,
+  modal
+}: Readonly<{
   children: React.ReactNode;
-}) {
+  modal: React.ReactNode;
+}>) {
   const messages = await getMessages();
 
   return (
-    <html lang="id" suppressHydrationWarning className="scroll-smooth">
+    <html lang="id" suppressHydrationWarning className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${montserrat.variable} font-sans antialiased min-h-screen bg-background text-foreground`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <AppProviders>
             {children}
+            {modal}
           </AppProviders>
         </NextIntlClientProvider>
       </body>

@@ -1,1 +1,25 @@
-{}
+{
+  "SetupPasswordModal": {
+    "title": "Create My Password",
+    "placeholders": {
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password"
+    },
+    "actions": {
+      "close": "Close",
+      "submit": "Create Account",
+      "backToHome": "Back to Home"
+    },
+    "errors": {
+      "passwordMismatch": "The confirm password does not match the password.",
+      "weakPassword": "Week Password",
+      "mediumPassword": "Medium Password",
+      "strongPassword": "Strong Password",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "states": {
+      "successTitle": "Account Successfully Created",
+      "successBody": "Your account has been successfully created. You can now sign in with your Account."
+    }
+  }
+}

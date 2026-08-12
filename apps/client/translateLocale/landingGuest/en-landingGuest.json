@@ -169,21 +169,18 @@
       "apple": "Apple",
       "close": "Close",
       "resendVerification": "Resend verification",
-      "checkVerification": "Check verification status",
-      "openDashboard": "Open dashboard",
+      "checkVerification": "Check Verification Status",
+      "openDashboard": "Open Dashboard",
       "forgotPassword": "Forgot password?",
       "rememberMe": "Remember me",
-      "registrationAccount": "Need new account? Sign up now",
-      "loginAccount": "Already have an account? Sign In"
+      "registrationAccount": "Need new account? Sign up now"
     },
-    "terms": "I have read and accept the Terms of Use.",
+    "terms": "I have read and accept the Terms of Use and Privacy Policy.",
     "states": {
       "successTitle": "Signed in successfully",
-      "successBody": "Your session is ready. Redirecting in {seconds}s…",
-      "verifyTitle": "Email Verification Sent",
-      "verifyBody": "We've sent a verification link to {email}. Redirecting in {seconds}s…",
+      "successBody": "Your account is ready. Redirecting to the dashboard in {seconds}s…",
       "verifyPendingTitle": "Waiting for Verification",
-      "verifyPendingBody": "We sent a verification email to {email}. Once verification is complete, please check the verification status below.",
+      "verifyPendingBody": "Please check the verification status below.",
       "verifySuccessTitle": "Verification Successful",
       "verifySuccessBody": "Your email has been verified. Redirecting to the dashboard in {seconds}s…",
       "signedInAs": "Signed in as {email}"
@@ -196,8 +193,8 @@
       "popupClosed": "The Google sign-in window was closed before completion.",
       "tooManyRequests": "Too many attempts. Please try again later.",
       "userDisabled": "This account has been disabled.",
-      "termsNotAccepted": "You must accept the Terms of Use first.",
-      "invalidCaptcha": "Security code (Captcha) is incorrect.",
+      "termsNotAccepted": "You must accept the Terms of Use and Privacy Policy first.",
+      "invalidCaptcha": "The Recaptcha field is required.",
       "unknown": "Something went wrong. Please try again."
     }
   },
@@ -213,25 +210,85 @@
     },
     "placeholders": {
       "email": "Email address",
-      "createPassword": "Create New Password",
-      "confirmPassword": "Confirm New Password"
+      "createPassword": "Create Password",
+      "confirmPassword": "Confirm Create Password"
     },
     "actions": {
       "close": "Close",
-      "register": "Daftar Sekarang",
-      "loginAccount": "Sudah memiliki akun? Masuk di sini"
+      "register": "Sign Up",
+      "openDashboard": "Open Dashboard",
+      "loginAccount": "Already have an account? Sign In",
+      "checkVerification": "Check Verification Status"
     },
-    "terms": "Saya menyetujui Syarat dan Ketentuan Penggunaan.",
+    "terms": "I agree to the Terms of Use and Privacy Policy.",
     "errors": {
-      "passwordMismatch": "Kata sandi dan konfirmasi kata sandi tidak cocok.",
-      "termsNotAccepted": "Anda harus menyetujui Syarat Penggunaan terlebih dahulu.",
-      "invalidCaptcha": "Kode keamanan (Captcha) tidak sesuai.",
-      "unknown": "Terjadi kesalahan. Silakan coba lagi."
+      "passwordMismatch": "The confirm password does not match the password.",
+      "termsNotAccepted": "You must accept the Terms of Use and Privacy Policy first.",
+      "invalidCaptcha": "The Recaptcha field is required.",
+      "weakPassword": "Week Password",
+      "mediumPassword": "Medium Password",
+      "strongPassword": "Strong Password",
+      "unknown": "Something went wrong. Please try again."
     },
     "states": {
-      "successTitle": "Registrasi Berhasil",
-      "successBody": "Akun Anda telah berhasil dibuat. Silakan periksa email Anda untuk memverifikasi akun sebelum masuk.",
-      "backToLogin": "Kembali ke Halaman Masuk"
+      "verifyTitle": "Waiting for Verification",
+      "verifyBody": "We've sent a verification link to {email}.",
+      "verifyPendingBody": "Please check the verification status below.",
+      "errorTitle": "Verification Failed",
+      "successTitle": "Registration Successfuly",
+      "backToLogin": "Back to Sign In"
+    }
+  },
+  "VerificationModal": {
+    "actions": {
+      "close": "Tutup",
+      "backToHome": "Back to Home",
+      "openDashboard": "Open Dashboard",
+      "checkVerification": "Check Verification Status"
+    },
+    "errors": {
+      "missingToken": "Verification token not found.",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "states": {
+      "verifyingTitle": "Verifying Account",
+      "verifyingBody": "Please wait a moment while we validate your {email}.",
+      "verifyTitle": "Verifying Account",
+      "verifyBody": "Your account is being verified. We will redirect you to {email} in {seconds} seconds… to verify your account.",
+      "verifyPendingBody": "Please check the verification status below.",
+      "successTitle": "Registration Successfuly",
+      "errorTitle": "Verification Failed",
+      "successBody": "Your account has been successfully created. Redirecting to the dashboard in {seconds}s…",
+      "signedInAs": "Signed in as {email}"
+    }
+  },
+  "ForgotPasswordModal": {
+    "title": "Reset My Password",
+    "placeholders": {
+      "email": "Email Address",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "confirmationCode": "Confirmation Code'"
+    },
+    "actions": {
+      "close": "Close",
+      "sendCode": "Send Code",
+      "submit": "Sumbit"
+    },
+    "errors": {
+      "invalidEmail": "Invalid email address.",
+      "invalidCaptcha": "The Recaptcha field is required.",
+      "passwordMismatch": "The confirm password does not match the password.",
+      "missingCode": "Please enter the confirmation code sent to your email.",
+      "weakPassword": "Week Password",
+      "mediumPassword": "Medium Password",
+      "strongPassword": "Strong Password",
+      "unknown": "Something went wrong. Please try again."
+    },
+    "states": {
+      "successTitle": "Password Reset Successfuly",
+      "successBody": "Your password has been successfully updated. You can now sign in with your new password.",
+      "backToLogin": "Back to Sign In"
     }
   }
 }

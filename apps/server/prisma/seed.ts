@@ -10,28 +10,28 @@ import { ApprovalStatus, Role } from "../src/generated/prisma";
 
 const SEED_USERS = [
   {
-    email: "halo.agrispectra@gmail.com",
-    password: "@agrispectra123",
+    email: "halo.dreampalm@gmail.com",
+    password: "dreampalm123",
     name: "Super Admin",
     role: Role.ADMIN,
     status: ApprovalStatus.APPROVED,
   },
   {
-    email: "ahmadsaiziraden@gmail.com",
+    email: "ahmadsaiziraden@apps.ipb.ac.id",
     password: "admin123",
     name: "Ahmad Sazira",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
   },
   {
-    email: "ghiinarania@gmail.com",
+    email: "ghiinarania@apps.ipb.ac.id",
     password: "admin123",
     name: "Ghina Rania",
     role: Role.FARMER,
     status: ApprovalStatus.APPROVED,
   },
   {
-    email: "dellaarviyanti@gmail.com",
+    email: "dellaarviyanti@apps.ipb.ac.id",
     password: "admin123",
     name: "Della Arviyanti",
     role: Role.FARMER,

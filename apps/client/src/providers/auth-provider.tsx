@@ -91,7 +91,7 @@ export function AuthProvider({children}: AuthProviderProps) {
       const promise = (async () => {
         const idToken = await targetUser.getIdToken(true);
 
-        const response = await fetch(`${API_BASE_URL}/api/auth/session-login`, {
+        const response = await fetch(`/api/auth/session-login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

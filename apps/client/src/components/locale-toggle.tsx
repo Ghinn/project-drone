@@ -28,7 +28,7 @@ export function LocaleToggle() {
     try {
       setPendingLocale(nextLocale);
 
-      const response = await fetch('/server/locale', {
+      const response = await fetch('/api/locale', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

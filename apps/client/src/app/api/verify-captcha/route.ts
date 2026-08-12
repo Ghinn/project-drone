@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     } else {
       // Token tidak valid atau kadaluarsa
       return NextResponse.json(
-        { success: false, message: 'Validasi reCAPTCHA gagal oleh Google.' },
+        { success: false, message: 'The Recaptcha field is required.' },
         { status: 400 }
       );
     }

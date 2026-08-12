@@ -1,25 +1,33 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import admin from '../lib/firebase/admin';
 
 export const verifyEmail = async (req: Request, res: Response) => {
     try {
         const { token } = req.query;
 
-        if (!token) {
-            return res.status(400).json({ error: 'Token verifikasi tidak ditemukan.' });
+        if (!token || typeof token !== 'string') {
+            return res.status(400).json({ error: 'Token verifikasi tidak valid atau hilang.' });
         }
 
-        // 1. Cari token di database[cite: 6]
+        // Cari token di database
         const verificationToken = await prisma.verificationToken.findUnique({
-            where: { token: String(token) }
+            where: { token }
         });
 
-        if (!verificationToken || verificationToken.expires < new Date()) {
-            return res.status(400).json({ error: 'Token tidak valid atau sudah kedaluwarsa' });
+        // Validasi Ketersediaan dan Kedaluwarsa Token
+        if (!verificationToken) {
+            return res.status(400).json({ 
+                error: 'Tautan sudah digunakan atau tidak valid. Email Anda mungkin sudah terverifikasi, silakan coba masuk ke akun Anda.' 
+            });
         }
 
-        // 2. Update user: emailVerified jadi true, status jadi APPROVED[cite: 6]
-        await prisma.user.update({
+        if (verificationToken.expires < new Date()) {
+            return res.status(400).json({ error: 'Tautan verifikasi telah kedaluwarsa. Silakan daftar kembali.' });
+        }
+
+        // Update status pengguna di Prisma
+        const user = await prisma.user.update({
             where: { id: verificationToken.userId },
             data: { 
                 emailVerified: true,
@@ -27,18 +35,23 @@ export const verifyEmail = async (req: Request, res: Response) => {
             }
         });
 
-        // 3. Hapus token agar tidak bisa dipakai lagi[cite: 6]
+        // Update status emailVerified di Firebase Auth
+        await admin.auth().updateUser(user.firebaseUid!, {
+            emailVerified: true
+        });
+
+        // Hapus token agar menjadi tautan One-Time Link
         await prisma.verificationToken.delete({
             where: { id: verificationToken.id }
         });
 
-        // 4. Redirect ke halaman Frontend
-        // (Misalnya: mengarahkan user langsung ke halaman login dengan parameter success)
-        const redirectUrl = `${process.env.CLIENT_URL}/?verified=true`;
-        return res.redirect(redirectUrl);
+        return res.status(200).json({ 
+            message: 'Verifikasi email berhasil. Sesi Anda siap.',
+            email: user.email 
+        });
 
     } catch (error) {
-        console.error('Verification Error:', error);
-        return res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
+        console.error('Error saat verifikasi email:', error);
+        return res.status(500).json({ error: 'Terjadi kesalahan pada server saat memverifikasi email.' });
     }
 };
