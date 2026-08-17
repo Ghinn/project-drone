@@ -253,7 +253,7 @@ export function ForgotPasswordModal() {
               <div>
                 <input
                   autoComplete="email"
-                  className={`w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-[#D1D5DB] focus:border-[#023337] focus:ring-[#023337]'} outline-none transition placeholder:text-[#6A717F] focus:ring-1`}
+                  className={`w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-[#D1D5DB] focus:border-[#6B8E23] focus:ring-[#6B8E23]'} outline-none transition placeholder:text-[#6A717F] focus:ring-1`}
                   disabled={isLoading || isSendingCode}
                   onChange={(event) => {
                     setEmail(event.target.value);
@@ -283,7 +283,7 @@ export function ForgotPasswordModal() {
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading || isSendingCode}
                     placeholder={t('placeholders.newPassword')}
                     required
@@ -317,7 +317,7 @@ export function ForgotPasswordModal() {
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading || isSendingCode}
                     placeholder={t('placeholders.confirmNewPassword')}
                     required
@@ -363,7 +363,7 @@ export function ForgotPasswordModal() {
               <div>
                 <div className="flex items-center gap-3">
                   <input
-                    className="flex-1 rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="flex-1 rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading || isSendingCode}
                     placeholder={t('placeholders.confirmationCode')}
                     required

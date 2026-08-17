@@ -1,8 +1,8 @@
 {
   "Header": {
-    "brandMark": "PS",
-    "brand": "Drone",
-    "tagline": "IoT Monitoring System",
+    "brandMark": "DP",
+    "brand": "DreamPalm",
+    "tagline": "Integrated Drone System",
     "nav": {
       "home": "Home",
       "monitoringFarmer": "Farmer Dashboard",
@@ -42,65 +42,65 @@
       "contact": "Contact"
     },
     "hero": {
-      "eyebrow": "AgriTech Research · IoT & AI",
-      "title": "Early Disease Detection<br></br>for Palm Oil<br></br><highlight>Plantations</highlight>",
-      "description": "Drone combines multispectral UAV imaging and onboard AI inference to identify Ganoderma-driven Basal Stem Rot at early stages — before visible symptoms appear.",
+      "eyebrow": "AgriTech Research · IoT & Machine Learning",
+      "title": "Drone-Based Monitoring<br></br>for Oil Palm Disease<br></br><highlight>Detection</highlight>",
+      "description": "DreamPalm integrates multispectral UAV imaging, backend NDVI image processing, and CNN with Random Forest models to detect Ganoderma-driven Basal Stem Rot at early stages — before visible symptoms appear.",
       "learnMore": "Learn More",
       "primaryAction": "Enter Dashboard",
       "metrics": {
-        "accuracy": "Classification accuracy",
+        "accuracy": "CNN classification accuracy",
         "coverage": "Coverage per sortie",
-        "sensor": "Multispectral sensor",
-        "latency": "Inference latency"
+        "sensor": "NDVI multispectral band",
+        "latency": "Backend inference latency"
       }
     },
     "about": {
       "eyebrow": "Research Background",
-      "title": "Digital agriculture for<br></br>sustainable oil palm",
-      "description1": "Basal Stem Rot (BSR), caused by <em>Ganoderma boninense</em>, is responsible for the loss of millions of oil palm trees annually across Southeast Asia. Conventional field scouting is too slow and too costly to catch the disease before it becomes systemic.",
-      "description2": "Drone replaces reactive scouting with proactive, data-driven monitoring. The system mounts a compact multispectral camera on a custom UAV platform, captures canopy-level imagery on a regular flight schedule, and runs an edge-AI classifier onboard — delivering geolocation-tagged treatment recommendations within minutes.",
+      "title": "AI & IoT-powered monitoring<br></br>for oil palm plantations",
+      "description1": "DreamPalm is a Next.js-based web dashboard platform integrated with IoT and Machine Learning. The system is designed to monitor, detect, and support the treatment of Basal Stem Rot (<em>Ganoderma boninense</em>) in real-time using drones.",
+      "description2": "A Raspberry Pi-equipped drone flies over the plantation and streams WebRTC video and GPS telemetry to the backend server via 4G. All NDVI image processing and model inference — CNN as the primary model and Random Forest as the comparison model — are handled server-side to maintain hardware stability and detection accuracy.",
       "stats": {
         "hectares": { "label": "Hectares surveyed", "note": "Field trial total" },
-        "f1score": { "label": "Model F1-score", "note": "Validation dataset" },
+        "f1score": { "label": "CNN Model F1-score", "note": "Validation dataset" },
         "endurance": { "label": "Flight endurance", "note": "Per battery cycle" },
-        "gps": { "label": "GPS accuracy", "note": "With RTK module" }
+        "gps": { "label": "RTK GPS accuracy", "note": "With RTK module" }
       }
     },
     "research": {
-      "imageAlt": "Research drone",
-      "imageCaption": "Drone UAV Platform · Multispectral & RC Spray Module",
-      "eyebrow": "Platform Overview",
-      "title": "A purpose-built UAV<br></br>for plantation monitoring",
-      "description": "The Drone drone integrates a 5-band multispectral sensor, an onboard NVIDIA Jetson Nano for real-time inference, RTK-GPS for sub-metre positioning, and a 2-litre spray tank actuated by RC command for precision fungicide application.",
+      "imageAlt": "DreamPalm research drone",
+      "imageCaption": "DreamPalm UAV Platform · Raspberry Pi + Multispectral Camera",
+      "eyebrow": "Platform Architecture",
+      "title": "IoT-based UAV with<br></br>backend AI processing",
+      "description": "The DreamPalm drone runs Raspberry Pi connected to the backend server via 4G. WebRTC video and GPS telemetry are streamed in real-time to the server for processing: NDVI imaging for vegetation feature extraction, CNN as the primary detection model, and Random Forest as the comparison model.",
       "specs": {
-        "specSensor": "Sensor", "valSensor": "5-band multispectral (NIR, RedEdge, NDVI, RGB)",
-        "specAi": "AI module", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
+        "specSensor": "Sensor", "valSensor": "NDVI multispectral camera (NIR, RedEdge, RGB)",
+        "specAi": "AI Models", "valAi": "CNN (primary model) + Random Forest (comparison)",
         "specPositioning": "Positioning", "valPositioning": "RTK-GPS · ±0.8 m horizontal",
         "specEndurance": "Endurance", "valEndurance": "28 min · 5,200 mAh LiPo 6S",
-        "specSpray": "Spray tank", "valSpray": "2 L · RC-triggered nozzle array",
-        "specComm": "Comm. link", "valComm": "5.8 GHz video + 915 MHz telemetry"
+        "specSpray": "Spraying", "valSpray": "Manual RC by Technician — guided by dashboard",
+        "specComm": "Connection", "valComm": "WebRTC video + GPS telemetry via 4G (DroneEngage)"
       }
     },
     "features": {
-      "eyebrow": "System Capabilities",
-      "title": "End-to-end detection<br></br>in a single flight",
+      "eyebrow": "Key System Features",
+      "title": "Monitoring, detection, and<br></br>field action guidance",
       "items": {
         "classification": {
-          "title": "AI Multispectral Classification",
-          "body": "A YOLOv8-Small model trained on 8,000 annotated palm canopy frames classifies disease severity into four stages — Healthy, Mild, Moderate, and Severe — across five spectral bands in under 80 ms per inference cycle."
+          "title": "Live AI Video Feed",
+          "body": "Streams live footage from the drone camera overlaid with Machine Learning results — including bounding boxes and palm health status (Healthy, Mild, Moderate, Severe) based on NDVI analysis and the CNN model."
         },
         "monitoring": {
-          "title": "Real-Time Video Monitoring",
-          "body": "Live H.264 video with AI detection annotations is streamed over a 5.8 GHz downlink to the ground station web dashboard. Operators can intervene remotely and trigger precision spraying via RC command."
+          "title": "Smart Spot Marking — Automatic Mapping",
+          "body": "A crucial feature where the system automatically records and marks GPS coordinates on a digital map at the exact moment AI detects a diseased tree. This helps Technicians track locations that need treatment and maintains a historical log of disease spots."
         },
         "mapping": {
-          "title": "Precision GPS Mapping",
-          "body": "Each detection event is geo-tagged with RTK-GPS coordinates accurate to ±0.8 m. Post-flight, disease clusters are rendered as a plantation overlay that agronomists can export for field treatment planning."
+          "title": "Historical Data & Monitoring",
+          "body": "Displays statistics in numbers and charts showing counts of diseased, healthy, and treated palms. Farmers can view plantation history and track the health trend of their land over time."
         }
       },
       "specialFeature": {
-        "title": "RC-Triggered Precision Spraying",
-        "body": "When the AI flags a disease cluster, the ground operator can activate the onboard spray tank via RC command. A servo-actuated nozzle array releases fungicide directly above infected palms, reducing chemical consumption by up to 60% compared to conventional broadcast application. The spray event timestamp and GPS coordinate are logged to the dashboard for traceability."
+        "title": "Manual Spraying Guidance via RC",
+        "body": "Since spraying must target the base stem (not sprayed from above the canopy), the web platform serves as an early warning system. Spraying is performed manually by a Technician using Remote Control, guided by the dashboard display. GPS location and action timestamp are automatically recorded for traceability."
       }
     },
     "photoBreak": {
@@ -120,8 +120,8 @@
     },
     "contact": {
       "eyebrow": "Get in Touch",
-      "title": "Collaborate with<br></br>the Drone team",
-      "description": "We welcome inquiries from researchers, agronomists, plantation managers, and technology partners interested in joint field trials, data sharing, or publication collaboration.",
+      "title": "Collaborate with<br></br>the DreamPalm team",
+      "description": "We welcome inquiries from researchers, agronomists, plantation managers, and technology partners interested in joint field trials, data sharing, or research publication collaboration.",
       "emailLabel": "Email",
       "locationLabel": "Location",
       "locationValue": "Department of Electrical Engineering, Indonesia",
@@ -135,9 +135,9 @@
       }
     },
     "footer": {
-      "brand": "Drone",
+      "brand": "DreamPalm",
       "tagline": "Research Project",
-      "copyright": "© {year} Drone · Academic Research Use Only · All data is simulated",
+      "copyright": "© {year} DreamPalm · Academic Research Use Only · All data is simulated",
       "links": {
         "privacy": "Privacy",
         "terms": "Terms",

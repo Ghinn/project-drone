@@ -71,7 +71,7 @@ export function LandingShell({
 
   return (
     <LandingContext.Provider value={contextValue}>
-      <div style={{ fontFamily: 'Montserrat, sans-serif' }}>
+      <div style={{ fontFamily: 'Jost, sans-serif' }}>
         <LandingNavbar />
         <div className="relative">{children}</div>
       </div>

@@ -7,43 +7,44 @@ html {
 
 :root {
   /* =========================================
-     WARNA (Ekstraksi dari const C LandingPage.js) 
+     WARNA DREAMPALM BRANDING
      ========================================= */
-  --drone-green: #84994F;
-  --drone-green-light: #C1D343;
-  --drone-green-bright: #A7D82E;
-  --drone-red: #990000;
-  --drone-orange: #FF6600;
+  --drone-green: #6B8E23;        /* Olive Green */
+  --drone-green-light: #8BAE3A;
+  --drone-green-bright: #9BBF4A;
+  --drone-red: #C8553D;          /* Pastel Rust */
+  --drone-orange: #D9644E;
   --drone-amber: #FCB53B;
-  --drone-brick: #A72703;
+  --drone-brick: #C8553D;
+  --drone-violet: #7C3AED;       /* Violet / Tech */
 
   /* =========================================
-     TEMA TERANG (Light Mode Default)
+     TEMA TERANG (Light Mode Default - Slate Palette)
      ========================================= */
   --background: #ffffff;
-  --background-alt: #f9fafb;
-  --foreground: #111827; /* Teks T1 */
-  --foreground-muted: #4b5563; /* Teks T2 */
-  --border: #e5e7eb;
+  --background-alt: #F8FAFC;    /* Slate-50 */
+  --foreground: #0F172A;        /* Slate-900 (Teks T1) */
+  --foreground-muted: #475569;  /* Slate-600 (Teks T2) */
+  --border: #E2E8F0;            /* Slate-200 */
 }
 
 /* =========================================
-   TEMA GELAP (Dark Mode)
+   TEMA GELAP (Dark Mode - Slate Dark Theme)
    ========================================= */
 .dark {
-  --background: #121212;
-  --background-alt: #1a1a1a;
-  --foreground: #f3f4f6;
-  --foreground-muted: #9ca3af;
-  --border: #2a2a2a;
+  --background: #0F172A;        /* Slate-900 */
+  --background-alt: #1E293B;    /* Slate-800 */
+  --foreground: #F8FAFC;        /* Slate-50 */
+  --foreground-muted: #94A3B8;  /* Slate-400 */
+  --border: #334155;            /* Slate-700 */
 }
 
 @layer base {
   * { border-color: var(--border); }
   
   body {
-    /* Menerapkan variabel Montserrat yang diinisiasi di layout.tsx */
-    font-family: var(--font-montserrat), sans-serif;
+    /* Menerapkan variabel Jost yang diinisiasi di layout.tsx */
+    font-family: var(--font-jost), sans-serif;
     background-color: var(--background);
     color: var(--foreground);
     @apply antialiased;
@@ -115,7 +116,7 @@ html {
   * { border-color: var(--border); }
   
   body {
-    font-family: var(--font-montserrat), sans-serif;
+    font-family: var(--font-jost), sans-serif;
     background-color: var(--background);
     color: var(--foreground);
     @apply antialiased;

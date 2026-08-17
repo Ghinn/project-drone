@@ -183,7 +183,7 @@ export function SetupPasswordModal() {
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading}
                     placeholder={t('placeholders.newPassword')}
                     required
@@ -217,7 +217,7 @@ export function SetupPasswordModal() {
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading}
                     placeholder={t('placeholders.confirmNewPassword')}
                     required

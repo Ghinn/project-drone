@@ -18,11 +18,11 @@ export default function MonitoringOperatorNavbar() {
           className="w-7 h-7 rounded flex items-center justify-center text-xs font-bold shrink-0 text-white"
           style={{ background: DRONE_TOKENS.green }}
         >
-          PS
+          DP
         </span>
         {!collapsed && (
           <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
-            Drone
+            DreamPalm
           </span>
         )}
       </div>

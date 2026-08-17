@@ -65,12 +65,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Email Validation onBlur
   const [emailError, setEmailError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [redirectPath, setRedirectPath] = useState('/monitoring');
 
-  // ReCAPTCHA, Terms, Remember Me
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -80,19 +78,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (countdown === null) return;
-
     if (countdown <= 0) {
       router.replace(redirectPath);
       return;
     }
-
     const timeoutId = window.setTimeout(() => {
       setCountdown((current) => (current === null ? null : current - 1));
     }, 1000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    return () => { window.clearTimeout(timeoutId); };
   }, [countdown, redirectPath, router]);
 
   function beginRedirect(path: string) {
@@ -102,7 +95,6 @@ export default function LoginPage() {
 
   function mapError(error: unknown): string {
     const code = getFirebaseErrorCode(error);
-
     switch (code) {
       case 'auth/invalid-credential':
       case 'auth/wrong-password':
@@ -129,35 +121,25 @@ export default function LoginPage() {
 
   async function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (emailError) return;
-
     if (!acceptTerms) {
       setErrorMessage('Harap setujui syarat dan ketentuan sebelum masuk.');
       return;
     }
-
     if (!recaptchaToken) {
       setErrorMessage('Harap selesaikan verifikasi reCAPTCHA.');
       return;
     }
-
     setIsLoading(true);
     setErrorMessage(null);
     firebaseAuth.languageCode = locale;
-
     try {
-      // reCAPTCHA verification on server
       const captchaVerifyRes = await fetch('/api/verify-captcha', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: recaptchaToken }),
       });
-
       const captchaVerifyData = await captchaVerifyRes.json();
-
       if (!captchaVerifyData.success) {
         setErrorMessage(captchaVerifyData.message || 'Verifikasi reCAPTCHA gagal. Silakan coba lagi.');
         setIsLoading(false);
@@ -165,27 +147,17 @@ export default function LoginPage() {
         setRecaptchaToken(null);
         return; 
       }
-
-      // Setup Session Persistence
       await setPersistence(
         firebaseAuth, 
         rememberMe ? browserLocalPersistence : browserSessionPersistence
       );
-
-      const credential = await signInWithEmailAndPassword(
-        firebaseAuth,
-        email,
-        password
-      );
-
+      const credential = await signInWithEmailAndPassword(firebaseAuth, email, password);
       const nextRole = await syncSession(credential.user);
-      
       setSignedInEmail(credential.user.email ?? email);
       setView('success');
       beginRedirect(homeForRole(nextRole));
     } catch (error: any) {
       await signOut(firebaseAuth);
-
       if (error?.message?.includes('Email verification') || error?.message?.includes('verify')) {
         setSignedInEmail(email);
         setView('verify-pending');
@@ -201,11 +173,9 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage(null);
     firebaseAuth.languageCode = locale;
-    
     try {
       const credential = await signInWithPopup(firebaseAuth, provider);
       const nextRole = await syncSession(credential.user);
-
       setSignedInEmail(credential.user.email ?? '');
       setView('success');
       beginRedirect(homeForRole(nextRole));
@@ -263,210 +233,270 @@ export default function LoginPage() {
     }
   }
 
-  // Toast helper for resending verify email
   const [toast, setToast] = useState<string | null>(null);
   function triggerToastNotification(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   }
 
+  // Shared input style
+  const inputClass = "w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all";
+  const inputStyle = {
+    background: '#f8fafc',
+    border: '1.5px solid #e2e8f0',
+    color: '#0F172A',
+  };
+
   return (
-    <div className="min-h-screen flex bg-white dark:bg-[#111111] transition-colors duration-300">
-      
-      {/* ================= SISI KIRI: GAMBAR VISUAL DREAMPALM (DESKTOP ONLY) ================= */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 text-white overflow-hidden">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
-          style={{ 
-            backgroundImage: "url('https://images.unsplash.com/photo-1697350978674-4b40261b0dc3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920')",
+    <div className="min-h-screen flex" style={{ background: '#0F172A' }}>
+
+      {/* ===== LEFT PANEL: DreamPalm Visual (Desktop only) ===== */}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-14 overflow-hidden">
+        
+        {/* Background radial glows */}
+        <div
+          className="pointer-events-none absolute -top-32 -left-32 h-[500px] w-[500px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #6B8E23 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-32 -right-10 h-[400px] w-[400px] rounded-full opacity-15"
+          style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute top-1/3 right-0 h-[250px] w-[250px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #C8553D 0%, transparent 70%)' }}
+        />
+
+        {/* Grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(107,142,35,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(107,142,35,0.5) 1px, transparent 1px)`,
+            backgroundSize: '48px 48px'
           }}
         />
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-[#0b2416]/80 dark:bg-[#07180e]/85 mix-blend-multiply z-10" />
 
-        {/* Content (z-index 20) */}
-        <div className="relative z-20 flex flex-col justify-between h-full">
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between h-full">
+          
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#84994F] text-white rounded flex items-center justify-center font-bold text-lg shadow-md border border-white/10">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #C8553D 60%, #7C3AED 100%)' }}
+            >
               DP
             </div>
-            <span className="font-extrabold text-xl tracking-wider uppercase text-zinc-100">DREAMPALM</span>
+            <span className="font-extrabold text-xl text-white tracking-tight">
+              Dream<span style={{ color: '#6B8E23' }}>Palm</span>
+            </span>
           </div>
 
-          {/* Slogan */}
-          <div className="space-y-6 max-w-lg">
-            <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-white tracking-wide">
-              Mendeteksi penyakit sebelum gejala terlihat.
-            </h1>
-            <p className="text-zinc-300 leading-relaxed text-base font-light">
-              Sistem pemantauan cerdas bertenaga AI dan IoT untuk perkebunan kelapa sawit berkelanjutan.
+          {/* Central slogan */}
+          <div className="my-auto">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] mb-4" style={{ color: '#6B8E23' }}>
+              Disease Recognition & Enhanced Aerial Marking
             </p>
+            <h1
+              className="font-extrabold text-white leading-[1.05]"
+              style={{ fontSize: 'clamp(2.2rem, 3.5vw, 3.2rem)' }}
+            >
+              Mendeteksi penyakit{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #6B8E23, #C8553D)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                sebelum
+              </span>{' '}gejala terlihat.
+            </h1>
           </div>
 
-          {/* Footer research team */}
-          <div className="text-xs text-zinc-400 font-light tracking-wide">
-            © 2026 DREAMPALM Research & Development Team. All rights reserved.
+          {/* Footer */}
+          <div>
+            {/* Gradient line */}
+            <div
+              className="h-px w-full mb-4"
+              style={{ background: 'linear-gradient(90deg, #6B8E23, #C8553D, #7C3AED)' }}
+            />
+            <p className="text-xs" style={{ color: '#334155' }}>
+              © 2026 DREAMPALM Research & Development Team. All rights reserved.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* ================= SISI KANAN: FORM LOGIN ================= */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white dark:bg-[#111111] overflow-y-auto">
+      {/* ===== RIGHT PANEL: Login Form ===== */}
+      <div
+        className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 overflow-y-auto"
+        style={{ background: '#ffffff' }}
+      >
         <div className="w-full max-w-[420px] space-y-6">
-          
-          {/* Mobile view Logo Header */}
+
+          {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-4 justify-center">
-            <div className="w-8 h-8 bg-[#84994F] text-white rounded flex items-center justify-center font-bold shadow-md">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white"
+              style={{ background: 'linear-gradient(135deg, #6B8E23, #C8553D, #7C3AED)' }}
+            >
               DP
             </div>
-            <span className="font-extrabold text-lg tracking-wider text-gray-800 dark:text-white">DREAMPALM</span>
+            <span className="font-extrabold text-lg text-[#0F172A]">
+              Dream<span style={{ color: '#6B8E23' }}>Palm</span>
+            </span>
           </div>
 
           {/* FORM VIEW */}
           {view === 'form' && (
-            <div className="space-y-6">
-              {/* Titles */}
-              <div className="text-center lg:text-left">
-                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-snug">Selamat Datang</h2>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1.5">
+            <div className="space-y-5">
+              <div>
+                <h2 className="text-2xl font-extrabold text-[#0F172A] leading-snug">
+                  Selamat Datang
+                </h2>
+                <p className="text-sm text-[#64748b] mt-1.5">
                   Silakan masuk ke akun Anda untuk melanjutkan.
                 </p>
               </div>
 
-              {/* Error messages */}
               {errorMessage && (
-                <div className="p-3.5 rounded-lg border border-red-200 bg-red-50 text-center text-xs font-semibold text-red-600 dark:border-red-950/30 dark:bg-red-950/20 dark:text-red-400 animate-shake">
+                <div className="p-3.5 rounded-xl border text-xs font-semibold text-center"
+                  style={{ borderColor: 'rgba(200,85,61,0.3)', background: 'rgba(200,85,61,0.06)', color: '#C8553D' }}
+                >
                   {errorMessage}
                 </div>
               )}
 
-              {/* Log In Form */}
               <form onSubmit={handleEmailSubmit} className="space-y-4">
-                {/* Input Email */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Email</label>
-                  <input 
-                    type="email" 
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider">
+                    Email
+                  </label>
+                  <input
+                    type="email"
                     value={email}
                     disabled={isLoading}
                     required
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (emailError) setEmailError(null);
-                    }}
-                    onBlur={(e) => {
-                      if (e.target.value && !e.target.validity.valid) {
-                        setEmailError(e.target.validationMessage);
-                      }
-                    }}
+                    onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                    onBlur={(e) => { if (e.target.value && !e.target.validity.valid) setEmailError(e.target.validationMessage); }}
                     placeholder="nama@email.com"
-                    className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-zinc-900/50 text-sm text-gray-900 dark:text-white outline-none focus:ring-1 transition-all
-                      ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-zinc-800 focus:border-[#84994F] focus:ring-[#84994F]'}`}
+                    className={inputClass}
+                    style={{
+                      ...inputStyle,
+                      borderColor: emailError ? '#C8553D' : '#e2e8f0',
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = '#6B8E23'; e.target.style.boxShadow = '0 0 0 3px rgba(107,142,35,0.1)'; }}
+                    onBlurCapture={(e) => { e.target.style.borderColor = emailError ? '#C8553D' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                   />
-                  {emailError && <p className="text-red-500 text-[11px] mt-1 font-semibold">{emailError}</p>}
+                  {emailError && <p className="text-xs font-semibold" style={{ color: '#C8553D' }}>{emailError}</p>}
                 </div>
 
-                {/* Input Password */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Enter your password</label>
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider">
+                    Password
+                  </label>
                   <div className="relative">
-                    <input 
-                      type={showPassword ? "text" : "password"} 
+                    <input
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       disabled={isLoading}
                       required
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 text-sm text-gray-900 dark:text-white outline-none focus:border-[#84994F] focus:ring-1 focus:ring-[#84994F] transition-all"
+                      className={inputClass}
+                      style={inputStyle}
+                      onFocus={(e) => { e.target.style.borderColor = '#6B8E23'; e.target.style.boxShadow = '0 0 0 3px rgba(107,142,35,0.1)'; }}
+                      onBlurCapture={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                     />
                     <button
                       type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      style={{ color: '#94a3b8' }}
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Remember Me & Terms Checkbox */}
+                {/* Checkboxes */}
                 <div className="space-y-2.5 pt-1">
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={rememberMe}
                         disabled={isLoading}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4.5 w-4.5 rounded border-gray-200 dark:border-zinc-800 text-[#84994F] focus:ring-[#84994F] accent-[#84994F]"
+                        className="h-4 w-4 rounded accent-[#6B8E23]"
                       />
-                      <span className="text-xs text-gray-500 dark:text-zinc-400">Ingat Saya</span>
+                      <span className="text-xs text-[#64748b]">Ingat Saya</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => router.push('/forgot-password')}
-                      className="text-xs font-semibold text-gray-800 dark:text-zinc-300 hover:underline bg-transparent border-none outline-none cursor-pointer"
+                      className="text-xs font-bold hover:underline"
+                      style={{ color: '#7C3AED' }}
                     >
                       Lupa Password?
                     </button>
                   </div>
-
                   <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={acceptTerms}
                       disabled={isLoading}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
-                      className="mt-0.5 h-4.5 w-4.5 rounded border-gray-200 dark:border-zinc-800 text-[#84994F] focus:ring-[#84994F] accent-[#84994F]"
+                      className="mt-0.5 h-4 w-4 rounded accent-[#6B8E23]"
                     />
-                    <span className="text-xs text-gray-500 dark:text-zinc-400 leading-snug">
+                    <span className="text-xs text-[#64748b] leading-snug">
                       Saya menyetujui Syarat Layanan dan Kebijakan Privasi DREAMPALM.
                     </span>
                   </label>
                 </div>
 
                 {/* ReCAPTCHA */}
-                <div className="flex justify-center py-2 shrink-0">
+                <div className="flex justify-center py-1 shrink-0">
                   <ReCAPTCHA
                     ref={recaptchaRef}
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"} // Fallback test key if missing
+                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
                     onChange={(token) => setRecaptchaToken(token)}
                   />
                 </div>
 
-                {/* Submit Sign In Button */}
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-lg text-white font-bold text-sm shadow-md transition-all duration-200 hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: '#84994F' }}
+                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #7C3AED 100%)' }}
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   Sign In
                 </button>
               </form>
 
-              {/* OR CONTINUE WITH Divider */}
+              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-zinc-800" />
+                  <div className="w-full border-t" style={{ borderColor: '#e2e8f0' }} />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white dark:bg-[#111111] px-3 text-gray-400 dark:text-zinc-500 font-bold tracking-wider">
-                    OR CONTINUE WITH
+                  <span className="bg-white px-3 text-[#94a3b8] font-bold tracking-wider">
+                    ATAU LANJUTKAN DENGAN
                   </span>
                 </div>
               </div>
 
-              {/* Google & Apple Auth buttons */}
+              {/* OAuth */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => void handleOAuth(googleProvider)}
                   disabled={isLoading}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all hover:bg-[#f1f5f9]"
+                  style={{ border: '1.5px solid #e2e8f0', color: '#475569' }}
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -479,7 +509,8 @@ export default function LoginPage() {
                 <button
                   onClick={() => void handleOAuth(appleProvider)}
                   disabled={isLoading}
-                  className="flex items-center justify-center gap-2 py-2.5 px-4 border border-gray-200 dark:border-zinc-800 rounded-lg text-xs font-semibold text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                  className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all hover:bg-[#f1f5f9]"
+                  style={{ border: '1.5px solid #e2e8f0', color: '#475569' }}
                 >
                   <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
                     <path d="M16.365 21.436c-1.309.924-2.645.894-3.955.084-1.327-.811-2.66-.826-3.989 0-1.282.811-2.584.869-3.847-.042C.641 18.252-1.293 11.545 1.341 6.84c1.233-2.193 3.08-3.456 5.312-3.486 1.48-.03 2.822.84 4.013.84 1.13 0 2.66-1.021 4.31-.87 1.83.15 3.344.871 4.341 2.373-3.791 2.221-3.14 7.234.615 8.766-1.127 3.036-2.507 5.795-3.567 6.973zm-3.83-16.71c.06-1.892 1.481-3.664 3.421-4.084.346 2.052-1.05 4.024-3.361 4.144h-.06z"/>
@@ -488,13 +519,13 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              {/* Redirect Footer */}
-              <div className="text-center pt-4">
-                <p className="text-xs text-gray-500 dark:text-zinc-400">
+              <div className="text-center">
+                <p className="text-xs text-[#64748b]">
                   Petani yang belum terdaftar?{' '}
-                  <button 
+                  <button
                     onClick={() => router.push('/register')}
-                    className="font-bold text-[#84994F] hover:underline bg-transparent border-none outline-none cursor-pointer"
+                    className="font-bold hover:underline"
+                    style={{ color: '#6B8E23' }}
                   >
                     Buat Akun
                   </button>
@@ -503,33 +534,34 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* SUCCESS REDIRECT VIEW */}
+          {/* SUCCESS VIEW */}
           {view === 'success' && (
             <div className="text-center space-y-6 py-8 animate-in fade-in duration-300">
-              <div className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-400">
+              <div
+                className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ background: 'rgba(107,142,35,0.1)', color: '#6B8E23' }}
+              >
                 <BadgeCheck className="h-10 w-10" />
               </div>
-
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Masuk Berhasil!
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
-                  Menghubungkan ke panel kendali. Anda akan dialihkan secara otomatis dalam{' '}
-                  <span className="font-bold text-[#84994F]">{countdown ?? REDIRECT_SECONDS}</span> detik.
+                <h3 className="text-2xl font-bold text-[#0F172A]">Masuk Berhasil!</h3>
+                <p className="text-sm text-[#64748b] leading-relaxed">
+                  Anda akan dialihkan secara otomatis dalam{' '}
+                  <span className="font-bold" style={{ color: '#6B8E23' }}>{countdown ?? REDIRECT_SECONDS}</span> detik.
                 </p>
               </div>
-
               {signedInEmail && (
-                <div className="mx-auto max-w-[320px] rounded-lg bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/60 px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-zinc-300 font-mono">
+                <div
+                  className="mx-auto max-w-[320px] rounded-xl px-4 py-2.5 text-xs font-mono"
+                  style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569' }}
+                >
                   Sesi aktif: {signedInEmail}
                 </div>
               )}
-
               <button
                 onClick={() => router.replace(redirectPath)}
-                className="w-full py-3 px-4 rounded-lg text-white font-bold text-sm shadow-md transition-opacity hover:opacity-90"
-                style={{ background: '#84994F' }}
+                className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #6B8E23, #7C3AED)' }}
               >
                 Buka Dashboard Sekarang
               </button>
@@ -539,44 +571,44 @@ export default function LoginPage() {
           {/* VERIFY PENDING VIEW */}
           {view === 'verify-pending' && (
             <div className="text-center space-y-6 py-8 animate-in fade-in duration-300">
-              <div className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-950/20 dark:text-amber-400">
+              <div
+                className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ background: 'rgba(200,85,61,0.1)', color: '#C8553D' }}
+              >
                 <Clock3 className="h-10 w-10" />
               </div>
-
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Verifikasi Email Anda
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
+                <h3 className="text-2xl font-bold text-[#0F172A]">Verifikasi Email Anda</h3>
+                <p className="text-sm text-[#64748b] leading-relaxed">
                   Kami telah mengirimkan tautan verifikasi ke email Anda. Harap verifikasi sebelum masuk.
                 </p>
               </div>
-
               {signedInEmail && (
-                <div className="mx-auto max-w-[320px] rounded-lg bg-gray-50 dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800/60 px-4 py-2.5 text-xs font-semibold text-gray-700 dark:text-zinc-300 font-mono">
+                <div className="mx-auto max-w-[320px] rounded-xl px-4 py-2.5 text-xs font-mono"
+                  style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569' }}>
                   {signedInEmail}
                 </div>
               )}
-
               {errorMessage && (
-                <div className="p-3 rounded-lg bg-red-50 text-xs font-semibold text-red-600 border border-red-150 dark:bg-red-950/20 dark:border-red-950/30 dark:text-red-400">
+                <div className="p-3 rounded-xl text-xs font-semibold"
+                  style={{ background: 'rgba(200,85,61,0.06)', border: '1px solid rgba(200,85,61,0.2)', color: '#C8553D' }}>
                   {errorMessage}
                 </div>
               )}
-
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => void handleCheckVerification()}
                   disabled={isLoading}
-                  className="py-3 px-4 rounded-lg text-white font-bold text-xs shadow-md hover:opacity-90 transition-opacity"
-                  style={{ background: '#84994F' }}
+                  className="py-3 px-4 rounded-xl text-white font-bold text-xs hover:opacity-90 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg, #6B8E23, #7C3AED)' }}
                 >
                   Cek Verifikasi
                 </button>
                 <button
                   onClick={() => void handleResendVerification()}
                   disabled={isLoading}
-                  className="py-3 px-4 rounded-lg border border-gray-200 dark:border-zinc-800 text-gray-700 dark:text-zinc-300 font-bold text-xs hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors"
+                  className="py-3 px-4 rounded-xl font-bold text-xs hover:bg-[#f1f5f9] transition-colors"
+                  style={{ border: '1.5px solid #e2e8f0', color: '#475569' }}
                 >
                   Kirim Ulang
                 </button>
@@ -587,24 +619,23 @@ export default function LoginPage() {
           {/* VERIFY SUCCESS VIEW */}
           {view === 'verify-success' && (
             <div className="text-center space-y-6 py-8 animate-in fade-in duration-300">
-              <div className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-400">
+              <div
+                className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ background: 'rgba(107,142,35,0.1)', color: '#6B8E23' }}
+              >
                 <BadgeCheck className="h-10 w-10" />
               </div>
-
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Email Terverifikasi!
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
-                  Email Anda berhasil diverifikasi. Anda akan dialihkan secara otomatis dalam{' '}
-                  <span className="font-bold text-[#84994F]">{countdown ?? REDIRECT_SECONDS}</span> detik.
+                <h3 className="text-2xl font-bold text-[#0F172A]">Email Terverifikasi!</h3>
+                <p className="text-sm text-[#64748b] leading-relaxed">
+                  Email Anda berhasil diverifikasi. Anda akan dialihkan dalam{' '}
+                  <span className="font-bold" style={{ color: '#6B8E23' }}>{countdown ?? REDIRECT_SECONDS}</span> detik.
                 </p>
               </div>
-
               <button
                 onClick={() => router.replace(redirectPath)}
-                className="w-full py-3 px-4 rounded-lg text-white font-bold text-sm shadow-md transition-opacity hover:opacity-90"
-                style={{ background: '#84994F' }}
+                className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #6B8E23, #7C3AED)' }}
               >
                 Buka Dashboard Sekarang
               </button>
@@ -614,16 +645,16 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Toast Notification Container */}
+      {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black text-xs font-bold rounded-lg shadow-xl animate-in fade-in slide-in-from-bottom-5">
-          <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-5 text-xs font-bold"
+          style={{ background: '#0F172A', color: '#fff', border: '1px solid rgba(107,142,35,0.3)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="#6B8E23" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4" />
           </svg>
           <span>{toast}</span>
         </div>
       )}
-
     </div>
   );
 }

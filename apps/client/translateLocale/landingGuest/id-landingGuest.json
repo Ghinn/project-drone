@@ -1,8 +1,8 @@
 {
   "Header": {
-    "brandMark": "PS",
-    "brand": "Drone",
-    "tagline": "Sistem Pemantauan IoT",
+    "brandMark": "DP",
+    "brand": "DreamPalm",
+    "tagline": "Sistem Drone Terpadu",
     "nav": {
       "home": "Beranda",
       "monitoringFarmer": "Dasbor Petani",
@@ -42,65 +42,65 @@
       "contact": "Kontak"
     },
     "hero": {
-      "eyebrow": "Riset AgriTech · IoT & AI",
-      "title": "Deteksi Dini Penyakit<br></br>untuk Perkebunan<br></br><highlight>Kelapa Sawit</highlight>",
-      "description": "Drone menggabungkan pencitraan UAV multispektral dan inferensi AI terintegrasi untuk mengidentifikasi Busuk Pangkal Batang akibat Ganoderma pada tahap awal — sebelum gejala fisik terlihat.",
+      "eyebrow": "Riset AgriTech · IoT & Machine Learning",
+      "title": "Sistem Monitoring Drone<br></br>untuk Deteksi Penyakit<br></br><highlight>Kelapa Sawit</highlight>",
+      "description": "DreamPalm mengintegrasikan drone UAV multispektral, pemrosesan citra NDVI di backend, serta model CNN dan Random Forest untuk mendeteksi Busuk Pangkal Batang (Ganoderma) pada tahap awal — sebelum gejala fisik terlihat.",
       "learnMore": "Pelajari Lanjut",
       "primaryAction": "Akses Dasbor",
       "metrics": {
-        "accuracy": "Akurasi klasifikasi",
+        "accuracy": "Akurasi klasifikasi CNN",
         "coverage": "Cakupan per penerbangan",
-        "sensor": "Sensor multispektral",
-        "latency": "Latensi inferensi"
+        "sensor": "Band NDVI multispektral",
+        "latency": "Latensi inferensi backend"
       }
     },
     "about": {
       "eyebrow": "Latar Belakang Riset",
-      "title": "Pertanian digital untuk<br></br>kelapa sawit berkelanjutan",
-      "description1": "Busuk Pangkal Batang (BPB), yang disebabkan oleh <em>Ganoderma boninense</em>, bertanggung jawab atas hilangnya jutaan pohon kelapa sawit setiap tahun di seluruh Asia Tenggara. Pemantauan lapangan konvensional terlalu lambat dan memakan biaya tinggi untuk menangani penyakit sebelum menyebar.",
-      "description2": "Drone menggantikan pencarian reaktif dengan pemantauan proaktif berbasis data. Sistem ini memasang kamera multispektral ringkas pada platform UAV khusus, menangkap citra kanopi pada jadwal penerbangan rutin, dan menjalankan klasifikasi AI lokal secara langsung — memberikan rekomendasi perawatan ber-tag geolokasi dalam hitungan menit.",
+      "title": "Platform monitoring perkebunan<br></br>sawit berbasis AI & IoT",
+      "description1": "DreamPalm adalah platform dashboard web berbasis Next.js yang terintegrasi dengan IoT dan Machine Learning. Sistem ini dirancang untuk memonitor, mendeteksi, dan membantu penanggulangan penyakit Busuk Pangkal Batang (<em>Ganoderma boninense</em>) secara real-time menggunakan drone.",
+      "description2": "Drone yang dilengkapi Raspberry Pi terbang di area perkebunan dan mengirimkan video WebRTC serta data telemetri GPS ke backend server melalui koneksi 4G. Seluruh pemrosesan citra NDVI dan inferensi model CNN serta Random Forest dilakukan di server, bukan di drone, demi menjaga stabilitas hardware dan akurasi deteksi.",
       "stats": {
         "hectares": { "label": "Hektar disurvei", "note": "Total uji lapangan" },
-        "f1score": { "label": "F1-score Model", "note": "Dataset validasi" },
+        "f1score": { "label": "F1-score Model CNN", "note": "Dataset validasi" },
         "endurance": { "label": "Daya tahan terbang", "note": "Per siklus baterai" },
-        "gps": { "label": "Akurasi GPS", "note": "Dengan modul RTK" }
+        "gps": { "label": "Akurasi GPS RTK", "note": "Dengan modul RTK" }
       }
     },
     "research": {
-      "imageAlt": "Drone penelitian",
-      "imageCaption": "Platform UAV Drone · Modul Multispektral & Penyemprotan RC",
-      "eyebrow": "Tinjauan Platform",
-      "title": "UAV yang dirancang khusus<br></br>untuk pemantauan perkebunan",
-      "description": "Drone Drone mengintegrasikan sensor multispektral 5-band, NVIDIA Jetson Nano terintegrasi untuk inferensi real-time, RTK-GPS untuk penentuan posisi sub-meter, dan tangki semprot 2 liter yang diaktifkan oleh perintah RC untuk aplikasi fungisida presisi.",
+      "imageAlt": "Drone penelitian DreamPalm",
+      "imageCaption": "Platform UAV DreamPalm · Raspberry Pi + Kamera Multispektral",
+      "eyebrow": "Arsitektur Platform",
+      "title": "UAV berbasis IoT dengan<br></br>pemrosesan AI di backend",
+      "description": "Drone DreamPalm dilengkapi Raspberry Pi yang terhubung ke server backend melalui 4G. Video WebRTC dan telemetri GPS dikirim secara real-time ke server untuk diproses: pencitraan NDVI untuk ekstraksi fitur vegetasi, CNN sebagai model deteksi utama, dan Random Forest sebagai model pembanding.",
       "specs": {
-        "specSensor": "Sensor", "valSensor": "Multispektral 5-band (NIR, RedEdge, NDVI, RGB)",
-        "specAi": "Modul AI", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
+        "specSensor": "Sensor", "valSensor": "Kamera multispektral NDVI (NIR, RedEdge, RGB)",
+        "specAi": "Model AI", "valAi": "CNN (model utama) + Random Forest (pembanding)",
         "specPositioning": "Posisi", "valPositioning": "RTK-GPS · Horizontal ±0.8 m",
         "specEndurance": "Daya Tahan", "valEndurance": "28 menit · 5,200 mAh LiPo 6S",
-        "specSpray": "Tangki semprot", "valSpray": "2 L · Susunan nosel dipicu RC",
-        "specComm": "Link Komun.", "valComm": "Video 5.8 GHz + telemetri 915 MHz"
+        "specSpray": "Penyemprotan", "valSpray": "Manual RC oleh Teknisi — dipandu panduan dasbor",
+        "specComm": "Koneksi", "valComm": "Video WebRTC + Telemetri GPS via 4G (DroneEngage)"
       }
     },
     "features": {
-      "eyebrow": "Kemampuan Sistem",
-      "title": "Deteksi ujung-ke-ujung<br></br>dalam satu penerbangan",
+      "eyebrow": "Fitur Utama Sistem",
+      "title": "Monitoring, deteksi, dan<br></br>panduan tindakan lapangan",
       "items": {
         "classification": {
-          "title": "Klasifikasi Multispektral AI",
-          "body": "Model YOLOv8-Small yang dilatih pada 8,000 bingkai kanopi sawit beranotasi mengklasifikasikan keparahan penyakit ke dalam empat tahap — Sehat, Ringan, Sedang, dan Parah — di seluruh lima pita spektral dalam latensi di bawah 80 ms per siklus inferensi."
+          "title": "Live AI Video Feed",
+          "body": "Menampilkan siaran langsung dari kamera drone yang sudah disisipi overlay hasil pemrosesan Machine Learning — termasuk bounding box dan status kesehatan sawit (Sehat, Ringan, Sedang, Parah) berdasarkan analisis NDVI dan model CNN."
         },
         "monitoring": {
-          "title": "Pemantauan Video Real-Time",
-          "body": "Video H.264 langsung dengan anotasi deteksi AI dialirkan melalui downlink 5.8 GHz ke web dasbor stasiun darat. Operator dapat mengintervensi dari jarak jauh dan memicu penyemprotan presisi melalui perintah RC."
+          "title": "Smart Spot Marking — Pemetaan Otomatis",
+          "body": "Fitur krusial di mana sistem secara otomatis merekam dan menandai koordinat GPS pada peta digital tepat ketika AI mendeteksi pohon yang sakit. Memudahkan Teknisi melacak lokasi yang perlu ditangani serta menyimpan riwayat spot penyakit."
         },
         "mapping": {
-          "title": "Pemetaan GPS Presisi",
-          "body": "Setiap deteksi ditandai dengan koordinat RTK-GPS akurat hingga ±0.8 m. Pasca-penerbangan, klaster penyakit dirender sebagai overlay perkebunan yang dapat diekspor agronomis untuk perencanaan perawatan."
+          "title": "Data Historis & Monitoring",
+          "body": "Menampilkan statistik berupa angka dan grafik mengenai jumlah sawit yang sakit, sehat, dan yang sudah mendapatkan tindakan penanganan. Petani dapat melihat riwayat data lahan dan tren kesehatan perkebunan dari waktu ke waktu."
         }
       },
       "specialFeature": {
-        "title": "Penyemprotan Presisi Dipicu RC",
-        "body": "Ketika AI menandai klaster penyakit, operator darat dapat mengaktifkan tangki semprot melalui perintah RC. Susunan nosel yang digerakkan servo melepaskan fungisida tepat di atas sawit terinfeksi, mengurangi konsumsi bahan kimia hingga 60% dibandingkan metode tabur konvensional. Data geolokasi dan waktu log disimpan di dasbor untuk pelacakan."
+        "title": "Panduan Penyemprotan Manual via RC",
+        "body": "Karena penyemprotan harus tepat mengenai pangkal batang (bukan dari atas daun), website berfungsi sebagai sistem peringatan dini. Eksekusi penyemprotan tetap dilakukan manual menggunakan Remote Control oleh Teknisi yang dipandu tampilan dasbor. Lokasi GPS dan waktu tindakan dicatat otomatis untuk keperluan pelacakan."
       }
     },
     "photoBreak": {
@@ -120,8 +120,8 @@
     },
     "contact": {
       "eyebrow": "Hubungi Kami",
-      "title": "Berkolaborasi dengan<br></br>tim Drone",
-      "description": "Kami menyambut baik pertanyaan dari peneliti, ahli agronomi, manajer perkebunan, dan mitra teknologi yang tertarik dengan uji coba lapangan bersama, pertukaran data, atau kolaborasi publikasi.",
+      "title": "Berkolaborasi dengan<br></br>tim DreamPalm",
+      "description": "Kami menyambut pertanyaan dari peneliti, agronomis, manajer perkebunan, dan mitra teknologi yang tertarik dengan uji coba lapangan bersama, pertukaran data, atau kolaborasi publikasi riset.",
       "emailLabel": "Email",
       "locationLabel": "Lokasi",
       "locationValue": "Departemen Teknik Elektro, Indonesia",
@@ -135,9 +135,9 @@
       }
     },
     "footer": {
-      "brand": "Drone",
+      "brand": "DreamPalm",
       "tagline": "Proyek Riset",
-      "copyright": "© {year} Drone · Penggunaan Khusus Riset Akademis · Semua data disimulasikan",
+      "copyright": "© {year} DreamPalm · Penggunaan Khusus Riset Akademis · Semua data disimulasikan",
       "links": {
         "privacy": "Privasi",
         "terms": "Syarat",

@@ -43,13 +43,12 @@ export function LandingPrimaryCta() {
 
   return (
     <button
-      className="inline-flex items-center gap-2.5 rounded bg-[#84994F] px-7 py-3.5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
+      className="inline-flex items-center gap-2.5 rounded-xl px-7 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[#6B8E23]/25 hover:-translate-y-0.5"
+      style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #7C3AED 100%)' }}
       onClick={handleClick}
       type="button"
     >
       {buttonText}
-      
-      {/* Ikon panah bawaan dari proyek Drone */}
       <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7"/>
       </svg>

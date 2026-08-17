@@ -40,7 +40,7 @@ export default function AdminSidebar() {
           {/* Logo */}
           <div className="h-16 flex items-center justify-between px-6 border-b dark:border-zinc-800 shrink-0">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-[#84994F] text-white rounded flex items-center justify-center font-bold mr-3 shadow-md">
+              <div className="w-8 h-8 bg-[#6B8E23] text-white rounded flex items-center justify-center font-bold mr-3 shadow-md">
                 DP
               </div>
               <span className="font-bold text-gray-800 dark:text-white text-lg tracking-wide">DREAMPALM</span>
@@ -68,7 +68,7 @@ export default function AdminSidebar() {
                   }}
                   className={`flex items-center gap-3 px-4 py-2.5 text-sm rounded-md transition-all duration-200 text-left ${
                     isActive
-                      ? 'bg-[#84994F] text-white font-semibold shadow-sm'
+                      ? 'bg-[#6B8E23] text-white font-semibold shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800/50 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >

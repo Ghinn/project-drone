@@ -218,7 +218,7 @@ type RegistrationView =
               <div>
                 <input
                   autoComplete="email"
-                  className={`w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-[#D1D5DB] focus:border-[#023337] focus:ring-[#023337]'} outline-none transition placeholder:text-[#6A717F] focus:ring-1`}
+                  className={`w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-[#D1D5DB] focus:border-[#6B8E23] focus:ring-[#6B8E23]'} outline-none transition placeholder:text-[#6A717F] focus:ring-1`}
                   disabled={isLoading}
                   onChange={(event) => {
                     setEmail(event.target.value);
@@ -248,7 +248,7 @@ type RegistrationView =
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading}
                     placeholder={t('placeholders.createPassword')}
                     required
@@ -283,7 +283,7 @@ type RegistrationView =
                 <div className="relative">
                   <input
                     autoComplete="new-password"
-                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#023337] focus:outline-none focus:ring-1 focus:ring-[#023337]"
+                    className="w-full rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[15px] text-[#191919] transition placeholder:text-[#6A717F] focus:border-[#6B8E23] focus:outline-none focus:ring-1 focus:ring-[#6B8E23]"
                     disabled={isLoading}
                     placeholder={t('placeholders.confirmPassword')}
                     required
@@ -329,7 +329,7 @@ type RegistrationView =
               <label className="flex cursor-pointer items-start gap-3 pt-1">
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 shrink-0 appearance-none rounded-[4px] border border-[#6A717F] bg-transparent outline-none transition checked:border-[#023337] checked:bg-[#023337] checked:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwb2x5bGluZSBwb2ludHM9IjIwIDYgOSAxNyA0IDEyIi8+PC9zdmc+')] checked:bg-[length:12px_12px] checked:bg-center checked:bg-no-repeat"
+                  className="mt-0.5 h-4 w-4 shrink-0 appearance-none rounded-[4px] border border-[#6A717F] bg-transparent outline-none transition checked:border-[#6B8E23] checked:bg-[#6B8E23] checked:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwb2x5bGluZSBwb2ludHM9IjIwIDYgOSAxNyA0IDEyIi8+PC9zdmc+')] checked:bg-[length:12px_12px] checked:bg-center checked:bg-no-repeat"
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                   disabled={isLoading}

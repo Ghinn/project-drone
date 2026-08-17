@@ -19,11 +19,11 @@ export interface AlertItem {
 }
 
 export const DRONE_TOKENS = {
-  green:       '#84994F',
-  greenLight:  '#C1D343',
-  greenBright: '#A7D82E',
-  red:         '#990000',
-  orange:      '#FF6600',
+  green:       '#6B8E23', // Olive Green
+  greenLight:  '#8BAE3A',
+  greenBright: '#9BBF4A',
+  red:         '#C8553D', // Pastel Rust / Warning
+  orange:      '#D9644E',
   amber:       '#FCB53B',
-  brick:       '#A72703',
+  brick:       '#C8553D',
 };

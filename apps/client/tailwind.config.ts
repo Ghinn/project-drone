@@ -15,45 +15,49 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        sans: ['var(--font-jost)', 'Jost', 'var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       colors: {
         fresh: {
-          primary: '#023337',
-          title: '#191919',
-          subtitle: '#23272E',
-          body: '#5B6068',
-          accent: '#FF5C01',
-          label: '#191919',
-          success: '#21C45D',
-          neutral: '#6A717F',
-          warning: '#EBCE01',
-          surface: '#F5F7FA',
-          dark: '#0B1020'
+          primary: '#6B8E23', // Olive Green
+          title: '#0F172A',   // Slate Dark
+          subtitle: '#334155', // Slate-700
+          body: '#475569',     // Slate-600
+          accent: '#C8553D',   // Pastel Rust
+          label: '#0F172A',
+          success: '#6B8E23',
+          neutral: '#64748B',  // Slate-500
+          warning: '#C8553D',  // Pastel Rust / Warning
+          surface: '#F8FAFC',  // Slate-50
+          dark: '#0F172A'      // Slate-900
         },
         brand: {
-          DEFAULT: '#023337',
+          DEFAULT: '#6B8E23',
           foreground: '#ffffff',
+          green: '#6B8E23',
+          rust: '#C8553D',
+          violet: '#7C3AED',
+          dark: '#0F172A',
         },
         primary: {
-          DEFAULT: '#023337',
+          DEFAULT: '#6B8E23',
           foreground: '#ffffff',
         },
         ink: {
-          1: '#023337',
-          2: '#191919',
-          3: '#23272E',
-          4: '#5B6068',
+          1: '#0F172A',
+          2: '#1E293B',
+          3: '#334155',
+          4: '#64748B',
         },
         card: {
           DEFAULT: '#FFFFFF',
-          foreground: '#191919',
+          foreground: '#0F172A',
         },
         muted: {
-          DEFAULT: '#F1F4F9',
-          foreground: '#5B6068',
+          DEFAULT: '#F8FAFC',
+          foreground: '#64748B',
         },
-        border: '#E6EAF2',
+        border: '#E2E8F0', // Slate-200
       },
       fontSize: {
         display: ['32px', {lineHeight: '1.2', fontWeight: '700'}],

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
-import { Montserrat } from 'next/font/google';
+import { Jost } from 'next/font/google';
 import './globals.css';
 import { AppProviders } from '@/providers/app-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 
-const montserrat = Montserrat({
+const jost = Jost({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-montserrat'
+  variable: '--font-jost'
 });
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default async function RootLayout({
 
   return (
     <html lang="id" suppressHydrationWarning className="scroll-smooth" data-scroll-behavior="smooth">
-      <body className={`${montserrat.variable} font-sans antialiased min-h-screen bg-background text-foreground`} suppressHydrationWarning>
+      <body className={`${jost.variable} font-sans antialiased min-h-screen bg-background text-foreground`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <AppProviders>
             {children}

@@ -6,13 +6,11 @@ import {
   type FormEvent
 } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { BadgeCheck, Clock3, Loader2, Eye, EyeOff } from 'lucide-react';
+import { BadgeCheck, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
-type RegistrationView =
-  | 'form'
-  | 'success';
+type RegistrationView = 'form' | 'success';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,16 +25,11 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Email & Password Validation states
   const [emailError, setEmailError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-  
-  // ReCAPTCHA & Terms
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
-  // Validasi Ketidakcocokan Kata Sandi
   useEffect(() => {
     if (confirmPassword.length > 0) {
       if (password !== confirmPassword) {
@@ -49,7 +42,6 @@ export default function RegisterPage() {
     }
   }, [password, confirmPassword, t]);
 
-  // Penilaian Kekuatan Kata Sandi
   const evaluatePasswordStrength = (pass: string) => {
     if (!pass) return 0;
     let score = 0;
@@ -62,14 +54,9 @@ export default function RegisterPage() {
   };
 
   const getStrengthColor = (score: number) => {
-    if (score <= 2) return 'bg-red-500';
-    if (score <= 3) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-  const getStrengthTextColor = (score: number) => {
-    if (score <= 2) return 'text-red-500';
-    if (score <= 3) return 'text-yellow-600';
-    return 'text-green-500';
+    if (score <= 2) return '#C8553D';
+    if (score <= 3) return '#FCB53B';
+    return '#6B8E23';
   };
   const getStrengthText = (score: number) => {
     if (score === 0) return '';
@@ -82,61 +69,46 @@ export default function RegisterPage() {
 
   async function handleRegistrationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (emailError) return;
-
     if (passwordScore < 3) {
       setErrorMessage(t('errors.weakPassword') || 'Kata sandi terlalu lemah.');
       return;
     }
-
     if (password !== confirmPassword) {
       setErrorMessage(t('errors.passwordMismatch') || 'Konfirmasi kata sandi tidak cocok.');
       return;
     }
-
     if (!acceptTerms) {
       setErrorMessage('Harap setujui syarat dan ketentuan.');
       return;
     }
-
     if (!recaptchaToken) {
       setErrorMessage('Harap selesaikan verifikasi reCAPTCHA.');
       return;
     }
-
     setIsLoading(true);
     setErrorMessage(null);
-
     try {
-      // reCAPTCHA verification on server
       const captchaVerifyRes = await fetch('/api/verify-captcha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: recaptchaToken }),
       });
-
       const captchaVerifyData = await captchaVerifyRes.json();
-
       if (!captchaVerifyData.success) {
         setErrorMessage(captchaVerifyData.message || 'Verifikasi reCAPTCHA gagal.');
         setIsLoading(false);
         return; 
       }
-
-      // API registration endpoint call
       const registerRes = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const registerData = await registerRes.json();
-
       if (!registerRes.ok) {
         throw new Error(registerData.error || 'Terjadi kesalahan saat pendaftaran.');
       }
-      
       setView('success');
     } catch (error: any) {
       setErrorMessage(error.message || 'Terjadi kesalahan sistem.');
@@ -145,202 +117,226 @@ export default function RegisterPage() {
     }
   }
 
+  // Shared input style
+  const inputClass = "w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all";
+  const inputStyle = { background: '#f8fafc', border: '1.5px solid #e2e8f0', color: '#0F172A' };
+
   return (
-    <div className="min-h-screen flex bg-white dark:bg-[#111111] transition-colors duration-300">
-      
-      {/* ================= SISI KIRI: FORM REGISTRASI ================= */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white dark:bg-[#111111] overflow-y-auto">
-        <div className="w-full max-w-[420px] space-y-6">
-          
-          {/* Mobile view Logo Header */}
+    <div className="min-h-screen flex" style={{ background: '#0F172A' }}>
+
+      {/* ===== LEFT PANEL: Registration Form ===== */}
+      <div
+        className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 overflow-y-auto"
+        style={{ background: '#ffffff' }}
+      >
+        <div className="w-full max-w-[420px] space-y-5">
+
+          {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-4 justify-center">
-            <div className="w-8 h-8 bg-[#84994F] text-white rounded flex items-center justify-center font-bold shadow-md">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white"
+              style={{ background: 'linear-gradient(135deg, #6B8E23, #C8553D, #7C3AED)' }}
+            >
               DP
             </div>
-            <span className="font-extrabold text-lg tracking-wider text-gray-800 dark:text-white">DREAMPALM</span>
+            <span className="font-extrabold text-lg text-[#0F172A]">
+              Dream<span style={{ color: '#6B8E23' }}>Palm</span>
+            </span>
           </div>
 
           {/* FORM VIEW */}
           {view === 'form' && (
-            <div className="space-y-6">
-              
-              {/* Heading */}
-              <div className="text-center lg:text-left space-y-2">
-                {/* Green badge "KHUSUS PETANI" */}
-                <span className="inline-block px-2.5 py-1 rounded bg-[#84994F]/10 dark:bg-[#84994F]/20 text-[#84994F] text-[10.5px] font-bold uppercase tracking-wider">
+            <div className="space-y-5">
+              <div className="space-y-2">
+                {/* Pill badge */}
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ background: 'rgba(107,142,35,0.1)', color: '#6B8E23', border: '1px solid rgba(107,142,35,0.2)' }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#6B8E23]" />
                   Khusus Petani
                 </span>
-                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-snug">Daftar Akun Petani</h2>
-                <p className="text-sm text-gray-500 dark:text-zinc-400">
+                <h2 className="text-2xl font-extrabold text-[#0F172A] leading-snug">
+                  Daftar Akun Petani
+                </h2>
+                <p className="text-sm text-[#64748b]">
                   Pantau lahan sawit Anda dan lihat hasil analisis secara langsung.
                 </p>
               </div>
 
-              {/* Error Alert */}
               {errorMessage && (
-                <div className="p-3.5 rounded-lg border border-red-200 bg-red-50 text-center text-xs font-semibold text-red-600 dark:border-red-950/30 dark:bg-red-950/20 dark:text-red-400">
+                <div className="p-3.5 rounded-xl text-xs font-semibold text-center"
+                  style={{ borderColor: 'rgba(200,85,61,0.3)', border: '1px solid rgba(200,85,61,0.3)', background: 'rgba(200,85,61,0.06)', color: '#C8553D' }}>
                   {errorMessage}
                 </div>
               )}
 
-              {/* Form Input fields */}
               <form onSubmit={handleRegistrationSubmit} className="space-y-4">
-                
-                {/* Email Address */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Email</label>
-                  <input 
-                    type="email" 
+
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider">Email</label>
+                  <input
+                    type="email"
                     value={email}
                     disabled={isLoading}
                     required
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (emailError) setEmailError(null);
-                    }}
-                    onBlur={(e) => {
-                      if (e.target.value && !e.target.validity.valid) {
-                        setEmailError(e.target.validationMessage);
-                      }
-                    }}
+                    onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                    onBlur={(e) => { if (e.target.value && !e.target.validity.valid) setEmailError(e.target.validationMessage); }}
                     placeholder="nama@email.com"
-                    className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-zinc-900/50 text-sm text-gray-900 dark:text-white outline-none focus:ring-1 transition-all
-                      ${emailError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-zinc-800 focus:border-[#84994F] focus:ring-[#84994F]'}`}
+                    className={inputClass}
+                    style={{ ...inputStyle, borderColor: emailError ? '#C8553D' : '#e2e8f0' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#6B8E23'; e.target.style.boxShadow = '0 0 0 3px rgba(107,142,35,0.1)'; }}
+                    onBlurCapture={(e) => { e.target.style.borderColor = emailError ? '#C8553D' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                   />
-                  {emailError && <p className="text-red-500 text-[11px] mt-1 font-semibold">{emailError}</p>}
+                  {emailError && <p className="text-xs font-semibold" style={{ color: '#C8553D' }}>{emailError}</p>}
                 </div>
 
-                {/* Create Password */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Create Password</label>
+                {/* Password */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider">Buat Password</label>
                   <div className="relative">
-                    <input 
-                      type={showPassword ? "text" : "password"} 
+                    <input
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       disabled={isLoading}
                       required
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Minimal 6 karakter"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 text-sm text-gray-900 dark:text-white outline-none focus:border-[#84994F] focus:ring-1 focus:ring-[#84994F] transition-all"
+                      className={inputClass}
+                      style={inputStyle}
+                      onFocus={(e) => { e.target.style.borderColor = '#6B8E23'; e.target.style.boxShadow = '0 0 0 3px rgba(107,142,35,0.1)'; }}
+                      onBlurCapture={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                     />
                     <button
                       type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      style={{ color: '#94a3b8' }}
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {password && (
-                    <div className="mt-2 flex items-center gap-2 px-1">
-                      <div className="flex h-1.5 flex-1 gap-1">
-                        <div className={`h-full flex-1 rounded-full ${passwordScore >= 1 ? getStrengthColor(passwordScore) : 'bg-gray-200'}`}></div>
-                        <div className={`h-full flex-1 rounded-full ${passwordScore >= 3 ? getStrengthColor(passwordScore) : 'bg-gray-200'}`}></div>
-                        <div className={`h-full flex-1 rounded-full ${passwordScore >= 5 ? getStrengthColor(passwordScore) : 'bg-gray-200'}`}></div>
+                    <div className="flex items-center gap-2 px-1 pt-1">
+                      <div className="flex h-1 flex-1 gap-1">
+                        {[1, 3, 5].map((threshold, i) => (
+                          <div
+                            key={i}
+                            className="h-full flex-1 rounded-full transition-all duration-300"
+                            style={{ background: passwordScore >= threshold ? getStrengthColor(passwordScore) : '#e2e8f0' }}
+                          />
+                        ))}
                       </div>
-                      <span className={`text-[11px] font-semibold ${getStrengthTextColor(passwordScore)}`}>
+                      <span className="text-[11px] font-bold" style={{ color: getStrengthColor(passwordScore) }}>
                         {getStrengthText(passwordScore)}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Confirm Create Password */}
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Confirm Create Password</label>
+                {/* Confirm Password */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-[#475569] uppercase tracking-wider">Konfirmasi Password</label>
                   <div className="relative">
-                    <input 
-                      type={showConfirmPassword ? "text" : "password"} 
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       disabled={isLoading}
                       required
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Ulangi password Anda"
-                      className="w-full px-4 py-3 border border-gray-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 text-sm text-gray-900 dark:text-white outline-none focus:border-[#84994F] focus:ring-1 focus:ring-[#84994F] transition-all"
+                      className={inputClass}
+                      style={{ ...inputStyle, borderColor: confirmPasswordError ? '#C8553D' : '#e2e8f0' }}
+                      onFocus={(e) => { e.target.style.borderColor = '#6B8E23'; e.target.style.boxShadow = '0 0 0 3px rgba(107,142,35,0.1)'; }}
+                      onBlurCapture={(e) => { e.target.style.borderColor = confirmPasswordError ? '#C8553D' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                     />
                     <button
                       type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300"
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      style={{ color: '#94a3b8' }}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       tabIndex={-1}
                     >
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {confirmPasswordError && <p className="text-red-500 text-[11px] mt-1 font-semibold">{confirmPasswordError}</p>}
+                  {confirmPasswordError && (
+                    <p className="text-xs font-semibold" style={{ color: '#C8553D' }}>{confirmPasswordError}</p>
+                  )}
                 </div>
 
-                {/* Terms agreement checkbox */}
+                {/* Terms */}
                 <label className="flex items-start gap-2.5 pt-1 cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={acceptTerms}
                     disabled={isLoading}
                     onChange={(e) => setAcceptTerms(e.target.checked)}
-                    className="mt-0.5 h-4.5 w-4.5 rounded border-gray-200 dark:border-zinc-800 text-[#84994F] focus:ring-[#84994F] accent-[#84994F]"
+                    className="mt-0.5 h-4 w-4 rounded accent-[#6B8E23]"
                   />
-                  <span className="text-xs text-gray-500 dark:text-zinc-400 leading-snug">
-                    Saya menyetujui Syarat Layanan dan Kebijakan Privasi DREAMPALM.
+                  <span className="text-xs text-[#64748b] leading-snug">
+                    Saya menyetujui{' '}
+                    <span className="font-bold" style={{ color: '#6B8E23' }}>Syarat Layanan</span> dan{' '}
+                    <span className="font-bold" style={{ color: '#6B8E23' }}>Kebijakan Privasi</span> DREAMPALM.
                   </span>
                 </label>
 
                 {/* ReCAPTCHA */}
-                <div className="flex justify-center py-2 shrink-0">
+                <div className="flex justify-center py-1 shrink-0">
                   <ReCAPTCHA
-                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"} // Fallback test key
+                    sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"}
                     onChange={(token) => setRecaptchaToken(token)}
                   />
                 </div>
 
-                {/* Create Account Button */}
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-lg text-white font-bold text-sm shadow-md transition-all duration-200 hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: '#84994F' }}
+                  className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm transition-all hover:opacity-90 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #7C3AED 100%)' }}
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Create Account
+                  Buat Akun
                 </button>
               </form>
 
-              {/* Redirect back to Sign In */}
-              <div className="text-center pt-2">
-                <p className="text-xs text-gray-500 dark:text-zinc-400">
+              <div className="text-center">
+                <p className="text-xs text-[#64748b]">
                   Sudah punya akun?{' '}
-                  <button 
+                  <button
                     onClick={() => router.push('/login')}
-                    className="font-bold text-[#84994F] hover:underline bg-transparent border-none outline-none cursor-pointer"
+                    className="font-bold hover:underline"
+                    style={{ color: '#6B8E23' }}
                   >
                     Sign In di sini
                   </button>
                 </p>
               </div>
-
             </div>
           )}
 
-          {/* REGISTRATION SUCCESS VIEW */}
+          {/* SUCCESS VIEW */}
           {view === 'success' && (
             <div className="text-center space-y-6 py-8 animate-in fade-in duration-300">
-              <div className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-400">
+              <div
+                className="mx-auto inline-flex h-20 w-20 items-center justify-center rounded-full"
+                style={{ background: 'rgba(107,142,35,0.1)', color: '#6B8E23' }}
+              >
                 <BadgeCheck className="h-10 w-10" />
               </div>
-
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Registrasi Berhasil!
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed max-w-sm mx-auto">
-                  Akun Anda telah terdaftar. Kami telah mengirimkan email verifikasi. Silakan periksa kotak masuk email Anda dan klik tautan verifikasi sebelum melakukan login.
+                <h3 className="text-2xl font-bold text-[#0F172A]">Registrasi Berhasil!</h3>
+                <p className="text-sm text-[#64748b] leading-relaxed max-w-sm mx-auto">
+                  Akun Anda telah terdaftar. Kami telah mengirimkan email verifikasi ke inbox Anda. Klik tautan verifikasi sebelum melakukan login.
                 </p>
               </div>
-
               <button
                 onClick={() => router.push('/login')}
-                className="w-full py-3 px-4 rounded-lg text-white font-bold text-sm shadow-md transition-opacity hover:opacity-90"
-                style={{ background: '#84994F' }}
+                className="w-full py-3.5 px-4 rounded-xl text-white font-bold text-sm hover:opacity-90 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #6B8E23, #7C3AED)' }}
               >
                 Kembali ke Halaman Login
               </button>
@@ -350,41 +346,76 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ================= SISI KANAN: GAMBAR DRONE TEKNISI (DESKTOP ONLY) ================= */}
-      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 text-white overflow-hidden">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-105"
-          style={{ 
-            backgroundImage: "url('https://images.unsplash.com/photo-1527977966376-1c8408f9f108?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200')",
+      {/* ===== RIGHT PANEL: DreamPalm Visual (Desktop only) ===== */}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-14 overflow-hidden">
+        
+        {/* Radial glows */}
+        <div
+          className="pointer-events-none absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #6B8E23 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute -bottom-32 -left-10 h-[400px] w-[400px] rounded-full opacity-15"
+          style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)' }}
+        />
+        <div
+          className="pointer-events-none absolute top-1/3 left-0 h-[250px] w-[250px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #C8553D 0%, transparent 70%)' }}
+        />
+
+        {/* Grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(107,142,35,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(107,142,35,0.5) 1px, transparent 1px)`,
+            backgroundSize: '48px 48px'
           }}
         />
-        {/* Mask overlay */}
-        <div className="absolute inset-0 bg-[#0b2416]/80 dark:bg-[#07180e]/85 mix-blend-multiply z-10" />
 
-        {/* Content */}
-        <div className="relative z-20 flex flex-col justify-between h-full">
+        <div className="relative z-10 flex flex-col justify-between h-full">
+          
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#84994F] text-white rounded flex items-center justify-center font-bold text-lg shadow-md border border-white/10">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black text-white shadow-lg"
+              style={{ background: 'linear-gradient(135deg, #6B8E23 0%, #C8553D 60%, #7C3AED 100%)' }}
+            >
               DP
             </div>
-            <span className="font-extrabold text-xl tracking-wider uppercase text-zinc-100">DREAMPALM</span>
+            <span className="font-extrabold text-xl text-white tracking-tight">
+              Dream<span style={{ color: '#6B8E23' }}>Palm</span>
+            </span>
           </div>
 
-          {/* Promo */}
-          <div className="space-y-6 max-w-lg">
-            <h1 className="text-4xl lg:text-5xl font-bold leading-tight text-white tracking-wide">
-              Teknologi UAV & AI untuk Kelapa Sawit
-            </h1>
-            <p className="text-zinc-300 leading-relaxed text-base font-light">
-              Tingkatkan efisiensi dan akurasi penanggulangan Ganoderma dengan pemetaan real-time.
+          {/* Central slogan */}
+          <div className="my-auto">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] mb-4" style={{ color: '#C8553D' }}>
+              Precision Application in Oil Palm
             </p>
+            <h1
+              className="font-extrabold text-white leading-[1.05]"
+              style={{ fontSize: 'clamp(2.2rem, 3.5vw, 3.2rem)' }}
+            >
+              Teknologi UAV & AI untuk{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #6B8E23, #7C3AED)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                Kelapa Sawit
+              </span>
+            </h1>
           </div>
 
-          {/* Footer team */}
-          <div className="text-xs text-zinc-400 font-light tracking-wide">
-            © 2026 DREAMPALM Research & Development Team. All rights reserved.
+          {/* Footer */}
+          <div>
+            <div
+              className="h-px w-full mb-4"
+              style={{ background: 'linear-gradient(90deg, #6B8E23, #C8553D, #7C3AED)' }}
+            />
+            <p className="text-xs" style={{ color: '#334155' }}>
+              © 2026 DREAMPALM Research & Development Team. All rights reserved.
+            </p>
           </div>
         </div>
       </div>
