@@ -44,7 +44,7 @@ export function LandingShell({
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 10
       ) {
-        nextSection = 'footer';
+        nextSection = 'contact';
       }
 
       setActiveSection(nextSection);
