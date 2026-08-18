@@ -107,6 +107,25 @@ export const updateUser = asyncHandler(async (req, res) => {
     }
   }
 
+  if (input.status) {
+    const existingUser = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: { firebaseUid: true },
+    });
+
+    if (existingUser?.firebaseUid) {
+      const isDisabled = input.status !== ApprovalStatus.APPROVED;
+      
+      try {
+        await firebaseAuth.updateUser(existingUser.firebaseUid, {
+          disabled: isDisabled,
+        });
+      } catch (error: any) {
+        throw new AppError(500, "Failed to synchronize account status with the security system.");
+      }
+    }
+  }
+
   const updated = await prisma.user.update({
     where: { id: req.params.id },
     data: input,

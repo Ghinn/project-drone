@@ -26,6 +26,7 @@ interface User {
   role: Role;
   status: ApprovalStatus;
   createdAt: string;
+  emailVerified?: string | null;
 }
 
 export default function UserManagementSection() {
@@ -405,6 +406,9 @@ export default function UserManagementSection() {
                     year: 'numeric'
                   });
 
+                  // Logika Disabled
+                  const isUserVerified = !!user.emailVerified; 
+
                   return (
                     <tr key={user.id} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors">
                       <td className="px-6 py-4 text-sm font-semibold text-[#191919] dark:text-zinc-300">{rowNum}</td>
@@ -426,16 +430,22 @@ export default function UserManagementSection() {
                         <div className="relative inline-block w-36">
                           <select 
                             value={user.status}
+                            disabled={!isUserVerified}
                             onChange={(e) => handleStatusChange(user.id, e.target.value as ApprovalStatus)}
-                            className={`w-full appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-bold border transition-colors outline-none cursor-pointer
-                              ${user.status === 'APPROVED' 
+                            className={`w-full appearance-none pl-3 pr-8 py-1.5 rounded-lg text-xs font-bold border transition-colors outline-none
+                              ${!isUserVerified 
+                                ? 'bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500'
+                                : user.status === 'APPROVED'
                                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' 
                                 : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'}`}
                           >
                             <option value="APPROVED">● ACTIVE</option>
                             <option value="PENDING">○ INACTIVE</option>
                           </select>
-                          <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${user.status === 'APPROVED' ? 'text-emerald-600' : 'text-amber-600'}`} />
+                          <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none
+                            ${!isUserVerified 
+                              ? 'text-gray-400 dark:text-zinc-600' 
+                              : user.status === 'APPROVED' ? 'text-emerald-600' : 'text-amber-600'}`} />
                         </div>
                       </td>
 
