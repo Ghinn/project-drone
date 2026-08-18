@@ -12,7 +12,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'AgriSpectra',
+  title: 'DREAMPALM',
   description: 'Sistem Drone Terpadu dengan Spot Marking dan Spraying'
 };
 
