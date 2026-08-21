@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.2.0",
     "lucide-react": "^1.28.0",
