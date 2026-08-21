@@ -75,15 +75,9 @@ export const listUsers = asyncHandler(async (req, res) => {
 
 export const getUserById = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     select: {
       ...publicUserSelect,
-      _count: {
-        select: {
-          news: true,
-          ownedSppgs: true,
-        },
-      },
     },
   });
 
@@ -96,8 +90,9 @@ export const getUserById = asyncHandler(async (req, res) => {
 
 export const updateUser = asyncHandler(async (req, res) => {
   const input = updateUserSchema.parse(req.body);
+  const userId = req.params.id as string;
 
-  if (req.currentUser?.id === req.params.id) {
+  if (req.currentUser?.id === userId) {
     if (input.role && input.role !== Role.ADMIN) {
       throw new AppError(400, "You cannot remove your own admin role.");
     }
@@ -107,9 +102,10 @@ export const updateUser = asyncHandler(async (req, res) => {
     }
   }
 
+  // Sinkronisasi Perubahan Status ke Firebase Authentication
   if (input.status) {
     const existingUser = await prisma.user.findUnique({
-      where: { id: req.params.id },
+      where: { id: userId },
       select: { firebaseUid: true },
     });
 
@@ -127,7 +123,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   const updated = await prisma.user.update({
-    where: { id: req.params.id },
+    where: { id: userId },
     data: input,
     select: publicUserSelect,
   });
@@ -139,7 +135,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 });
 
 export const deleteUser = asyncHandler(async (req, res) => {
-  const userId = req.params.id;
+  const userId = req.params.id as string;
 
   if (req.currentUser?.id === req.params.id) {
     throw new AppError(400, "You cannot delete your own account from this endpoint.");
@@ -168,7 +164,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
   // Hapus data akun dari Prisma
   const deleted = await prisma.user.delete({
-    where: { id: req.params.id },
+    where: { id: userId },
     select: publicUserSelect,
   });
 

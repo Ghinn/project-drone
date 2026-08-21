@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import MonitoringOperatorShell from '@/components/monitoringOperator/layout/monitoringOperator-shell';
 import { useMonitoringOperator } from '@/components/monitoringOperator/layout/monitoringOperator-context';
 
@@ -9,6 +10,19 @@ import OverviewSection from '@/components/monitoringOperator/sections/overview-s
 import LiveCameraSection from '@/components/monitoringOperator/sections/live-camera-section';
 import AnalisisPredictionLogSection from '@/components/monitoringOperator/sections/analisis-prediction-log-section';
 import SettingsSection from '@/components/monitoringOperator/sections/settings-section';
+
+// Import komponen 3D secara dinamis dengan SSR dinonaktifkan (Penting untuk WebGL/Three.js)
+const Orientation3DSection = dynamic(
+  () => import('@/components/monitoringOperator/sections/3d-orientation-model'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[400px] w-full animate-pulse items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
+        <span className="text-sm font-medium text-gray-500">Memuat modul 3D Orientation...</span>
+      </div>
+    )
+  }
+);
 
 // Komponen internal untuk menangani switching section berdasarkan tab aktif
 function OperatorContentRouter() {
@@ -21,6 +35,8 @@ function OperatorContentRouter() {
       return <AnalisisPredictionLogSection />;
     case 'settings':
       return <SettingsSection />;
+    case 'orientation':
+      return <Orientation3DSection />;
     case 'dashboard':
     default:
       return <OverviewSection />;
