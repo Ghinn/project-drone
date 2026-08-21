@@ -24,6 +24,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'camera', label: 'Live Camera' },
     { id: 'ai-log', label: 'AI Prediction Log' },
+    { id: 'orientation', label: 'Device' },
     { id: 'settings', label: 'Settings' },
   ];
 

@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 
-export type MonitoringOperatorTab = 'dashboard' | 'camera' | 'ai-log' | 'settings';
+export type MonitoringOperatorTab = 'dashboard' | 'camera' | 'ai-log' | 'orientation' | 'settings';
 
 export interface NavItem {
   id: MonitoringOperatorTab;

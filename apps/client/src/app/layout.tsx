@@ -12,8 +12,8 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'DREAMPALM',
-  description: 'Sistem Drone Terpadu dengan Spot Marking dan Spraying'
+  title: 'DreamPalm',
+  description: 'Disease Recognition and Enhanced Aerial Marking for Precision Application in Oil Palm'
 };
 
 export default async function RootLayout({
