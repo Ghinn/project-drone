@@ -4,6 +4,17 @@ import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 
 const T = DRONE_TOKENS;
 
+// Drone terdaftar untuk akun ini (read-only, placeholder)
+const REGISTERED_DRONES = [
+  {
+    id: 'DP-DRONE-001',
+    model: 'DJI Mavic 3 Enterprise',
+    firmware: 'v4.2.1',
+    status: 'active',
+    registeredAt: '14 Jan 2026',
+  },
+];
+
 export default function SettingsSection() {
   const [name, setName] = useState('Dio Wirawan');
   const [email, setEmail] = useState('dio@dreampalm.com');
@@ -26,7 +37,13 @@ export default function SettingsSection() {
   const focusStyle = { '--tw-ring-color': `${T.green}55` } as React.CSSProperties;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="space-y-6">
+
+      {/* Page Header */}
+      <div>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Pengaturan Akun · Kelola profil dan preferensi akun operator Anda</p>
+      </div>
 
       {/* Account Info Card */}
       <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
@@ -36,7 +53,7 @@ export default function SettingsSection() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Informasi Akun</h3>
-            <p className="text-xs text-gray-400">Data profil operator yang terdaftar di sistem</p>
+            <p className="text-xs text-gray-400">Account Information · Data profil operator terdaftar di sistem DreamPalm</p>
           </div>
         </div>
 
@@ -49,15 +66,20 @@ export default function SettingsSection() {
             <div>
               <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{name}</p>
               <p className="text-xs text-gray-400">{org}</p>
-              <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.violet}20`, color: T.violet }}>
-                OPERATOR
-              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.violet}20`, color: T.violet }}>
+                  OPERATOR
+                </span>
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.green}20`, color: T.green }}>
+                  DREAMPALM
+                </span>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nama Lengkap</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nama Lengkap / Full Name</label>
               <input value={name} onChange={e => setName(e.target.value)} className={inputCls} style={focusStyle} />
             </div>
             <div>
@@ -65,11 +87,11 @@ export default function SettingsSection() {
               <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={inputCls} style={focusStyle} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nomor Telepon</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nomor Telepon / Phone</label>
               <input value={phone} onChange={e => setPhone(e.target.value)} className={inputCls} style={focusStyle} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Organisasi / Tim</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Organisasi / Tim / Organization</label>
               <input value={org} onChange={e => setOrg(e.target.value)} className={inputCls} style={focusStyle} />
             </div>
           </div>
@@ -84,18 +106,18 @@ export default function SettingsSection() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Ubah Kata Sandi</h3>
-            <p className="text-xs text-gray-400">Pastikan kata sandi baru minimal 8 karakter</p>
+            <p className="text-xs text-gray-400">Change Password · Pastikan kata sandi baru minimal 8 karakter</p>
           </div>
         </div>
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Saat Ini</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Saat Ini / Current Password</label>
             <input value={currentPw} onChange={e => setCurrentPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Baru</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Baru / New Password</label>
               <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
             </div>
             <div>
@@ -116,16 +138,16 @@ export default function SettingsSection() {
             🔔
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Notifikasi</h3>
-            <p className="text-xs text-gray-400">Atur kapan Anda menerima pemberitahuan sistem</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Notifikasi / Notifications</h3>
+            <p className="text-xs text-gray-400">Atur kapan Anda menerima pemberitahuan sistem DreamPalm</p>
           </div>
         </div>
 
         <div className="p-6 space-y-4">
           {[
-            { label: 'Notifikasi Email', desc: 'Kirim laporan misi ke email terdaftar', val: notifEmail, set: setNotifEmail, color: T.green },
-            { label: 'Peringatan Kritis (BSR Detected)', desc: 'Pop-up dan bunyi ketika AI mendeteksi penyakit parah', val: notifCritical, set: setNotifCritical, color: T.red },
-            { label: 'Laporan Otomatis Harian', desc: 'Ringkasan hasil scan dikirim tiap pukul 08.00', val: notifReport, set: setNotifReport, color: T.violet },
+            { label: 'Notifikasi Email', desc: 'Kirim laporan misi ke email terdaftar setelah penerbangan selesai', val: notifEmail, set: setNotifEmail, color: T.green },
+            { label: 'Peringatan Kritis (BSR Detected)', desc: 'Pop-up dan notifikasi ketika AI mendeteksi penyakit BSR parah', val: notifCritical, set: setNotifCritical, color: T.red },
+            { label: 'Laporan Otomatis Harian', desc: 'Ringkasan hasil scan harian dikirim tiap pukul 08.00 WIB', val: notifReport, set: setNotifReport, color: T.violet },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-[#1a1a1a] last:border-0">
               <div>
@@ -134,7 +156,7 @@ export default function SettingsSection() {
               </div>
               <button
                 onClick={() => item.set((v: boolean) => !v)}
-                className="relative w-11 h-6 rounded-full transition-all duration-300 shrink-0"
+                className="relative w-11 h-6 rounded-full transition-all duration-300 shrink-0 ml-4"
                 style={{ background: item.val ? item.color : '#D1D5DB' }}
               >
                 <span
@@ -147,15 +169,63 @@ export default function SettingsSection() {
         </div>
       </div>
 
+      {/* Drone Terdaftar Card (BARU) */}
+      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}>
+            🚁
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Drone Terdaftar / Registered Drones</h3>
+            <p className="text-xs text-gray-400">Daftar drone yang terhubung ke akun operator ini. Dikelola oleh Admin DreamPalm.</p>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {REGISTERED_DRONES.map(drone => (
+            <div
+              key={drone.id}
+              className="flex items-center justify-between p-4 rounded-lg border border-gray-100 dark:border-[#1e1e1e] bg-gray-50 dark:bg-[#0f0f0f]"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                  style={{ background: `${T.green}15` }}
+                >
+                  🚁
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{drone.model}</p>
+                  <p className="text-xs font-mono text-gray-400">{drone.id} · Firmware {drone.firmware}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Terdaftar: {drone.registeredAt}</p>
+                </div>
+              </div>
+              <span
+                className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full"
+                style={{ background: `${T.green}20`, color: T.green, border: `1px solid ${T.green}44` }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                {drone.status === 'active' ? 'AKTIF' : 'TIDAK AKTIF'}
+              </span>
+            </div>
+          ))}
+          <p className="text-[10px] text-gray-400 mt-3">
+            * Untuk menambah atau menghapus drone, hubungi Admin DreamPalm. Satu drone dapat dikelola lebih dari satu operator.
+          </p>
+        </div>
+      </div>
+
       {/* Role Info */}
       <div className="rounded-xl p-5 border border-dashed border-gray-200 dark:border-[#2a2a2a]">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Info Akses & Peran</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Info Akses & Peran / Access & Role Info</p>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: 'Peran', value: 'Operator Drone' },
-            { label: 'Level Akses', value: 'Dashboard Operator' },
+            { label: 'Peran / Role', value: 'Operator Drone' },
+            { label: 'Level Akses / Access Level', value: 'Dashboard Operator' },
+            { label: 'Platform', value: 'DreamPalm Drone System' },
             { label: 'Terdaftar Sejak', value: '14 Jan 2026' },
-            { label: 'Login Terakhir', value: 'Hari ini, 09:14 WIB' },
+            { label: 'Login Terakhir / Last Login', value: 'Hari ini, 09:14 WIB' },
+            { label: 'Versi Aplikasi / App Version', value: 'v1.0.0-beta' },
           ].map(r => (
             <div key={r.label} className="flex items-center justify-between py-1.5">
               <span className="text-xs text-gray-400">{r.label}</span>

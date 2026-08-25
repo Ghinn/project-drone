@@ -6,10 +6,10 @@ import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 const T = DRONE_TOKENS;
 
 const STAT_CARDS = [
-  { label: 'Total Pohon Terdeteksi', value: '1.248', unit: 'pohon', icon: '🌴', color: T.green },
-  { label: 'Pohon Sehat', value: '1.037', unit: 'pohon', icon: '✅', color: T.green },
-  { label: 'Pohon Tidak Sehat', value: '211', unit: 'pohon', icon: '⚠️', color: T.red },
-  { label: 'Persentase Sehat', value: '83.1', unit: '%', icon: '📊', color: T.green },
+  { label: 'Total Pohon Terdeteksi', labelEn: 'Total Trees Detected', value: '1.248', unit: 'pohon', icon: '🌴', color: T.green },
+  { label: 'Pohon Sehat', labelEn: 'Healthy Trees', value: '1.037', unit: 'pohon', icon: '✅', color: T.green },
+  { label: 'Pohon Tidak Sehat', labelEn: 'Unhealthy Trees', value: '211', unit: 'pohon', icon: '⚠️', color: T.red },
+  { label: 'Persentase Sehat', labelEn: 'Health Rate', value: '83.1', unit: '%', icon: '📊', color: T.green },
 ];
 
 const CLASSIFICATION_DATA = [
@@ -34,7 +34,149 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> 
   ok:       { bg: `${T.green}22`, text: T.green, label: 'SEHAT' },
 };
 
-export default function Dashboard() {
+// Komponen: Section Device Drone
+function DeviceDroneSection({ battery, spray }: { battery: number; spray: number }) {
+  const { droneOn, setDroneOn } = useMonitoringOperator();
+  const battColor = battery > 50 ? T.green : battery > 20 ? T.amber : T.red;
+  const connStatus = droneOn ? 'connected' : 'disconnected';
+
+  const DEVICE_INFO = [
+    { label: 'Model Drone', labelEn: 'Drone Model', value: 'DJI Mavic 3 Enterprise' },
+    { label: 'ID Perangkat', labelEn: 'Device ID', value: 'DP-DRONE-001' },
+    { label: 'Versi Firmware', labelEn: 'Firmware', value: 'v4.2.1' },
+    { label: 'Frekuensi Link', labelEn: 'Link Frequency', value: '5.8 GHz' },
+    { label: 'Tipe Baterai', labelEn: 'Battery Type', value: 'LiPo 6S 5000mAh' },
+    { label: 'Kapasitas Tangki', labelEn: 'Tank Capacity', value: '10 Liter' },
+  ];
+
+  const TELEMETRY = [
+    { label: 'Baterai', labelEn: 'Battery', value: `${battery.toFixed(0)}%`, pct: battery, color: battColor, icon: '🔋' },
+    { label: 'Tangki Semprot', labelEn: 'Spray Tank', value: `${spray}%`, pct: spray, color: T.violet, icon: '🪣' },
+    { label: 'GPS Signal', labelEn: 'GPS Signal', value: 'Kuat · 14 Satelit', color: T.green, icon: '📡' },
+    { label: 'Ketinggian', labelEn: 'Altitude', value: '25.3 m', color: T.green, icon: '📏' },
+    { label: 'Kecepatan', labelEn: 'Speed', value: '4.2 m/s', color: T.amber, icon: '⚡' },
+    { label: 'Suhu Motor', labelEn: 'Motor Temp', value: '42°C', color: T.orange, icon: '🌡️' },
+  ];
+
+  return (
+    <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
+      {/* Card Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e]">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-base"
+            style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}
+          >
+            🚁
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              Status & Detail Device Drone
+            </h3>
+            <p className="text-[11px] text-gray-400">Drone Device Status & Details</p>
+          </div>
+        </div>
+
+        {/* Connection Status Badge */}
+        <div className="flex items-center gap-3">
+          <span
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+            style={
+              connStatus === 'connected'
+                ? { background: `${T.green}20`, color: T.green, border: `1px solid ${T.green}44` }
+                : { background: `${T.red}18`, color: T.red, border: `1px solid ${T.red}33` }
+            }
+          >
+            <span className={`w-1.5 h-1.5 rounded-full bg-current ${connStatus === 'connected' ? 'animate-pulse' : ''}`} />
+            {connStatus === 'connected' ? 'TERHUBUNG' : 'TIDAK TERHUBUNG'}
+          </span>
+
+          {/* Toggle Power Button */}
+          <button
+            onClick={() => setDroneOn(!droneOn)}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95"
+            style={{
+              background: droneOn
+                ? `linear-gradient(135deg, ${T.red}, ${T.orange})`
+                : `linear-gradient(135deg, ${T.green}, ${T.greenLight})`,
+            }}
+          >
+            {droneOn ? '⏹ Matikan Drone' : '▶ Nyalakan Drone'}
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-5">
+        {/* Device Info Grid */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+            Informasi Perangkat / Device Information
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {DEVICE_INFO.map(info => (
+              <div
+                key={info.label}
+                className="rounded-lg p-3 bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e]"
+              >
+                <p className="text-[10px] text-gray-400 mb-0.5">{info.label}</p>
+                <p className="text-xs font-semibold text-gray-400">{info.labelEn}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mt-1">{info.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Telemetri Real-time */}
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+            Telemetri Real-time / Real-time Telemetry
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {TELEMETRY.map(item => (
+              <div
+                key={item.label}
+                className="rounded-lg p-3 bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e]"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-gray-400">{item.label}</span>
+                  <span className="text-base leading-none">{item.icon}</span>
+                </div>
+                <p className="text-[10px] text-gray-400 mb-1.5">{item.labelEn}</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.value}</span>
+                </div>
+                {item.pct !== undefined && (
+                  <div className="w-full h-1 rounded-full bg-gray-200 dark:bg-[#2a2a2a] mt-2">
+                    <div
+                      className="h-1 rounded-full transition-all duration-700"
+                      style={{ width: `${item.pct}%`, background: item.color }}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Catatan */}
+        <div
+          className="flex items-start gap-2.5 rounded-lg p-3 text-xs"
+          style={{ background: `${T.amber}12`, border: `1px solid ${T.amber}33` }}
+        >
+          <span className="text-base leading-none shrink-0">ℹ️</span>
+          <p style={{ color: T.amber }}>
+            Status perangkat ini akan tersinkronisasi secara otomatis oleh sistem backend.
+            Data yang ditampilkan saat ini merupakan indikator awal sebelum penerbangan.
+            <em className="block mt-0.5 opacity-75">Device status will be auto-synced by the backend system.</em>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main Dashboard Component
+export default function DashboardSection() {
   const { battery, spray } = useMonitoringOperator();
   const [tick, setTick] = useState<Date | null>(null);
 
@@ -44,7 +186,6 @@ export default function Dashboard() {
     return () => clearInterval(t);
   }, []);
 
-  const battColor = battery > 50 ? T.green : battery > 20 ? T.amber : T.red;
   const healthPct = 83.1;
   const unhealthPct = 16.9;
 
@@ -55,7 +196,9 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Ringkasan Misi Drone</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Penerbangan aktif · Update terakhir: {tick ? tick.toLocaleTimeString('id-ID') : '--:--:--'}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Mission Summary · Update terakhir: {tick ? tick.toLocaleTimeString('id-ID') : '--:--:--'}
+          </p>
         </div>
         <span
           className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full"
@@ -71,11 +214,14 @@ export default function Dashboard() {
         {STAT_CARDS.map(card => (
           <div
             key={card.label}
-            className="rounded-lg p-5 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e]"
+            className="rounded-xl p-5 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e]"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">{card.label}</span>
-              <span className="text-lg">{card.icon}</span>
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 block">{card.label}</span>
+                <span className="text-[10px] text-gray-300 dark:text-gray-600">{card.labelEn}</span>
+              </div>
+              <span className="text-xl">{card.icon}</span>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">{card.value}</span>
@@ -85,12 +231,16 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Main Grid */}
+      {/* Section: Device Drone (BARU) */}
+      <DeviceDroneSection battery={battery} spray={spray} />
+
+      {/* Main Grid: Chart + Recent Detections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {/* Donut Chart + Breakdown */}
-        <div className="lg:col-span-1 rounded-lg bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] p-6">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Distribusi Klasifikasi Pohon</p>
+        <div className="lg:col-span-1 rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] p-6">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5">Distribusi Klasifikasi Pohon</p>
+          <p className="text-[10px] text-gray-400 mb-4">Tree Classification Distribution</p>
 
           {/* Donut Visual */}
           <div className="flex items-center justify-center mb-5">
@@ -143,10 +293,10 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Detections Table */}
-        <div className="lg:col-span-2 rounded-lg bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
+        <div className="lg:col-span-2 rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e]">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Deteksi Terbaru</p>
-            <p className="text-xs text-gray-400 mt-0.5">Hasil inference AI real-time dari kamera drone</p>
+            <p className="text-xs text-gray-400 mt-0.5">Recent Detections · Hasil inference AI real-time dari kamera drone</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -187,28 +337,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom Row - Telemetry */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Baterai Drone', value: battery.toFixed(0), unit: '%', pct: Math.round(battery), color: battColor },
-          { label: 'Tangki Semprot', value: String(spray), unit: '%', pct: spray, color: T.violet },
-          { label: 'Ketinggian', value: '25.3', unit: 'm', color: T.green },
-          { label: 'Kecepatan', value: '4.2', unit: 'm/s', color: T.amber },
-        ].map(item => (
-          <div key={item.label} className="rounded-lg p-5 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e]">
-            <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 block mb-3">{item.label}</span>
-            <div className="flex items-baseline gap-1 mb-3">
-              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.value}</span>
-              <span className="text-sm" style={{ color: item.color }}>{item.unit}</span>
-            </div>
-            {item.pct !== undefined && (
-              <div className="w-full h-1 rounded-full bg-gray-100 dark:bg-[#1e1e1e]">
-                <div className="h-1 rounded-full transition-all duration-500" style={{ width: `${item.pct}%`, background: item.color }} />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

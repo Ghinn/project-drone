@@ -11,6 +11,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
   const [collapsed, setCollapsed] = useState(false);
   const [battery, setBattery] = useState(85);
   const [spray] = useState(62);
+  const [droneOn, setDroneOn] = useState(true);
 
   // Simulasi penurunan baterai drone
   useEffect(() => {
@@ -21,16 +22,40 @@ export default function MonitoringOperatorShell({ children }: { children: React.
   }, []);
 
   const navItems: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'camera', label: 'Live Camera' },
-    { id: 'ai-log', label: 'AI Prediction Log' },
-    { id: 'orientation', label: 'Device' },
-    { id: 'settings', label: 'Settings' },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      labelEn: 'Overview',
+      icon: 'dashboard',
+    },
+    {
+      id: 'pantau-drone',
+      label: 'Pantau Drone',
+      labelEn: 'Drone Monitor',
+      icon: 'camera',
+    },
+    {
+      id: 'log-prediksi',
+      label: 'Log Prediksi',
+      labelEn: 'Prediction Log',
+      icon: 'log',
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      labelEn: 'Pengaturan',
+      icon: 'settings',
+    },
   ];
 
   const getPageTitle = () => {
     const current = navItems.find(n => n.id === activeTab);
     return current ? current.label : 'Dashboard';
+  };
+
+  const getPageTitleEn = () => {
+    const current = navItems.find(n => n.id === activeTab);
+    return current ? current.labelEn : 'Overview';
   };
 
   return (
@@ -42,8 +67,11 @@ export default function MonitoringOperatorShell({ children }: { children: React.
         setCollapsed,
         battery,
         spray,
+        droneOn,
+        setDroneOn,
         navItems,
         getPageTitle,
+        getPageTitleEn,
       }}
     >
       <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-[#0a0a0a] font-sans">

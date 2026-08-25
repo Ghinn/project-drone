@@ -12,8 +12,11 @@ type MonitoringOperatorContextValue = {
   setCollapsed: (collapsed: boolean) => void;
   battery: number;
   spray: number;
+  droneOn: boolean;
+  setDroneOn: (on: boolean) => void;
   navItems: NavItem[];
   getPageTitle: () => string;
+  getPageTitleEn: () => string;
 };
 
 export const MonitoringOperatorContext = createContext<MonitoringOperatorContextValue | null>(null);
