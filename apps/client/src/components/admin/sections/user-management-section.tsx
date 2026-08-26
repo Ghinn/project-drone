@@ -321,6 +321,29 @@ export default function UserManagementSection() {
     }));
   };
 
+  const handleSort = () => {
+    if (sortOrder == "oldest") {
+      setSortOrder("newest");
+    } else {
+      setSortOrder("oldest");
+    }
+  };
+
+  const formatDate = (dateString: string | number | Date) => {
+    const date = new Date(dateString);
+    const addZero = (number: string | number | Date) =>
+      String(number).padStart(2, "0");
+
+    const day = addZero(date.getDate());
+    const month = addZero(date.getMonth() + 1);
+    const year = date.getFullYear();
+    const hours = addZero(date.getHours());
+    const minutes = addZero(date.getMinutes());
+    const seconds = addZero(date.getSeconds());
+
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+  };
+
   return (
     <div className="h-full flex flex-col gap-2.5 animate-in fade-in duration-300 min-h-0">
       {/* HEADER SECTION */}
@@ -382,7 +405,9 @@ export default function UserManagementSection() {
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-[11px] text-[#6A717F] mt-0.5">Petani aktif lapangan</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">
+            Petani aktif lapangan
+          </p>
         </div>
 
         <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
@@ -395,7 +420,9 @@ export default function UserManagementSection() {
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-[11px] text-[#6A717F] mt-0.5">Pengendali stasiun</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">
+            Pengendali stasiun
+          </p>
         </div>
 
         <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
@@ -408,7 +435,9 @@ export default function UserManagementSection() {
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-[11px] text-[#6A717F] mt-0.5">Administrator sistem</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">
+            Administrator sistem
+          </p>
         </div>
       </div>
 
@@ -465,13 +494,21 @@ export default function UserManagementSection() {
             value={selectedDroneFilter}
             onChange={setSelectedDroneFilter}
           />
-          <SortDateDropdown
+          {/* <SortDateDropdown
             value={sortOrder}
             onChange={(value) => {
               setSortOrder(value);
               setCurrentPage(1);
             }}
-          />
+          /> */}
+          <button
+            type="button"
+            onClick={() => handleSort()}
+            className={`p-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-color`}
+            title="Urutkan tanggal masuk"
+          >
+            <ArrowUpDown className="w-4 h-4" />
+          </button>
           {/* <button
             onClick={openAddModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#84994F] hover:bg-[#e65c00] text-white text-xs font-semibold rounded-xl shadow-sm transition-colors whitespace-nowrap"
@@ -488,28 +525,28 @@ export default function UserManagementSection() {
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#84994F] text-white">
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   No.
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   User ID
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Pengguna
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Tanggal Bergabung
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Drone
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-right">
+                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
                   Aksi
                 </th>
               </tr>
@@ -531,17 +568,7 @@ export default function UserManagementSection() {
                 paginatedUsers.map((user, index) => {
                   const rowNum = (currentPage - 1) * itemsPerPage + index + 1;
                   const shortId = user.id.slice(0, 8).toUpperCase();
-                  const joinDate = new Date(user.createdAt).toLocaleDateString(
-                    "id-ID",
-                    {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                    },
-                  );
+                  const joinDate = formatDate(user.createdAt);
 
                   // Logika Disabled
                   const isUserVerified = !!user.emailVerified;
@@ -551,13 +578,13 @@ export default function UserManagementSection() {
                       key={user.id}
                       className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors"
                     >
-                      <td className="px-3 py-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-300">
+                      <td className="px-3 py-2.5 text-xs font-semibold text-[#191919] dark:text-zinc-300">
                         {rowNum}
                       </td>
-                      <td className="px-3 py-1.5 text-xs font-mono text-[#6A717F]">
+                      <td className="px-3 py-2.5 text-xs font-mono text-[#6A717F]">
                         #{shortId}
                       </td>
-                      <td className="px-3 py-1.5 text-xs text-[#191919] dark:text-white">
+                      <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white">
                         <span className="block font-bold leading-tight truncate max-w-37.5">
                           {user.name || "Tanpa Nama"}
                         </span>
@@ -566,7 +593,7 @@ export default function UserManagementSection() {
                         </span>
                       </td>
 
-                      <td className="px-3 py-1.5">
+                      <td className="px-3 py-2.5">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-200">
                           <span
                             className={`w-2 h-2 rounded-full 
@@ -584,11 +611,11 @@ export default function UserManagementSection() {
                         </span>
                       </td>
 
-                      <td className="px-3 py-1.5 text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
                         {joinDate}
                       </td>
 
-                      <td className="px-3 py-1.5 text-xs min-w-35">
+                      <td className="px-3 py-2.5 text-xs min-w-35">
                         <SearchableDropdown
                           options={drones}
                           value={userDrones[user.id] ?? null}
@@ -602,7 +629,7 @@ export default function UserManagementSection() {
                         />
                       </td>
 
-                      <td className="px-3 py-1.5">
+                      <td className="px-3 py-2.5">
                         <div className="relative inline-block">
                           <select
                             value={user.status}
