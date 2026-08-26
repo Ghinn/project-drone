@@ -1,45 +1,29 @@
 'use client';
 
 import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import MonitoringOperatorShell from '@/components/monitoringOperator/layout/monitoringOperator-shell';
 import { useMonitoringOperator } from '@/components/monitoringOperator/layout/monitoringOperator-context';
 
-// Import sections Operator
-import OverviewSection from '@/components/monitoringOperator/sections/overview-section';
-import LiveCameraSection from '@/components/monitoringOperator/sections/live-camera-section';
-import AnalisisPredictionLogSection from '@/components/monitoringOperator/sections/analisis-prediction-log-section';
+// Import 4 sections baru
+import DashboardSection from '@/components/monitoringOperator/sections/overview-section';
+import PantauDroneSection from '@/components/monitoringOperator/sections/pantau-drone-section';
+import LogPrediksiSection from '@/components/monitoringOperator/sections/log-prediksi-section';
 import SettingsSection from '@/components/monitoringOperator/sections/settings-section';
 
-// Import komponen 3D secara dinamis dengan SSR dinonaktifkan (Penting untuk WebGL/Three.js)
-const Orientation3DSection = dynamic(
-  () => import('@/components/monitoringOperator/sections/3d-orientation-model'),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[400px] w-full animate-pulse items-center justify-center rounded-2xl border border-gray-200 bg-gray-50">
-        <span className="text-sm font-medium text-gray-500">Memuat modul 3D Orientation...</span>
-      </div>
-    )
-  }
-);
-
-// Komponen internal untuk menangani switching section berdasarkan tab aktif
+// Router: menampilkan section berdasarkan tab aktif
 function OperatorContentRouter() {
   const { activeTab } = useMonitoringOperator();
 
   switch (activeTab) {
-    case 'camera':
-      return <LiveCameraSection />;
-    case 'ai-log':
-      return <AnalisisPredictionLogSection />;
+    case 'pantau-drone':
+      return <PantauDroneSection />;
+    case 'log-prediksi':
+      return <LogPrediksiSection />;
     case 'settings':
       return <SettingsSection />;
-    case 'orientation':
-      return <Orientation3DSection />;
     case 'dashboard':
     default:
-      return <OverviewSection />;
+      return <DashboardSection />;
   }
 }
 
