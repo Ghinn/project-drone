@@ -76,7 +76,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AppHeader />
-          <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-gray-50 dark:bg-[#111111] transition-colors duration-300">
+          <div className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-50 dark:bg-[#111111] transition-colors duration-300">
             {children}
           </div>
         </div>

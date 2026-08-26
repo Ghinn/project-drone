@@ -48,7 +48,7 @@ export default function UserManagementSection() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 5;
 
   // Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -79,7 +79,7 @@ export default function UserManagementSection() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/admin/users?limit=5", {
+      const res = await fetch("/api/admin/users?limit=100", {
         method: "GET",
         credentials: "include",
       });
@@ -90,6 +90,7 @@ export default function UserManagementSection() {
         { id: "2", name: "DJI Matrice 300 RTK" },
         { id: "3", name: "DJI Phantom 4 RTK" },
         { id: "4", name: "DJI Inspire 3" },
+        { id: "5", name: "Autel EVO Max 4T" },
       ];
       if (res.ok && json.data) {
         setUsers(json.data);
@@ -321,14 +322,14 @@ export default function UserManagementSection() {
   };
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-300">
+    <div className="h-full flex flex-col gap-2.5 animate-in fade-in duration-300 min-h-0">
       {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-[#191919] dark:text-white">
+          <h1 className="text-lg sm:text-xl font-bold text-[#191919] dark:text-white leading-tight">
             Manajemen Pengguna
           </h1>
-          <p className="text-sm text-[#5B6068] mt-0.5">
+          <p className="text-xs text-[#5B6068] mt-0.5">
             Kelola akun dan otorisasi hak akses platform pemantauan.
           </p>
         </div>
@@ -337,7 +338,7 @@ export default function UserManagementSection() {
       {/* NOTIFICATION BANNER */}
       {notification && (
         <div
-          className={`p-4 rounded-xl border flex items-center justify-between text-sm font-semibold
+          className={`p-2 px-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold shrink-0
           ${
             notification.type === "success"
               ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300"
@@ -347,7 +348,7 @@ export default function UserManagementSection() {
           <span>{notification.message}</span>
           <button
             onClick={() => setNotification(null)}
-            className="text-xs underline font-normal"
+            className="text-xs underline font-normal ml-2"
           >
             Tutup
           </button>
@@ -355,66 +356,66 @@ export default function UserManagementSection() {
       )}
 
       {/* STATS CARDS (Mengacu pada Gambar Pengguna.png) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-[#16161a] p-4 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 shrink-0">
+        <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
           <p className="text-xs font-semibold text-[#191919] dark:text-zinc-300">
             Semua Pengguna
           </p>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#191919] dark:text-white">
+          <div className="mt-0.5 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-bold text-[#191919] dark:text-white">
               {stats.total}
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-xs text-[#6A717F] mt-1">
+          <p className="text-[11px] text-[#6A717F] mt-0.5">
             Total terdaftar di sistem
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#16161a] p-4 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
+        <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
           <p className="text-xs font-semibold text-[#191919] dark:text-zinc-300">
             Farmer
           </p>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#191919] dark:text-white">
+          <div className="mt-0.5 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-bold text-[#191919] dark:text-white">
               {stats.farmer}
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-xs text-[#6A717F] mt-1">Petani aktif lapangan</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">Petani aktif lapangan</p>
         </div>
 
-        <div className="bg-white dark:bg-[#16161a] p-4 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
+        <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
           <p className="text-xs font-semibold text-[#191919] dark:text-zinc-300">
             Operator
           </p>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#191919] dark:text-white">
+          <div className="mt-0.5 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-bold text-[#191919] dark:text-white">
               {stats.operator}
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-xs text-[#6A717F] mt-1">Pengendali stasiun</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">Pengendali stasiun</p>
         </div>
 
-        <div className="bg-white dark:bg-[#16161a] p-4 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
+        <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
           <p className="text-xs font-semibold text-[#191919] dark:text-zinc-300">
             Admin
           </p>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-bold text-[#191919] dark:text-white">
+          <div className="mt-0.5 flex items-baseline gap-1.5">
+            <span className="text-lg sm:text-xl font-bold text-[#191919] dark:text-white">
               {stats.admin}
             </span>
             <span className="text-xs font-medium text-[#84994F]">akun</span>
           </div>
-          <p className="text-xs text-[#6A717F] mt-1">Administrator sistem</p>
+          <p className="text-[11px] text-[#6A717F] mt-0.5">Administrator sistem</p>
         </div>
       </div>
 
       {/* FILTER NAVBAR & ACTION BAR */}
-      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2 shrink-0">
         {/* TABS (Semua Pengguna, Farmer, Operator, Admin) */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#F7F9FB] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-x-auto">
+        <div className="flex items-center gap-1 p-1 bg-[#F7F9FB] dark:bg-zinc-900 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl overflow-x-auto">
           {(["ALL", "FARMER", "OPERATOR", "ADMIN"] as const).map((tab) => {
             const labels: Record<string, string> = {
               ALL: `Semua (${stats.total})`,
@@ -430,7 +431,7 @@ export default function UserManagementSection() {
                   setActiveTab(tab);
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg whitespace-nowrap transition-all
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all
                   ${
                     isActive
                       ? "bg-[#84994F] text-white shadow-sm"
@@ -445,7 +446,7 @@ export default function UserManagementSection() {
 
         {/* SEARCH & ACTION TOOLS */}
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 md:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6A717F]" />
             <input
               type="text"
@@ -455,7 +456,7 @@ export default function UserManagementSection() {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-9 pr-4 py-2 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-white dark:bg-[#16161a] text-xs text-[#191919] dark:text-white outline-none focus:border-[#84994F] transition-all"
+              className="w-full pl-9 pr-3 py-1.5 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-white dark:bg-[#16161a] text-xs text-[#191919] dark:text-white outline-none focus:border-[#84994F] transition-all"
             />
           </div>
 
@@ -482,33 +483,33 @@ export default function UserManagementSection() {
       </div>
 
       {/* USER TABLE CARD */}
-      <div className="bg-white dark:bg-[#16161a] rounded-xl border border-[#E5E7EB] dark:border-zinc-800 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="z-0 flex-1 min-h-0 flex flex-col justify-between bg-white dark:bg-[#16161a] rounded-xl border border-[#E5E7EB] dark:border-zinc-800 overflow-hidden shadow-sm">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-[#84994F] text-white">
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   No.
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   User ID
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   Pengguna
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   Tanggal Bergabung
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   Drone
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-right">
+                <th className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-right">
                   Aksi
                 </th>
               </tr>
@@ -517,11 +518,11 @@ export default function UserManagementSection() {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={7}
-                    className="px-4 py-12 text-center text-sm text-[#6A717F]"
+                    colSpan={8}
+                    className="px-4 py-8 text-center text-xs text-[#6A717F]"
                   >
                     <div className="inline-flex items-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#84994F]" />
+                      <Loader2 className="w-4 h-4 animate-spin text-[#84994F]" />
                       <span>Memuat data pengguna...</span>
                     </div>
                   </td>
@@ -550,23 +551,23 @@ export default function UserManagementSection() {
                       key={user.id}
                       className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors"
                     >
-                      <td className="px-4 py-4 text-sm font-semibold text-[#191919] dark:text-zinc-300">
+                      <td className="px-3 py-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-300">
                         {rowNum}
                       </td>
-                      <td className="px-4 py-4 text-sm font-mono text-[#6A717F]">
+                      <td className="px-3 py-1.5 text-xs font-mono text-[#6A717F]">
                         #{shortId}
                       </td>
-                      <td className="px-4 py-4 text-sm font-bold text-[#191919] dark:text-white">
-                        <span className="block font-bold">
+                      <td className="px-3 py-1.5 text-xs text-[#191919] dark:text-white">
+                        <span className="block font-bold leading-tight truncate max-w-37.5">
                           {user.name || "Tanpa Nama"}
                         </span>
-                        <span className="block text-xs text-[#5B6068] dark:text-zinc-400">
+                        <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate max-w-37.5">
                           {user.email}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4">
-                        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#191919] dark:text-zinc-200">
+                      <td className="px-3 py-1.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-200">
                           <span
                             className={`w-2 h-2 rounded-full 
                             ${
@@ -583,11 +584,11 @@ export default function UserManagementSection() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-[#5B6068] dark:text-zinc-400">
+                      <td className="px-3 py-1.5 text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
                         {joinDate}
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-[#5B6068] dark:text-zinc-400">
+                      <td className="px-3 py-1.5 text-xs min-w-35">
                         <SearchableDropdown
                           options={drones}
                           value={userDrones[user.id] ?? null}
@@ -601,7 +602,7 @@ export default function UserManagementSection() {
                         />
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-1.5">
                         <div className="relative inline-block">
                           <select
                             value={user.status}
@@ -612,7 +613,7 @@ export default function UserManagementSection() {
                                 e.target.value as ApprovalStatus,
                               )
                             }
-                            className={`appearance-none pl-3 pr-6 py-1.5 rounded-lg text-xs font-bold border transition-colors outline-none
+                            className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-bold border transition-colors outline-none
                               ${
                                 !isUserVerified
                                   ? "bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500"
@@ -625,7 +626,7 @@ export default function UserManagementSection() {
                             <option value="PENDING">INACTIVE</option>
                           </select>
                           <ChevronDown
-                            className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none
                             ${
                               !isUserVerified
                                 ? "text-gray-400 dark:text-zinc-600"
@@ -637,24 +638,24 @@ export default function UserManagementSection() {
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-right">
-                        <div className="inline-flex items-center gap-2">
+                      <td className="px-3 py-1.5 text-right">
+                        <div className="inline-flex items-center gap-1.5">
                           <button
                             onClick={() => openEditModal(user)}
-                            className="p-1.5 rounded-lg text-[#5B6068] hover:text-[#191919] hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                            className="p-1 rounded-lg text-[#5B6068] hover:text-[#191919] hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                             title="Edit pengguna"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => {
                               setCurrentUser(user);
                               setIsDeleteModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                             title="Hapus pengguna"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -664,8 +665,8 @@ export default function UserManagementSection() {
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
-                    className="px-6 py-10 text-center text-sm text-[#6A717F]"
+                    colSpan={8}
+                    className="px-6 py-6 text-center text-xs text-[#6A717F]"
                   >
                     Tidak ada pengguna yang sesuai dengan filter/pencarian Anda.
                   </td>
@@ -675,15 +676,15 @@ export default function UserManagementSection() {
           </table>
         </div>
 
-        {/* PAGINATION SECTION (Gaya Persis Gambar Pengguna.png) */}
+        {/* PAGINATION SECTION */}
         {!isLoading && filteredUsers.length > 0 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-[#E5E7EB] dark:border-zinc-800 bg-white dark:bg-[#16161a]">
+          <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-t border-[#E5E7EB] dark:border-zinc-800 bg-white dark:bg-[#16161a]">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold border border-[#E5E7EB] dark:border-zinc-800 rounded-xl text-[#5B6068] hover:text-[#191919] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-[#E5E7EB] dark:border-zinc-800 rounded-lg text-[#5B6068] hover:text-[#191919] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              ← Previous
+              ← Prev
             </button>
 
             <div className="flex items-center gap-1">
@@ -692,7 +693,7 @@ export default function UserManagementSection() {
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`w-9 h-9 text-sm font-bold rounded-xl transition-all
+                    className={`w-6 h-6 text-xs font-bold rounded-md transition-all
                     ${
                       currentPage === page
                         ? "bg-[#84994F] text-white shadow-sm"
@@ -708,7 +709,7 @@ export default function UserManagementSection() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold border border-[#E5E7EB] dark:border-zinc-800 rounded-xl text-[#5B6068] hover:text-[#191919] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-[#E5E7EB] dark:border-zinc-800 rounded-lg text-[#5B6068] hover:text-[#191919] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next →
             </button>
