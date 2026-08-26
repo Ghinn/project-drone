@@ -66,7 +66,7 @@ export default function AdminSidebar() {
                     setActiveTab(item.id);
                     if (window.innerWidth < 768) setIsSidebarOpen(false);
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm rounded-md transition-all duration-200 text-left ${
+                  className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm rounded-md transition-all duration-200 text-left ${
                     isActive
                       ? 'bg-[#84994F] text-white font-semibold shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800/50 hover:text-gray-900 dark:hover:text-white'

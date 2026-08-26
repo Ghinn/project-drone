@@ -78,9 +78,9 @@ export default function Settings() {
             }`}
           >
             {tab === 'profile' && 'Profil Admin'}
-            {tab === 'ai-iot' && 'Parameter AI & IoT'}
+            {/* {tab === 'ai-iot' && 'Parameter AI & IoT'}
             {tab === 'map' && 'Peta & Spot Marking'}
-            {tab === 'danger' && 'Zona Bahaya'}
+            {tab === 'danger' && 'Zona Bahaya'} */}
           </button>
         ))}
       </div>
