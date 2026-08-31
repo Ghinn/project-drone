@@ -509,13 +509,13 @@ export default function UserManagementSection() {
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
-          {/* <button
+          <button
             onClick={openAddModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#84994F] hover:bg-[#e65c00] text-white text-xs font-semibold rounded-xl shadow-sm transition-colors whitespace-nowrap"
           >
             <UserPlus className="w-4 h-4" />
             <span>Tambah</span>
-          </button> */}
+          </button>
         </div>
       </div>
 
