@@ -86,11 +86,11 @@ export default function UserManagementSection() {
       const json = await res.json();
       console.log(json.data);
       const droneList = [
-        { id: "1", name: "DJI Mavic 3 Enterprise" },
-        { id: "2", name: "DJI Matrice 300 RTK" },
-        { id: "3", name: "DJI Phantom 4 RTK" },
-        { id: "4", name: "DJI Inspire 3" },
-        { id: "5", name: "Autel EVO Max 4T" },
+        { id: "1", name: "DreamPalm-Drone-V1-001" },
+        { id: "2", name: "DreamPalm-Drone-V1-002" },
+        { id: "3", name: "DreamPalm-Drone-V1-003" },
+        { id: "4", name: "DreamPalm-Drone-V1-004" },
+        { id: "5", name: "DreamPalm-Drone-V1-005" },
       ];
       if (res.ok && json.data) {
         setUsers(json.data);
@@ -504,7 +504,7 @@ export default function UserManagementSection() {
           <button
             type="button"
             onClick={() => handleSort()}
-            className={`p-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-color`}
+            className={`p-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white`}
             title="Urutkan tanggal masuk"
           >
             <ArrowUpDown className="w-4 h-4" />
@@ -578,22 +578,24 @@ export default function UserManagementSection() {
                       key={user.id}
                       className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors"
                     >
-                      <td className="px-3 py-2.5 text-xs font-semibold text-[#191919] dark:text-zinc-300">
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold text-[#191919] dark:text-zinc-300">
                         {rowNum}
                       </td>
-                      <td className="px-3 py-2.5 text-xs font-mono text-[#6A717F]">
+                      <td className="px-3 py-2.5 text-center text-xs font-mono text-[#6A717F]">
                         #{shortId}
                       </td>
                       <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white">
-                        <span className="block font-bold leading-tight truncate max-w-37.5">
-                          {user.name || "Tanpa Nama"}
-                        </span>
-                        <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate max-w-37.5">
-                          {user.email}
-                        </span>
+                        <div className="flex flex-col items-center text-center">
+                          <span className="block font-bold leading-tight truncate max-w-[150px]">
+                            {user.name || "Tanpa Nama"}
+                          </span>
+                          <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate max-w-[150px]">
+                            {user.email}
+                          </span>
+                        </div>
                       </td>
 
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 text-center">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-200">
                           <span
                             className={`w-2 h-2 rounded-full 
@@ -611,25 +613,27 @@ export default function UserManagementSection() {
                         </span>
                       </td>
 
-                      <td className="px-3 py-2.5 text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
+                      <td className="px-3 py-2.5 text-center text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
                         {joinDate}
                       </td>
 
-                      <td className="px-3 py-2.5 text-xs min-w-35">
-                        <SearchableDropdown
-                          options={drones}
-                          value={userDrones[user.id] ?? null}
-                          onChange={(droneId) => {
-                            handleDroneChange(user.id, droneId);
-                          }}
-                          placeholder="Pilih Drone"
-                          searchPlaceholder="Cari drone..."
-                          getOptionLabel={(drone) => drone.name}
-                          getOptionValue={(drone) => drone.id}
-                        />
+                      <td className="px-3 py-2.5 text-center text-xs min-w-35 relative">
+                        <div className="w-full flex justify-center">
+                          <SearchableDropdown
+                            options={drones}
+                            value={userDrones[user.id] ?? null}
+                            onChange={(droneId) => {
+                              handleDroneChange(user.id, droneId);
+                            }}
+                            placeholder="Pilih Drone"
+                            searchPlaceholder="Cari drone..."
+                            getOptionLabel={(drone) => drone.name}
+                            getOptionValue={(drone) => drone.id}
+                          />
+                        </div>
                       </td>
 
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 text-center">
                         <div className="relative inline-block">
                           <select
                             value={user.status}
@@ -665,7 +669,7 @@ export default function UserManagementSection() {
                         </div>
                       </td>
 
-                      <td className="px-3 py-1.5 text-right">
+                      <td className="px-3 py-1.5 text-center">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             onClick={() => openEditModal(user)}

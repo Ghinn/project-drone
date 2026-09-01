@@ -89,7 +89,7 @@ export default function SearchableDropdown<T>({
         }}
         className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium outline-none transition-colors bg-gray-100 border-gray-200 text-gray-700 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-300 hover:border-[#8FA64A] disabled:opacity-50 disabled:cursor-not-allowed ${isOpen ? "border-[#8FA64A]" : ""}`}
       >
-        <span className={selectedOption ? "truncate" : "text-zinc-500"}>
+        <span className={`flex-1 text-center pl-4 ${selectedOption ? "truncate" : "text-zinc-500"}`}>
           {selectedOption ? getOptionLabel(selectedOption) : placeholder}
         </span>
 
@@ -109,7 +109,7 @@ export default function SearchableDropdown<T>({
       </button>
 
       {isOpen && (
-        <div className="absolute w-fit z-50 left-0 right-0 mt-1 overflow-hidden rounded-lg border shadow-xl bg-white border-gray-200 dark:bg-[#202024] dark:border-zinc-800">
+        <div className="absolute w-full z-50 left-0 right-0 mt-1 overflow-hidden rounded-lg border shadow-xl bg-white border-gray-200 dark:bg-[#202024] dark:border-zinc-800">
           <div className="p-2 border-b border-gray-200 dark:border-zinc-800">
             <div className="relative">
               <Search
@@ -141,7 +141,7 @@ export default function SearchableDropdown<T>({
                     onClick={() => handleSelect(option)}
                     className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md text-left text-xs transition-colors hover:bg-[#8FA64A]/10 dark:text-zinc-300 ${isSelected ? "bg-[#8FA64A]/10 text-[#8FA64A]" : ""}`}
                   >
-                    <span className="truncate">{optionLabel}</span>
+                    <span className="truncate flex-1">{optionLabel}</span>
 
                     {isSelected && (
                       <svg
