@@ -42,12 +42,14 @@ export interface PredictionLogEntry {
   // Telemetri drone saat snapshot diambil
   telemetry: {
     battery: number;
-    spray: number;
     altitude: number;
     speed: number;
     gpsSignal: string;
     linkQuality: string;
   };
+  // Koordinat GPS untuk peta (opsional, diisi backend)
+  lat?: number;
+  lng?: number;
 }
 
 export const DRONE_TOKENS = {
