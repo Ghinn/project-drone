@@ -1,13 +1,13 @@
 "use client";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface LogEntry {
   id: string;
   timestamp: string;
   actor: string;
-  category: 'Auth' | 'Drone' | 'AI Detection' | 'System';
+  category: 'Auth' | 'Admin' | 'Operator';
   action: string;
-  status: 'success' | 'info' | 'warning' | 'error';
+  status: 'success' | 'info' | 'error';
   metadata: {
     ipAddress?: string;
     userAgent?: string;
@@ -25,50 +25,50 @@ const INITIAL_LOGS: LogEntry[] = [
     actor: 'Budi Santoso (Petani)', 
     category: 'Auth', 
     action: 'Login ke sistem', 
-    status: 'success',
+    status: 'info',
     metadata: { ipAddress: '192.168.1.45', userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', details: 'Sesi web berhasil diinisialisasi' }
   },
   { 
     id: 'LOG-002', 
     timestamp: '2026-08-11 08:15:32', 
     actor: 'Rangga Dirgantara (Teknisi)', 
-    category: 'Drone', 
+    category: 'Operator', 
     action: 'Drone-01 lepas landas (Take-off)', 
-    status: 'info',
+    status: 'admin',
     metadata: { droneId: 'Drone-01', coordinates: '-1.244, 116.895', details: 'Baterai: 100%, Status GPS: 3D Lock, Satelit: 14' }
   },
   { 
     id: 'LOG-003', 
     timestamp: '2026-08-11 08:22:05', 
     actor: 'System AI', 
-    category: 'AI Detection', 
+    category: 'Admin', 
     action: 'Deteksi penyakit sawit BSR (Basal Stem Rot)', 
-    status: 'warning',
+    status: 'info',
     metadata: { droneId: 'Drone-01', coordinates: '-1.246, 116.899', confidence: '89.4%', details: 'Pohon diklasifikasikan sebagai SAKIT (Ganoderma Boninense)' }
   },
   { 
     id: 'LOG-004', 
     timestamp: '2026-08-11 08:30:15', 
     actor: 'System AI', 
-    category: 'AI Detection', 
+    category: 'Admin', 
     action: 'Deteksi penyakit sawit BSR (Basal Stem Rot)', 
-    status: 'warning',
+    status: 'info',
     metadata: { droneId: 'Drone-01', coordinates: '-1.248, 116.901', confidence: '91.2%', details: 'Pohon diklasifikasikan sebagai SAKIT (Ganoderma Boninense)' }
   },
   { 
     id: 'LOG-005', 
     timestamp: '2026-08-11 08:45:00', 
     actor: 'Rangga Dirgantara (Teknisi)', 
-    category: 'Drone', 
+    category: 'Operator', 
     action: 'Drone-01 mendarat darurat (Landing)', 
-    status: 'warning',
+    status: 'info',
     metadata: { droneId: 'Drone-01', coordinates: '-1.242, 116.890', details: 'Baterai rendah (15%). Prosedur auto-return-to-launch (RTL) berhasil.' }
   },
   { 
     id: 'LOG-006', 
     timestamp: '2026-08-11 09:12:00', 
     actor: 'System Server', 
-    category: 'System', 
+    category: 'Admin', 
     action: 'Gagal mengirim notifikasi email laporan harian', 
     status: 'error',
     metadata: { smtpServer: 'smtp.gmail.com:587', error: 'Connection timeout', details: 'Pengiriman email rekapitulasi deteksi harian ke kepala kebun tertunda.' }
@@ -86,7 +86,7 @@ const INITIAL_LOGS: LogEntry[] = [
     id: 'LOG-008', 
     timestamp: '2026-08-11 09:45:22', 
     actor: 'Master Admin', 
-    category: 'System', 
+    category: 'Admin', 
     action: 'Mengubah AI Confidence Threshold ke 75%', 
     status: 'success',
     metadata: { previousThreshold: '70%', newThreshold: '75%', details: 'Sensitivitas klasifikasi penyakit sawit diperbarui.' }
@@ -95,7 +95,7 @@ const INITIAL_LOGS: LogEntry[] = [
     id: 'LOG-009', 
     timestamp: '2026-08-11 10:10:05', 
     actor: 'Danu Kusuma (Teknisi)', 
-    category: 'Drone', 
+    category: 'Operator', 
     action: 'Inisialisasi video stream WebRTC Drone-02', 
     status: 'success',
     metadata: { droneId: 'Drone-02', streamUrl: 'webrtc://stream.dreampalm.com/drone02', details: 'Koneksi kamera drone real-time 1080p terjalin' }
@@ -104,7 +104,7 @@ const INITIAL_LOGS: LogEntry[] = [
     id: 'LOG-010', 
     timestamp: '2026-08-11 10:15:30', 
     actor: 'System Database', 
-    category: 'System', 
+    category: 'Admin', 
     action: 'Backup database otomatis berhasil', 
     status: 'success',
     metadata: { backupSize: '24.5 MB', storageProvider: 'Cloud Storage Bucket', details: 'File backup: backup_dreampalm_20260811.sql' }
@@ -119,6 +119,13 @@ export default function SystemLogs() {
   
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
 
+  const [options, setOptions] = useState<Array<{value: string, label: string}>>([
+    {value: 'all', label: 'Semua Status'},
+    {value: 'success', label: 'SUCCESS'},
+    {value: 'info', label: 'INFO'},
+    {value: 'error', label: 'ERROR'}
+  ]);
+
   // Search & Filter logic
   const filteredLogs = logs.filter(log => {
     const matchesSearch = 
@@ -126,11 +133,47 @@ export default function SystemLogs() {
       log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
       log.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || log.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+    const matchesStatus = statusFilter === 'all' || statusFilter === log.status;
+    const matchesCategory = categoryFilter === 'all' ||  categoryFilter === log.category;
 
     return matchesSearch && matchesStatus && matchesCategory;
   });
+
+  useEffect(() => {
+    switch(categoryFilter){
+      case 'all':
+        setOptions([
+          {value: 'all', label: 'Semua Status'},
+          {value: 'success', label: 'SUCCESS'},
+          {value: 'info', label: 'INFO'},
+          {value: 'error', label: 'ERROR'}
+        ])
+        break
+      case 'Auth':
+        setStatusFilter('info')
+        setOptions([
+          {value: 'info', label: 'INFO'},
+        ])
+        break
+      case 'Admin':
+        setOptions([
+          {value: 'all', label: 'Semua Status'},
+          {value: 'success', label: 'SUCCESS'},
+          {value: 'info', label: 'INFO'},
+          {value: 'error', label: 'ERROR'}
+        ])
+        break
+      case 'Operator':
+        setStatusFilter('success')
+        setOptions([
+          {value: 'all', label: 'Semua Status'},
+          {value: 'success', label: 'SUCCESS'},
+          {value: 'info', label: 'INFO'},
+          {value: 'error', label: 'ERROR'}
+        ])
+        break
+    }
+  }, [categoryFilter])
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -160,11 +203,11 @@ export default function SystemLogs() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111115] text-sm text-gray-800 dark:text-white outline-none focus:border-[#84994F]"
           >
-            <option value="all">Semua Status</option>
-            <option value="success">SUCCESS</option>
-            <option value="info">INFO</option>
-            <option value="warning">WARNING</option>
-            <option value="error">ERROR</option>
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -176,10 +219,9 @@ export default function SystemLogs() {
             className="w-full px-3 py-2 border border-gray-200 dark:border-zinc-800 rounded-md bg-white dark:bg-[#111115] text-sm text-gray-800 dark:text-white outline-none focus:border-[#84994F]"
           >
             <option value="all">Semua Kategori</option>
-            <option value="Auth">Autentikasi (Auth)</option>
-            <option value="Drone">Telemetri Drone</option>
-            <option value="AI Detection">Deteksi AI</option>
-            <option value="System">Sistem Internal</option>
+            <option value="Auth">Autentikasi</option>
+            <option value="Admin">Admin</option>
+            <option value="Operator">Operator</option>
           </select>
         </div>
       </div>
@@ -216,7 +258,6 @@ export default function SystemLogs() {
                       <span className={`inline-flex px-2.5 py-0.5 rounded-sm text-xs font-semibold
                         ${log.status === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 
                           log.status === 'error' ? 'bg-red-100 text-red-700 dark:bg-red-950/20 dark:text-red-400' : 
-                          log.status === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400' :
                           'bg-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400'}`}>
                         {log.status.toUpperCase()}
                       </span>
@@ -296,7 +337,6 @@ export default function SystemLogs() {
                 <span className={`inline-flex px-2.5 py-0.5 rounded-sm text-xs font-semibold
                   ${selectedLog.status === 'success' ? 'bg-green-100 text-green-700 dark:bg-green-950/20 dark:text-green-400' : 
                     selectedLog.status === 'error' ? 'bg-red-100 text-red-700 dark:bg-red-950/20 dark:text-red-400' : 
-                    selectedLog.status === 'warning' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400' :
                     'bg-blue-100 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400'}`}>
                   {selectedLog.status.toUpperCase()}
                 </span>

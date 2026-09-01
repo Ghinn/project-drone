@@ -509,13 +509,13 @@ export default function UserManagementSection() {
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
-          {/* <button
+          <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#84994F] hover:bg-[#e65c00] text-white text-xs font-semibold rounded-xl shadow-sm transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white text-xs font-semibold rounded-xl whitespace-nowrap"
           >
             <UserPlus className="w-4 h-4" />
             <span>Tambah</span>
-          </button> */}
+          </button>
         </div>
       </div>
 
@@ -629,6 +629,7 @@ export default function UserManagementSection() {
                             searchPlaceholder="Cari drone..."
                             getOptionLabel={(drone) => drone.name}
                             getOptionValue={(drone) => drone.id}
+                            placement={index >= 3 ? "top" : "bottom"} 
                           />
                         </div>
                       </td>

@@ -133,8 +133,8 @@ html {
 
   /* Untuk Chrome, Edge, Safari, dan Opera */
   *::-webkit-scrollbar {
-    width: 0.2px; /* Ketebalan scroll-bar vertikal */
-    height: 0.2px; /* Ketebalan scroll-bar horizontal */
+    width: 4px; /* Ketebalan scroll-bar vertikal */
+    height: 4px; /* Ketebalan scroll-bar horizontal */
   }
 
   /* Jalur latar belakang scroll-bar (dibuat transparan) */

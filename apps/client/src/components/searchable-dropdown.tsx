@@ -15,6 +15,7 @@ interface SearchableDropdownProps<T> {
   getOptionValue: (option: T) => string;
 
   disabled?: boolean;
+  placement?: "bottom" | "top"; 
 }
 
 export default function SearchableDropdown<T>({
@@ -29,6 +30,7 @@ export default function SearchableDropdown<T>({
   getOptionValue,
 
   disabled = false,
+  placement = "bottom",
 }: SearchableDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -109,8 +111,13 @@ export default function SearchableDropdown<T>({
       </button>
 
       {isOpen && (
-        <div className="absolute w-full z-50 left-0 right-0 mt-1 overflow-hidden rounded-lg border shadow-xl bg-white border-gray-200 dark:bg-[#202024] dark:border-zinc-800">
-          <div className="p-2 border-b border-gray-200 dark:border-zinc-800">
+        <div
+          className={`absolute w-full z-50 left-0 right-0 mt-1 overflow-hidden rounded-lg border shadow-xl bg-white border-gray-200 dark:bg-[#202024] dark:border-zinc-800 flex
+          ${placement === "top" ? "bottom-full mb-1 flex-col-reverse" : "top-full mt-1 flex-col"}`}
+        >
+          <div
+            className={`p-2 border-gray-200 dark:border-zinc-800 ${placement === "top" ? "border-t" : "border-b"}`}
+          >
             <div className="relative">
               <Search
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500"
@@ -122,13 +129,19 @@ export default function SearchableDropdown<T>({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full pl-8 pr-3 py-2 rounded-md text-xs outline-none bg-gray-100  text-gray-700 dark:bg-[#18181b] dark:text-zinc-200 placeholder:text-zinc-500 focus:ring-1 focus:ring-[#8FA64A]"
+                className="w-full pl-8 pr-3 py-2 rounded-md text-xs outline-none bg-gray-100 text-gray-700 dark:bg-[#18181b] dark:text-zinc-200 placeholder:text-zinc-500 focus:ring-1 focus:ring-[#8FA64A]"
               />
             </div>
           </div>
 
-          <div className="max-h-48 overflow-y-auto p-1">
-            {filteredOptions.length > 0 ? (
+          <div className="max-h-[72px] overflow-y-auto p-1">
+            {search.length === 0 ? (
+              <div className="px-3 py-4 text-center">
+                <p className="text-xs text-zinc-500">
+                  Ketik nama untuk mencari...
+                </p>
+              </div>
+            ) : filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const optionValue = getOptionValue(option);
                 const optionLabel = getOptionLabel(option);

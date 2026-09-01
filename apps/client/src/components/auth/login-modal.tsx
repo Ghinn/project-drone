@@ -448,14 +448,14 @@ export function LoginModal() {
                   {isLoading ? '...' : t('actions.login')}
                 </button>
 
-                <button
+                {/* <button
                   className="w-full rounded-xl bg-[#F7F9FB] border border-[#D1D5DB] px-4 py-3.5 text-[15px] font-normal text-[#5B6068] transition hover:bg-[#E5E7EB] disabled:cursor-not-allowed disabled:opacity-70"
                   disabled={isLoading}
                   onClick={() => router.push('/register')}
                   type="button"
                 >
                   {t('actions.registrationAccount')}
-                </button>
+                </button> */}
               </div>
             </form>
 
