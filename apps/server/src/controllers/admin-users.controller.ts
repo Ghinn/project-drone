@@ -5,6 +5,7 @@ import { AppError, asyncHandler } from "../lib/http";
 import { publicUserSelect } from "../services/user.service";
 import { sendAdminInvitationEmail } from "../lib/mailer";
 import { firebaseAuth } from "../lib/firebase";
+import { setCustomUserRole, revokeUserAccess } from "../services/firebase-auth.service";
 import crypto from 'crypto';
 
 const listUsersQuerySchema = z.object({
@@ -22,6 +23,7 @@ const updateUserSchema = z
     avatarUrl: z.string().url().nullable().optional(),
     role: z.nativeEnum(Role).optional(),
     status: z.nativeEnum(ApprovalStatus).optional(),
+    assignedDroneId: z.string().nullable().optional(),
   })
   .refine((input) => Object.keys(input).length > 0, {
     message: "At least one field must be provided.",
@@ -31,7 +33,8 @@ const createUserSchema = z.object({
   name: z.string().trim().min(1, "Nama wajib diisi"),
   email: z.string().trim().email("Format email tidak valid"),
   role: z.nativeEnum(Role).default(Role.FARMER),
-  status: z.nativeEnum(ApprovalStatus).default(ApprovalStatus.APPROVED),
+  status: z.nativeEnum(ApprovalStatus).default(ApprovalStatus.PENDING), 
+  assignedDroneId: z.string().nullable().optional(),
 });
 
 export const listUsers = asyncHandler(async (req, res) => {
@@ -54,7 +57,7 @@ export const listUsers = asyncHandler(async (req, res) => {
   const [data, total] = await prisma.$transaction([
     prisma.user.findMany({
       where,
-      select: publicUserSelect,
+      select: { ...publicUserSelect, assignedDroneId: true },
       orderBy: { createdAt: "desc" },
       skip,
       take: query.limit,
@@ -78,6 +81,7 @@ export const getUserById = asyncHandler(async (req, res) => {
     where: { id: req.params.id as string },
     select: {
       ...publicUserSelect,
+      assignedDroneId: true,
     },
   });
 
@@ -102,31 +106,82 @@ export const updateUser = asyncHandler(async (req, res) => {
     }
   }
 
-  // Sinkronisasi Perubahan Status ke Firebase Authentication
-  if (input.status) {
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { firebaseUid: true },
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      firebaseUid: true,
+      role: true,
+      status: true,
+      assignedDroneId: true  },
+  });
+
+  if (!existingUser) {
+    throw new AppError(404, "User record not found.");
+  }
+
+  if (input.assignedDroneId !== undefined && input.assignedDroneId !== null) {
+    const droneTaken = await prisma.user.findUnique({
+      where: { assignedDroneId: input.assignedDroneId },
+      select: { id: true, name: true, email: true }
     });
 
-    if (existingUser?.firebaseUid) {
-      const isDisabled = input.status !== ApprovalStatus.APPROVED;
-      
-      try {
-        await firebaseAuth.updateUser(existingUser.firebaseUid, {
-          disabled: isDisabled,
-        });
-      } catch (error: any) {
-        throw new AppError(500, "Failed to synchronize account status with the security system.");
+    if (droneTaken && droneTaken.id !== userId) {
+      throw new AppError(
+        400, 
+        `Drone ini sedang digunakan oleh akun ${droneTaken.name || droneTaken.email}. Harap cabut pengidentifikasi sebelumnya.`
+      );
+    }
+  }
+
+  const targetRole = input.role ?? existingUser.role;
+  const targetStatus = input.status ?? existingUser.status;
+  const targetDrone = input.assignedDroneId !== undefined ? input.assignedDroneId : existingUser.assignedDroneId;
+
+  // Sinkronisasi Perubahan Status dan Firebase Custom Claims (RBAC)
+  if (existingUser.firebaseUid) {
+    const isDisabled = targetStatus !== ApprovalStatus.APPROVED;
+    
+    try {
+      await firebaseAuth.updateUser(existingUser.firebaseUid, {
+        disabled: isDisabled,
+      });
+
+      if (targetStatus === ApprovalStatus.APPROVED) {
+        await setCustomUserRole(existingUser.firebaseUid, targetRole, targetDrone);
+      } else {
+        await revokeUserAccess(existingUser.firebaseUid);
       }
+    } catch (error: any) {
+      throw new AppError(500, "Failed to synchronize RBAC claims with Firebase Auth.");
     }
   }
 
   const updated = await prisma.user.update({
     where: { id: userId },
     data: input,
-    select: publicUserSelect,
+    select: { ...publicUserSelect, assignedDroneId: true },
   });
+
+  if (existingUser.assignedDroneId && existingUser.assignedDroneId !== targetDrone) {
+    await prisma.drone.update({
+      where: { id: existingUser.assignedDroneId },
+      data: { 
+        status: "offline", 
+        isApproved: false
+      } 
+    });
+  }
+
+  if (targetDrone && targetDrone !== existingUser.assignedDroneId) {
+    const droneStatus = targetStatus === ApprovalStatus.APPROVED ? "Waiting Approval" : "Pending Approval";
+    await prisma.drone.update({
+      where: { id: targetDrone },
+      data: { 
+        status: droneStatus,
+        isApproved: false
+      }
+    });
+  }
 
   return res.status(200).json({
     message: "User updated.",
@@ -158,7 +213,6 @@ export const deleteUser = asyncHandler(async (req, res) => {
         console.error("Gagal menghapus akun:", error);
         throw new AppError(500, "Gagal menghapus akun pengguna dari Firebase Auth.");
       }
-      console.warn(`Pengguna dengan UID ${userToDelete.firebaseUid} sudah tidak ada di Firebase Auth.`);
     }
   }
 
@@ -182,8 +236,12 @@ export const createUser = asyncHandler(async (req, res) => {
     where: { email: input.email },
   });
 
-  if (existingUser) {
-    throw new AppError(400, "Email sudah terdaftar di dalam sistem.");
+  if (input.assignedDroneId) {
+    const droneTaken = await prisma.user.findUnique({
+      where: { assignedDroneId: input.assignedDroneId },
+      select: { id: true }
+    });
+    if (droneTaken) throw new AppError(400, "Drone ini sudah di-assign ke pengguna lain.");
   }
 
   // Registrasi di Firebase Authentication terlebih dahulu
@@ -193,7 +251,7 @@ export const createUser = asyncHandler(async (req, res) => {
       email: input.email,
       displayName: input.name,
       emailVerified: false,
-      disabled: input.status === ApprovalStatus.REJECTED,
+      disabled: input.status !== ApprovalStatus.APPROVED,
     });
     firebaseUid = firebaseUser.uid;
   } catch (err: any) {
@@ -205,6 +263,56 @@ export const createUser = asyncHandler(async (req, res) => {
     }
   }
 
+  // Sinkronkan Custom Claims Role awal
+  if (input.status === ApprovalStatus.APPROVED) {
+    await setCustomUserRole(firebaseUid, input.role);
+  }
+
+  // Geneartor Drone Otomatis (role OPERATOR)
+  let autoGeneratedDroneId = null;
+
+  // GET seluruh Drone ID yang berawalan "v1-"
+  if (input.role === Role.OPERATOR) {
+    const existingDrones = await prisma.drone.findMany({
+      where: { id: { startsWith: "v1-" } },
+      select: { id: true }
+    });
+
+    // Ekstrak nomor urut dan urutkan dari terkecil ke terbesar
+    const usedNumbers = existingDrones
+      .map(drone => {
+        const match = drone.id.match(/v1-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(n => n > 0)
+      .sort((a, b) => a - b);
+
+    // FIND gap pertama yang tersedia
+    let nextSequence = 1;
+    for (const num of usedNumbers) {
+      if (num === nextSequence) {
+        nextSequence++;
+      } else if (num > nextSequence) {
+        break;
+      }
+    }
+
+    // Format menjadi 3 digit angka
+    const seqStr = nextSequence.toString().padStart(3, "0");
+    autoGeneratedDroneId = `v1-${seqStr}`;
+    const droneName = `DreamPalm Drone V1-${seqStr}`;
+    const droneStatus = input.status === ApprovalStatus.APPROVED ? "Waiting Approval" : "Pending Approval";
+
+    // Buat entri Drone baru secara otomatis
+    await prisma.drone.create({
+      data: {
+        id: autoGeneratedDroneId,
+        name: droneName,
+        status: droneStatus,
+      }
+    });
+  }
+
   // Create Pengguna Baru di Prisma (tanpa password, emailVerified: false)
   const newUser = await prisma.user.create({
     data: {
@@ -214,8 +322,9 @@ export const createUser = asyncHandler(async (req, res) => {
       status: input.status,
       emailVerified: false,
       firebaseUid: firebaseUid,
+      assignedDroneId: autoGeneratedDroneId,
     },
-    select: publicUserSelect,
+    select: { ...publicUserSelect, assignedDroneId: true },
   });
 
   // Generate Token Undangan (berlaku 24 jam)
@@ -234,7 +343,7 @@ export const createUser = asyncHandler(async (req, res) => {
   try {
     await sendAdminInvitationEmail(input.email, token, input.name);
   } catch (emailError) {
-    // Kita tetap mengembalikan status sukses agar Admin tahu akun berhasil dibuat
+    console.warn("Gagal mengirim email undangan:", emailError);
   }
 
   return res.status(201).json({

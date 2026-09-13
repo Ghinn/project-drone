@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import admin from '../lib/firebase/admin';
+import { firebaseAuth } from '../lib/firebase';
 import { sendResetPasswordEmail } from '../lib/mailer';
 
 // Generate 6 digit angka acak
@@ -74,7 +74,7 @@ export const verifyAndResetPassword = async (req: Request, res: Response) => {
 
         // Update Password di Firebase Auth (Source of Truth)
         try {
-            await admin.auth().updateUser(user.firebaseUid, {
+            await firebaseAuth.updateUser(user.firebaseUid, {
                 password: newPassword
             });
         } catch (firebaseError: any) {

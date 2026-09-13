@@ -1,51 +1,53 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma'; // Sesuaikan jalur jika diperlukan
+import { prisma } from '../lib/prisma';
+import { addClient } from '../services/sse.service';
 
-// 1. Endpoint Dashboard (Mengambil 1 data paling terbaru untuk real-time display)
 export const getDashboardData = async (req: Request, res: Response) => {
     try {
-        const latestData = await prisma.akuisisiData.findFirst({
+        const latestData = await prisma.telemetryLog.findFirst({
             orderBy: { timestamp: 'desc' }
         });
         
         res.status(200).json({ success: true, data: latestData });
     } catch (error) {
-        console.error('[Controller] Error getDashboardData:', error);
-        res.status(500).json({ success: false, message: 'Gagal mengambil data dashboard' });
+        console.error('[dataController] Error getDashboardData:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil dashboard data' });
     }
 };
 
-// 2. Endpoint Histori (Mengambil banyak data dengan batasan jumlah tertentu)
-export const getHistoriData = async (req: Request, res: Response) => {
+export const getDataLogs = async (req: Request, res: Response) => {
     try {
-        // Secara default mengambil 100 data terbaru, bisa diubah melalui query parameter (?limit=50)
         const limit = Number(req.query.limit) || 100;
         
-        const historyData = await prisma.akuisisiData.findMany({
+        const historyData = await prisma.telemetryLog.findMany({
             orderBy: { timestamp: 'desc' },
             take: limit
         });
         
         res.status(200).json({ success: true, data: historyData });
     } catch (error) {
-        console.error('[Controller] Error getHistoriData:', error);
-        res.status(500).json({ success: false, message: 'Gagal mengambil data histori' });
+        console.error('[dataController] Error getDataLogs:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil riwayat data' });
     }
 };
 
-// 3. Endpoint Analisis (Menghitung rata-rata, nilai tertinggi, dan terendah)
-export const getAnalisisData = async (req: Request, res: Response) => {
+export const getDataStats = async (req: Request, res: Response) => {
     try {
-        const aggregations = await prisma.akuisisiData.aggregate({
-            _avg: { nh3: true, h2s: true, temperature: true, humidity: true },
-            _max: { nh3: true, h2s: true, temperature: true, humidity: true },
-            _min: { nh3: true, h2s: true, temperature: true, humidity: true },
+        const aggregations = await prisma.telemetryLog.aggregate({
+            _avg: { altitude: true, battery: true, groundSpeed: true },
+            _max: { altitude: true, groundSpeed: true },
+            _min: { battery: true },
             _count: { id: true }
         });
         
         res.status(200).json({ success: true, data: aggregations });
     } catch (error) {
-        console.error('[Controller] Error getAnalisisData:', error);
-        res.status(500).json({ success: false, message: 'Gagal melakukan analisis data' });
+        console.error('[Controller] Error getDataStats:', error);
+        res.status(500).json({ success: false, message: 'Gagal melakukan analisis statistik' });
     }
+};
+
+export const streamTelemetrySSE = (req: Request, res: Response) => {
+    // Teruskan request dan response langsung ke service SSE
+    addClient(req, res);
 };

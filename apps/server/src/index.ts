@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import { app } from './app.js';
+import { initMqtt } from './services/mqtt.service';
 
 const port = Number(process.env.PORT ?? 4000);
+
+initMqtt();
 
 const server = app.listen(port, () => {
   console.log(`DreamPalm Backend running on http://localhost:${port}`);

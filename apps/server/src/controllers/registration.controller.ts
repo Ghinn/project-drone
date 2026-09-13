@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
-import admin from '../lib/firebase/admin';
+import { firebaseAuth } from '../lib/firebase';
+import { setCustomUserRole } from '../services/firebase-auth.service';
 import { sendVerificationEmail } from '../lib/mailer';
+import { Role } from '../generated/prisma';
 
 export const registerFarmer = async (req: Request, res: Response) => {
     try {
@@ -25,7 +27,7 @@ export const registerFarmer = async (req: Request, res: Response) => {
             // Jika nama tidak disediakan dari UI, gunakan default atau prefix email
             const defaultName = email.split('@')[0];
             
-            const firebaseUser = await admin.auth().createUser({
+            const firebaseUser = await firebaseAuth.createUser({
                 email,
                 password,
                 displayName: defaultName,
@@ -33,8 +35,8 @@ export const registerFarmer = async (req: Request, res: Response) => {
             });
             firebaseUid = firebaseUser.uid;
             
-            // Set Custom Claims untuk Role Base Access Control (RBAC)
-            await admin.auth().setCustomUserClaims(firebaseUid, { role: 'FARMER' });
+            // Set Custom Claims untuk Role Farmer via modalRegistration
+            await setCustomUserRole(firebaseUid, Role.FARMER);
         } catch (firebaseError: any) {
             if (firebaseError.code === 'auth/email-already-exists') {
                 return res.status(400).json({ error: 'Email sudah terdaftar. Silakan gunakan email lain.' });

@@ -41,59 +41,28 @@ export async function requireSession(req: Request, res: Response, next: NextFunc
   }
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) {
-    return res.status(401).json({
-      message: "Authentication required.",
-    });
-  }
+export function requireRole(allowedRoles: Role[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.currentUser) {
+      return res.status(401).json({
+        message: "Authentication required." });
+    }
 
-  if (
-    req.currentUser.role !== Role.ADMIN ||
-    req.currentUser.status !== ApprovalStatus.APPROVED
-  ) {
-    return res.status(403).json({
-      message: "Admin access required.",
-    });
-  }
+    if (req.currentUser.status !== ApprovalStatus.APPROVED) {
+      return res.status(403).json({
+        message: "Account not approved by admin." });
+    }
 
-  return next();
+    if (!allowedRoles.includes(req.currentUser.role as Role)) {
+      return res.status(403).json({ 
+        message: `Access denied. Required roles: ${allowedRoles.join(", ")}` 
+      });
+    }
+
+    return next();
+  };
 }
 
-export function requireFarmer(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) {
-    return res.status(401).json({
-      message: "Authentication required.",
-    });
-  }
-
-  if (
-    req.currentUser.role !== Role.FARMER ||
-    req.currentUser.status !== ApprovalStatus.APPROVED
-  ) {
-    return res.status(403).json({
-      message: "Farmer access required.",
-    });
-  }
-
-  return next();
-}
-
-export function requireOperator(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) {
-    return res.status(401).json({
-      message: "Authentication required.",
-    });
-  }
-
-  if (
-    req.currentUser.role !== Role.OPERATOR ||
-    req.currentUser.status !== ApprovalStatus.APPROVED
-  ) {
-    return res.status(403).json({
-      message: "Operator access required.",
-    });
-  }
-
-  return next();
-}
+export const requireAdmin = requireRole([Role.ADMIN]);
+export const requireOperator = requireRole([Role.OPERATOR, Role.ADMIN]);
+export const requireFarmer = requireRole([Role.FARMER, Role.ADMIN]);

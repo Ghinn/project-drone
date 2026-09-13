@@ -1,11 +1,13 @@
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
+import Drone3DViewer from '../sections/drone-model'; 
 
 const T = DRONE_TOKENS;
 
-// ── Stat Cards (3 cards only, pie chart is separate) ──────────────────
+// Stat Cards
 const STAT_CARDS = [
   {
     label: 'Total Pohon Terdeteksi', labelEn: 'Total Trees Detected',
@@ -30,7 +32,7 @@ const STAT_CARDS = [
 const HEALTH_PCT   = 83.1;
 const UNHEALTH_PCT = 16.9;
 
-// ── Recent Detections ───────────────────────────────────────────────────
+// Recent Detections
 const RECENT_DETECTIONS = [
   { id: 'DET-037', loc: 'Blok A-12 Baris 8', cls: 'Tidak Sehat', conf: 94, status: 'critical', time: '14:32:17' },
   { id: 'DET-036', loc: 'Blok C-07 Baris 3', cls: 'Tidak Sehat', conf: 71, status: 'warning', time: '14:30:44' },
@@ -46,25 +48,67 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; label: string }> 
   ok:       { bg: `${T.green}22`,  text: T.green,  label: 'SEHAT' },
 };
 
-// ── Device Drone Section ────────────────────────────────────────────────
-function DeviceDroneSection({ battery }: { battery: number }) {
-  const { droneOn, setDroneOn } = useMonitoringOperator();
-  const battColor = battery > 50 ? T.green : battery > 20 ? T.amber : T.red;
+const PREFLIGHT_ITEMS = [
+  { key: 'gyro', label: 'Gyro' },
+  { key: 'accelerometer', label: 'Accelerometer' },
+  { key: 'magnetometer', label: 'Magnetometer' },
+  { key: 'absolute_pressure', label: 'Absolute Pressure' },
+  { key: 'differential_pressure', label: 'Differential Pressure' },
+  { key: 'gps', label: 'GPS' },
+  { key: 'optical_flow', label: 'Optical Flow' },
+  { key: 'vision_position', label: 'Vision Position' },
+  { key: 'laser_position', label: 'Laser Position' },
+  { key: 'external_ground_truth', label: 'External Ground Truth' },
+  { key: 'angular_rate_control', label: 'Angular Rate Control' },
+  { key: 'attitude_stabilization', label: 'Attitude Stabilization' },
+  { key: 'yaw_position', label: 'Yaw Position' },
+  { key: 'z_position_control', label: 'Z Position Control' },
+  { key: 'xy_position_control', label: 'XY Position Control' },
+  { key: 'motor_outputs', label: 'Motor Outputs' },
+  { key: 'rc_receiver', label: 'RC Receiver' },
+  { key: 'gyro_cal', label: '3D Gyro Calibration' },
+  { key: 'accel_cal', label: '3D Accelerometer Calibration' },
+  { key: 'mag_cal', label: 'Magnetometer Calibration' },
+];
+
+// Helper: Konversi Radian ke Derajat (Ardupilot mengirimkan orientasi dalam radian)
+const toDeg = (radians: number) => {
+  if (typeof radians !== 'number') return "0.00";
+  return (radians * (180 / Math.PI)).toFixed(2);
+};
+
+// Device Drone Section
+function DeviceDroneSection() {
+  const { droneOn, setDroneOn, telemetry } = useMonitoringOperator();
+  
+  const battColor = telemetry.battery > 50 ? T.green : telemetry.battery > 20 ? T.amber : T.red;
   const connStatus = droneOn ? 'connected' : 'disconnected';
 
   const DEVICE_INFO = [
-    { label: 'Model Drone',    labelEn: 'Drone Model',    value: 'DJI Mavic 3 Enterprise' },
-    { label: 'ID Perangkat',   labelEn: 'Device ID',      value: 'DP-DRONE-001' },
+    { label: 'Model Drone',    labelEn: 'Drone Model',    value: 'DreamPalm' },
+    { label: 'ID Perangkat',   labelEn: 'Device ID',      value: 'V1-001' },
     { label: 'Versi Firmware', labelEn: 'Firmware',       value: 'v4.2.1' },
     { label: 'Frekuensi Link', labelEn: 'Link Frequency', value: '5.8 GHz' },
-    { label: 'Tipe Baterai',   labelEn: 'Battery Type',   value: 'LiPo 6S 5000mAh' },
   ];
 
+  const displayMode = telemetry.mode?.startsWith('Mode(') 
+                    ? 'INITIALIZING' 
+                    : (telemetry.mode || 'UNKNOWN');
+
+  // Data real-time SSE
   const TELEMETRY = [
-    { label: 'Baterai',     labelEn: 'Battery',    value: `${battery.toFixed(0)}%`, color: battColor,  icon: '🔋' },
-    { label: 'GPS Signal',  labelEn: 'GPS Signal', value: 'Kuat · 14 Satelit',      color: T.green,    icon: '📡' },
-    { label: 'Ketinggian',  labelEn: 'Altitude',   value: '25.3 m',                 color: T.green,    icon: '📏' },
-    { label: 'Kecepatan',   labelEn: 'Speed',      value: '4.2 m/s',               color: T.amber,    icon: '⚡' },
+    { label: 'Mode Terbang', labelEn: 'Flight Mode', value: displayMode, color: T.green, icon: '🚁' },
+    { label: 'Baterai',      labelEn: 'Battery',     value: `${(telemetry.battery || 0).toFixed(0)}%`, color: battColor, icon: '🔋' },
+    { label: 'Tegangan',     labelEn: 'Voltage',     value: `${(telemetry.voltage || 0).toFixed(2)} V`, color: T.green, icon: '⚡' },
+    { label: 'Arus',         labelEn: 'Current',     value: `${(telemetry.current || 0).toFixed(2)} A`, color: T.green, icon: '🔌' },
+    { label: 'Ketinggian',   labelEn: 'Altitude',    value: `${(telemetry.altitude || 0).toFixed(1)} m`, color: T.green, icon: '📏' },
+    { label: 'Kecepatan',    labelEn: 'Speed',       value: `${(telemetry.groundSpeed || 0).toFixed(1)} m/s`, color: T.amber, icon: '💨' },
+  ]; 
+
+  const ATTITUDE = [
+    { label: 'Roll',  value: toDeg(telemetry.roll) },
+    { label: 'Pitch', value: toDeg(telemetry.pitch) },
+    { label: 'Yaw',   value: toDeg(telemetry.yaw) },
   ];
 
   return (
@@ -102,90 +146,137 @@ function DeviceDroneSection({ battery }: { battery: number }) {
         </div>
       </div>
 
-      <div className="p-6 space-y-5">
-        {/* Top Grid: 3D Model (kosong) + Device Info + Telemetri */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Card: 3D Model Orientation (placeholder untuk backend) */}
-          <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-[#2a2a2a] p-4 flex flex-col items-center justify-center min-h-[200px] gap-3">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
-              style={{ background: `${T.violet}15`, border: `1px dashed ${T.violet}44` }}>
-              🛸
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-bold text-gray-400">Orientasi 3D Model</p>
-              <p className="text-xs text-gray-400 mt-0.5">3D Model Orientation</p>
-              <p className="text-[10px] text-gray-300 dark:text-gray-600 mt-2 px-2">
-                {/* NOTE FOR BACKEND: Tambahkan komponen 3D GLB model orientation drone di sini */}
-                Area ini dipersiapkan untuk visualisasi model 3D drone.<br />
-                <em>Reserved for backend 3D model integration.</em>
-              </p>
-            </div>
-          </div>
+          <div className="flex flex-col gap-3 h-full">
+            {/* 3D Model Orientation */}
+            <div className="flex-1 rounded-xl border border-gray-100 dark:border-[#2a2a2a] bg-gray-50/50 dark:bg-[#0a0a0a] relative overflow-hidden flex flex-col min-h-[220px]">
+  
+  {/* Label Mengambang di Pojok Kiri Atas */}
+  <div className="absolute top-4 left-4 z-10 pointer-events-none">
+    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">Orientasi 3D Model</h4>
+    <p className="text-[10px] text-gray-500">Live Telemetry Viewer</p>
+  </div>
 
-          {/* Device Info */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Informasi Perangkat / Device Information
-            </p>
-            <div className="space-y-2">
-              {DEVICE_INFO.map(info => (
-                <div key={info.label}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e]">
-                  <div>
-                    <p className="text-[10px] text-gray-400">{info.label}</p>
-                    <p className="text-[10px] text-gray-300 dark:text-gray-600">{info.labelEn}</p>
-                  </div>
-                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{info.value}</span>
+  {/* Kanvas 3D R3F */}
+  <div className="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing">
+    {/* Kita mengoper data radian asli langsung dari state telemetry */}
+    <Drone3DViewer 
+      roll={telemetry.roll} 
+      pitch={telemetry.pitch} 
+      yaw={telemetry.yaw} 
+    />
+  </div>
+</div>
+
+            {/* Attitude Indicators */}
+            <div className="grid grid-cols-3 gap-2 shrink-0">
+              {ATTITUDE.map(axis => (
+                <div key={axis.label} className="py-2 px-2 rounded-lg bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e] text-center flex flex-col justify-center">
+                  <span className="block text-[10px] text-gray-500 uppercase tracking-wider">{axis.label}</span>
+                  <span className="block text-xs font-bold text-gray-900 dark:text-gray-100 mt-0.5">
+                    {axis.value}°
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Telemetri (angka saja, tanpa bar) */}
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Telemetri Real-time / Telemetry
+          {/* Device Info */}
+          <div className="flex flex-col justify-between h-full space-y-4">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Informasi Perangkat
+              </p>
+              <div className="flex flex-col gap-2">
+                {DEVICE_INFO.map(info => (
+                  <div key={info.label} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e]">
+                    <div>
+                      <p className="text-[10px] text-gray-400">{info.label}</p>
+                      <p className="text-[9px] text-gray-500">{info.labelEn}</p>
+                    </div>
+                    <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{info.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* RC Switch */}
+            <div className="space-y-2 shrink-0">
+               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                RC Switch Status
+              </p>
+               <div className="grid grid-cols-2 gap-2">
+                  {['ch6', 'ch7', 'ch8', 'ch9'].map(ch => {
+                     const rcVal = telemetry.rc ? telemetry.rc[ch as keyof typeof telemetry.rc] : 'OFF';
+                     const isOff = rcVal === 'OFF' || rcVal === 'DISCONNECTED';
+                     return (
+                        <div key={ch} className="py-2 px-3 rounded bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e] flex justify-between items-center">
+                           <span className="text-[10px] text-gray-500 uppercase">{ch}</span>
+                           <span className="text-[10px] font-bold" style={{ color: isOff ? T.red : T.green }}>
+                             {rcVal}
+                           </span>
+                        </div>
+                     );
+                  })}
+               </div>
+            </div>
+          </div>
+
+          {/* Informasi Penerbangan */}
+          <div className="flex flex-col h-full space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 shrink-0">
+              Infomarsi Penerbangan
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3 flex-1">
               {TELEMETRY.map(item => (
-                <div key={item.label}
-                  className="rounded-lg p-3 bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e]">
+                <div key={item.label} className="rounded-lg p-3 bg-gray-50 dark:bg-[#0f0f0f] border border-gray-100 dark:border-[#1e1e1e] flex flex-col justify-center">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-gray-400">{item.label}</span>
                     <span className="text-sm leading-none">{item.icon}</span>
                   </div>
-                  <p className="text-[10px] text-gray-300 dark:text-gray-600 mb-1">{item.labelEn}</p>
+                  <p className="text-[9px] text-gray-500 mb-1">{item.labelEn}</p>
                   <p className="text-base font-bold" style={{ color: item.color }}>{item.value}</p>
                 </div>
               ))}
             </div>
           </div>
+
         </div>
 
-        {/* Info note */}
-        <div className="flex items-start gap-2.5 rounded-lg p-3 text-xs"
-          style={{ background: `${T.amber}12`, border: `1px solid ${T.amber}33` }}>
-          <span className="text-base leading-none shrink-0">ℹ️</span>
-          <p style={{ color: T.amber }}>
-            Status perangkat ini akan tersinkronisasi secara otomatis oleh sistem backend.
-            Data yang ditampilkan saat ini merupakan indikator awal sebelum penerbangan.
-            <em className="block mt-0.5 opacity-75">Device status will be auto-synced by the backend system.</em>
-          </p>
+        <hr className="border-gray-100 dark:border-[#1e1e1e]" />
+
+        {/* Pre-flight System Check */}
+        <div className="space-y-3">
+           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-2">
+              <span>📋</span> Pre-flight System Check
+           </p>
+           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {PREFLIGHT_ITEMS.map((item) => {
+                 const isHealthy = telemetry.sys_check ? telemetry.sys_check[item.key as keyof typeof telemetry.sys_check] : false;
+                 return (
+                    <div key={item.key} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-[#1e1e1e] transition-colors">
+                       <div className="flex items-center justify-center w-6 h-6 rounded-md shrink-0" 
+                            style={{ background: isHealthy ? `${T.green}22` : `${T.red}22` }}>
+                          <span className="text-[11px]">{isHealthy ? '✅' : '❌'}</span>
+                       </div>
+                       <span className="text-[10px] font-medium text-gray-600 dark:text-gray-300 leading-tight">
+                          {item.label}
+                       </span>
+                    </div>
+                 )
+              })}
+           </div>
         </div>
+
       </div>
     </div>
   );
 }
 
-// ── AI Health Rate Section (lebar, dua bar) ────────────────────────────
-function HealthRateSection() {
-  return null; // Digantikan oleh pie chart di stat cards row
-}
-
-// ── Main Dashboard Component ────────────────────────────────────────────
+// Main Dashboard Component
 export default function DashboardSection() {
-  const { battery } = useMonitoringOperator();
   const [tick, setTick] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -212,7 +303,6 @@ export default function DashboardSection() {
         </span>
       </div>
 
-      {/* ① Stat Cards (3) + Pie Chart (1) — satu baris */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 3 stat cards */}
         {STAT_CARDS.map(card => (
@@ -290,10 +380,10 @@ export default function DashboardSection() {
         </div>
       </div>
 
-      {/* ② Device Drone Section */}
-      <DeviceDroneSection battery={battery} />
+      {/* Device Drone Section */}
+      <DeviceDroneSection />
 
-      {/* ④ Deteksi Terbaru (paling bawah) */}
+      {/* Deteksi Terbaru (paling bawah) */}
       <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e]">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-base"

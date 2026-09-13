@@ -1,12 +1,5 @@
 import { Router } from "express";
 
-// Import Controllers (Autentikasi Publik)
-import { sessionLogin } from "../controllers/login.controller";
-import { registerFarmer } from "../controllers/registration.controller";
-import { verifyEmail } from "../controllers/verification.controller";
-import { sendResetCode, verifyAndResetPassword } from "../controllers/forgot-password.controller";
-import { setupAccountPassword } from "../controllers/setup-password.controller";
-
 // Import Controllers (Sistem RBAC)
 import {
   createUser,
@@ -15,6 +8,13 @@ import {
   listUsers,
   updateUser,
 } from "../controllers/admin-users.controller";
+
+// Import Controllers (Drone Management)
+import {
+  listDrones,
+  updateDrone,
+  deleteDrone,
+} from "../controllers/admin-drone.controller";
 
 // Import Controllers (Admin)
 import { 
@@ -35,28 +35,26 @@ router.get("/health", (_req, res) => {
   });
 });
 
-// Route Autentikasi (Public)
-router.post("/auth/session-login", sessionLogin);
-router.post("/auth/register", registerFarmer);
-router.get("/auth/verify", verifyEmail);
-router.post("/auth/forgot-password/send-reset-code", sendResetCode);
-router.post("/auth/forgot-password/verify-reset-password", verifyAndResetPassword);
-router.post("/auth/setup-password", setupAccountPassword);
-
-// Route Role Admin (Protected)
-router.use("/admin", requireSession, requireAdmin);
+// Middleware proteksi untuk semua route '/api/admin'
+router.use(requireSession, requireAdmin);
 
 // Data Fetching Endpoint untuk Halaman Admin
-router.get('/admin/dashboard', getOverviewData);
-router.get('/admin/user-management', listUsers);
-router.get('/admin/system-logs', getSystemLogsData);
-router.get('/admin/settings', getSettingsData);
+router.get('/overview', getOverviewData);
+router.get('/user-management', listUsers);
+router.get('/drones-management', listDrones);
+router.get('/logs', getSystemLogsData);
+router.get('/settings', getSettingsData);
 
 // CRUD Specific User Operations
-router.get("/admin/users", listUsers);
-router.post("/admin/users", createUser);
-router.get("/admin/users/:id", getUserById);
-router.patch("/admin/users/:id", updateUser);
-router.delete("/admin/users/:id", deleteUser);
+router.get("/users", listUsers);
+router.post("/users", createUser);
+router.get("/users/:id", getUserById);
+router.patch("/users/:id", updateUser);
+router.delete("/users/:id", deleteUser);
+
+// CRUD Specific Drone Operations
+router.get("/drones", listDrones);
+router.patch("/drones/:id", updateDrone);
+router.delete("/drones/:id", deleteDrone);
 
 export default router;

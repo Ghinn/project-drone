@@ -6,12 +6,10 @@ import { User, Settings, LogOut, ChevronDown, Globe } from "lucide-react";
 import { useLocale } from "next-intl";
 import { type AppLocale } from "@/i18n/config";
 import { useAuth } from "@/providers/auth-provider";
-import { useAdminContext } from "./admin-context";
 
 export default function UserProfileDropdown() {
   const router = useRouter();
   const { signOutApp } = useAuth();
-  const { setActiveTab } = useAdminContext();
   const locale = useLocale() as AppLocale;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -79,32 +77,14 @@ export default function UserProfileDropdown() {
   }, []);
 
   return (
-    <div
-      ref={dropdownRef}
-      className="relative border-l dark:border-zinc-800 pl-4"
-    >
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-3 cursor-pointer outline-none rounded-xl p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
-      >
-        <div className="w-9 h-9 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-black flex items-center justify-center text-sm font-bold shadow-sm shrink-0">
-          MA
-        </div>
-
+    <div ref={dropdownRef} className="relative border-l dark:border-zinc-800 pl-4">
+      <button type="button" onClick={() => setIsOpen((prev) => !prev)} className="flex items-center gap-3 cursor-pointer outline-none rounded-xl p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900">
+        <div className="w-9 h-9 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-black flex items-center justify-center text-sm font-bold shadow-sm shrink-0">MA</div>
         <div className="hidden sm:flex flex-col text-left">
-          <span className="text-sm font-semibold text-gray-800 dark:text-zinc-100 leading-none">
-            Master Admin
-          </span>
-
-          <span className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">
-            Superuser
-          </span>
+          <span className="text-sm font-semibold text-gray-800 dark:text-zinc-100 leading-none">Master Admin</span>
+          <span className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">Superuser</span>
         </div>
-
-        <ChevronDown
-          className={`hidden sm:block w-4 h-4 text-gray-400 dark:text-zinc-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`hidden sm:block w-4 h-4 text-gray-400 dark:text-zinc-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
@@ -143,18 +123,14 @@ export default function UserProfileDropdown() {
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                setActiveTab("settings");
+                router.push('/admin/settings');
               }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
             >
               <Settings className="w-4 h-4 text-gray-500 dark:text-zinc-400" />
-
               <div>
                 <p className="text-sm font-medium">Settings</p>
-
-                <p className="text-[10px] text-gray-400 dark:text-zinc-500">
-                  Kelola pengaturan akun
-                </p>
+                <p className="text-[10px] text-gray-400 dark:text-zinc-500">Kelola pengaturan akun</p>
               </div>
             </button>
           </div>

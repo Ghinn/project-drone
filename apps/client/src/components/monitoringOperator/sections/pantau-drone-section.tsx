@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
@@ -74,7 +75,7 @@ const LIVE_POSITIONS = [
 ];
 
 export default function PantauDroneSection() {
-  const { battery, droneOn } = useMonitoringOperator();
+  const { droneOn, setDroneOn, telemetry } = useMonitoringOperator();
   const [tick, setTick] = useState<Date | null>(null);
   const [cameraMode, setCameraMode] = useState<CameraMode>('live');
   const [snapshotTaken, setSnapshotTaken] = useState(false);
@@ -86,7 +87,7 @@ export default function PantauDroneSection() {
   const [savedToLog, setSavedToLog] = useState(false);
   const [livePosIdx, setLivePosIdx] = useState(0);
 
-  const battColor = battery > 50 ? T.green : battery > 20 ? T.amber : T.red;
+  const battColor = telemetry.battery > 50 ? T.green : telemetry.battery > 20 ? T.amber : T.red;
 
   // Clock
   useEffect(() => {
@@ -251,7 +252,7 @@ export default function PantauDroneSection() {
                 <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5 bg-gradient-to-t from-black/80 to-transparent">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-mono text-emerald-300">GPS: {snapshotGps}</span>
-                    <span className="text-xs font-mono text-emerald-300">ALT: 25.3 m · {battery.toFixed(0)}% BAT</span>
+                    <span className="text-xs font-mono text-emerald-300">ALT: 25.3 m · {telemetry.battery.toFixed(0)}% BAT</span>
                   </div>
                 </div>
                 {snapshotFlash && <div className="absolute inset-0 bg-white/70 animate-ping pointer-events-none" />}
@@ -289,7 +290,7 @@ export default function PantauDroneSection() {
               { k: 'NDVI',      v: '0.72',    c: T.green },
               { k: 'BANDWIDTH', v: '4.8 Mbps',c: T.violet },
               { k: 'LATENSI',   v: '48 ms',   c: T.greenLight },
-              { k: 'BATERAI',   v: `${battery.toFixed(0)}%`, c: battColor },
+              { k: 'BATERAI',   v: `${telemetry.battery.toFixed(0)}%`, c: battColor },
               { k: 'KETINGGIAN',v: '25.3 m',  c: T.green },
               { k: 'KECEPATAN', v: '4.2 m/s', c: T.amber },
               { k: 'GPS',       v: 'Kuat · 14 sat', c: T.green },
@@ -399,7 +400,7 @@ export default function PantauDroneSection() {
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Telemetri Drone / Telemetry</p>
             <div className="space-y-3">
               {[
-                { label: 'Baterai',     value: `${battery.toFixed(0)}%`, color: battColor },
+                { label: 'Baterai',     value: `${telemetry.battery.toFixed(0)}%`, color: battColor },
                 { label: 'GPS Signal',  value: 'Kuat (14 sat)',          color: T.green },
                 { label: 'Ketinggian',  value: '25.3 m',                 color: T.green },
                 { label: 'Kecepatan',   value: '4.2 m/s',               color: T.amber },

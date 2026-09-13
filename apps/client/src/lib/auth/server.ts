@@ -2,7 +2,7 @@ import 'server-only';
 
 import {cookies} from 'next/headers';
 import {redirect} from 'next/navigation';
-import {adminAuth} from '@/lib/firebase/admin';
+import {firebaseAuth} from '@/lib/firebase';
 import {
   normalizeRole,
   redirectForUnauthorized,
@@ -35,7 +35,7 @@ export async function getServerSession(
   }
 
   try {
-    const decoded = await adminAuth.verifySessionCookie(
+    const decoded = await firebaseAuth.verifySessionCookie(
       sessionCookie,
       checkRevoked
     );

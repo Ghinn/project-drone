@@ -25,6 +25,21 @@ enum ApprovalStatus {
   REJECTED
 }
 
+model Drone {
+  id          String   @id
+  name        String?
+  macAddress  String?  @unique
+  status      String   @default("offline")
+  isApproved  Boolean  @default(false) 
+  createdAt   DateTime @default(now())
+
+  // Relasi 1:1 ke User (Operator)
+  operator    User?
+  
+  // Relasi 1:M ke log telemetri
+  telemetryLogs TelemetryLog[]
+}
+
 model User {
   id            String         @id @default(cuid())
   firebaseUid   String?        @unique
@@ -36,6 +51,11 @@ model User {
   emailVerified Boolean        @default(false)
   role          Role           @default(GUEST)
   status        ApprovalStatus @default(PENDING)
+
+  // Identifier Drone
+  assignedDroneId String?      @unique
+  assignedDrone   Drone?       @relation(fields: [assignedDroneId], references: [id])
+
   lastLoginAt   DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -56,4 +76,31 @@ model VerificationToken {
   createdAt  DateTime @default(now())
 
   @@index([userId])
+}
+
+model TelemetryLog {
+  id          Int      @id @default(autoincrement())
+  timestamp   DateTime @default(now())
+
+  // Identifier Drone
+  droneId     String
+  drone       Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+
+  roll        Float
+  pitch       Float
+  yaw         Float
+  altitude    Float
+  latitude    Float
+  longitude   Float
+  groundSpeed Float
+  mode        String
+  
+  battery     Float
+  voltage     Float?
+  current     Float?
+
+  sys_check   Json?
+  rc          Json?
+
+  @@index([droneId, timestamp(sort: Desc)])
 }

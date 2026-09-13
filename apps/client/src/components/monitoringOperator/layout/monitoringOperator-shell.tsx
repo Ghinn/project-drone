@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { MonitoringOperatorContext } from './monitoringOperator-context';
+import React, { useState } from 'react';
+import { MonitoringOperatorContext, useTelemetrySSE } from './monitoringOperator-context';
 import type { MonitoringOperatorTab, NavItem } from './monitoringOperator-types';
 import MonitoringOperatorNavbar from './monitoringOperator-sidebar';
 import AppHeader from './app-header';
@@ -9,43 +9,20 @@ import AppHeader from './app-header';
 export default function MonitoringOperatorShell({ children }: { children: React.ReactNode }) {
   const [activeTab, setActiveTab] = useState<MonitoringOperatorTab>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
-  const [battery, setBattery] = useState(85);
   const [spray] = useState(62);
   const [droneOn, setDroneOn] = useState(true);
 
-  // Simulasi penurunan baterai drone
-  useEffect(() => {
-    const t = setInterval(() => {
-      setBattery(b => Math.max(10, +(b - 0.05).toFixed(1)));
-    }, 2000);
-    return () => clearInterval(t);
-  }, []);
+  // Direct Request ke Express Backend
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+  // Panggil Custom Hook SSE
+  const { telemetry, droneStatus } = useTelemetrySSE(API_URL, 'v1-001');
 
   const navItems: NavItem[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      labelEn: 'Overview',
-      icon: 'dashboard',
-    },
-    {
-      id: 'pantau-drone',
-      label: 'Pantau Drone',
-      labelEn: 'Drone Monitor',
-      icon: 'camera',
-    },
-    {
-      id: 'log-prediksi',
-      label: 'Log Prediksi',
-      labelEn: 'Prediction Log',
-      icon: 'log',
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      labelEn: 'Pengaturan',
-      icon: 'settings',
-    },
+    { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },
+    { id: 'pantau-drone', label: 'Pantau Drone', labelEn: 'Drone Monitor', icon: 'camera' },
+    { id: 'log-prediksi', label: 'Log Prediksi', labelEn: 'Prediction Log', icon: 'log' },
+    { id: 'settings', label: 'Settings', labelEn: 'Pengaturan', icon: 'settings' },
   ];
 
   const getPageTitle = () => {
@@ -65,7 +42,8 @@ export default function MonitoringOperatorShell({ children }: { children: React.
         setActiveTab,
         collapsed,
         setCollapsed,
-        battery,
+        telemetry,
+        droneStatus,
         spray,
         droneOn,
         setDroneOn,

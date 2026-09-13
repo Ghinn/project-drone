@@ -12,13 +12,15 @@ import {
   Loader2,
   AlertCircle,
   Mail,
+  Link2Off,
   ChevronDown,
+  CheckCircle2,
+  Ban,
+  Clock
 } from "lucide-react";
 import SearchableDropdown from "@/components/searchable-dropdown";
 import FilterDrone from "../userManagementComponents/filter-drone";
-import SortDateDropdown, {
-  SortOrder,
-} from "../userManagementComponents/sort-date";
+import SortDateDropdown, { SortOrder } from "../userManagementComponents/sort-date";
 
 // Tipe Role sesuai Schema Prisma
 type Role = "GUEST" | "FARMER" | "OPERATOR" | "ADMIN";
@@ -32,12 +34,55 @@ interface User {
   status: ApprovalStatus;
   createdAt: string;
   emailVerified?: string | null;
+  assignedDroneId?: string | null;
 }
 
 interface Drone {
   id: string;
   name: string;
 }
+
+const CountdownTimer = ({ createdAt }: { createdAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState<string>("--:--:--");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const targetTime = new Date(createdAt).getTime() + 24 * 60 * 60 * 1000;
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const difference = targetTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft("Expired");
+        setIsExpired(true);
+        return;
+      }
+
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      // Format ke HH:MM:SS
+      const format = (num: number) => num.toString().padStart(2, "0");
+      setTimeLeft(`${format(hours)}:${format(minutes)}:${format(seconds)}`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  return (
+    <span className={`inline-block w-[70px] text-center font-mono text-xs font-semibold px-2 py-1 rounded-md border 
+      ${isExpired 
+        ? "bg-red-50 border-red-200 text-red-600 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-400" 
+        : "bg-amber-50 border-amber-200 text-amber-600 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-400"
+      }`}>
+      {timeLeft}
+    </span>
+  );
+};
 
 export default function UserManagementSection() {
   const [users, setUsers] = useState<User[]>([]);
@@ -60,7 +105,8 @@ export default function UserManagementSection() {
     name: "",
     email: "",
     role: "FARMER" as Role,
-    status: "APPROVED" as ApprovalStatus,
+    status: "PENDING" as ApprovalStatus,
+    assignedDroneId: "",
   });
 
   const [errors, setErrors] = useState({ name: "", email: "" });
@@ -69,51 +115,70 @@ export default function UserManagementSection() {
     message: string;
   } | null>(null);
 
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   const [userDrones, setUserDrones] = useState<Record<string, string>>({});
-  const [selectedDroneFilter, setSelectedDroneFilter] = useState<string | null>(
-    null,
-  );
-  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [selectedDroneFilter, setSelectedDroneFilter] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
   // Fetch Real Data dari API Backend
-  const fetchUsers = async () => {
-    setIsLoading(true);
+  const fetchUsers = async (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+
     try {
       const res = await fetch("/api/admin/users?limit=100", {
         method: "GET",
         credentials: "include",
       });
       const json = await res.json();
-      console.log(json.data);
-      const droneList = [
-        { id: "1", name: "DreamPalm-Drone-V1-001" },
-        { id: "2", name: "DreamPalm-Drone-V1-002" },
-        { id: "3", name: "DreamPalm-Drone-V1-003" },
-        { id: "4", name: "DreamPalm-Drone-V1-004" },
-        { id: "5", name: "DreamPalm-Drone-V1-005" },
-      ];
+
+      const droneRes = await fetch("/api/admin/drones", {
+        method: "GET",
+        credentials: "include" });
+      const droneJson = await droneRes.json();
+
       if (res.ok && json.data) {
         setUsers(json.data);
-        setDrones(droneList);
-
-        // buat dummy drone per user
-        const initialUserDrones: Record<string, string> = {};
-
-        json.data.forEach((user: User, index: number) => {
-          initialUserDrones[user.id] = droneList[index % droneList.length].id;
+        
+        const syncDrones: Record<string, string> = {};
+        json.data.forEach((u: User) => {
+          syncDrones[u.id] = u.assignedDroneId || ""; 
         });
-
-        setUserDrones(initialUserDrones);
+        setUserDrones(syncDrones);
       }
+      
+      if (droneRes.ok && droneJson.data) setDrones(droneJson.data);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      console.error("Failed to fetch data:", error);
     } finally {
-      setIsLoading(false);
+      if (!isSilent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchUsers();
+
+    const intervalId = setInterval(() => {
+      fetchUsers(true);
+    }, 15000);
+
+    const handleFocus = () => {
+      fetchUsers(true);
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   // Perhitungan Statistik Kartu (Summary Cards)
@@ -134,11 +199,11 @@ export default function UserManagementSection() {
       const matchesSearch =
         (user.name &&
           user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.id.toLowerCase().includes(searchQuery.toLowerCase());
+          user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.id.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesDrone =
-        !selectedDroneFilter || userDrones[user.id] === selectedDroneFilter;
+        !selectedDroneFilter || user.assignedDroneId === selectedDroneFilter;
 
       return matchesTab && matchesSearch && matchesDrone;
     });
@@ -146,17 +211,9 @@ export default function UserManagementSection() {
     return [...result].sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
-
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
-  }, [
-    users,
-    activeTab,
-    searchQuery,
-    selectedDroneFilter,
-    userDrones,
-    sortOrder,
-  ]);
+  }, [users, activeTab, searchQuery, selectedDroneFilter, sortOrder]);
 
   // Pagination Slicing
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
@@ -174,7 +231,7 @@ export default function UserManagementSection() {
   // Handler Form Add / Edit
   const openAddModal = () => {
     setCurrentUser(null);
-    setFormData({ name: "", email: "", role: "FARMER", status: "PENDING" });
+    setFormData({ name: "", email: "", role: "FARMER", status: "PENDING", assignedDroneId: "" });
     setErrors({ name: "", email: "" });
     setIsFormModalOpen(true);
   };
@@ -186,6 +243,7 @@ export default function UserManagementSection() {
       email: user.email,
       role: user.role,
       status: user.status,
+      assignedDroneId: user.assignedDroneId || "",
     });
     setErrors({ name: "", email: "" });
     setIsFormModalOpen(true);
@@ -217,6 +275,14 @@ export default function UserManagementSection() {
     setNotification(null);
 
     try {
+      const payload: any = { ...formData };
+      
+      if (formData.role !== "OPERATOR") {
+        payload.assignedDroneId = null;
+      }
+
+      if (!payload.assignedDroneId) delete payload.assignedDroneId;
+
       if (currentUser) {
         // UPDATE USER
         const res = await fetch(`/api/admin/users/${currentUser.id}`, {
@@ -267,9 +333,7 @@ export default function UserManagementSection() {
   ) => {
     try {
       // Optimistic Update UI
-      setUsers(
-        users.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)),
-      );
+      setUsers(users.map((u) => (u.id === userId ? { ...u, status: newStatus } : u)));
 
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
@@ -285,6 +349,47 @@ export default function UserManagementSection() {
         type: "success",
         message: `Status berhasil diubah menjadi ${newStatus === "APPROVED" ? "ACTIVE" : "INACTIVE"}`,
       });
+    } catch (error: any) {
+      setNotification({ type: "error", message: error.message });
+      fetchUsers(); // Revert back if fail
+    }
+  };
+
+  // Handler Indetifier Drone
+  const handleDroneChange = async (userId: string, droneId: string | null) => {
+    // Simpan Drone ID lama
+    const oldDroneId = userDrones[userId]; 
+
+    // Optimistic Update UI 
+    setUserDrones((prev) => ({ ...prev, [userId]: droneId || "" }));
+
+    setDrones((prevDrones) =>
+      prevDrones.map((drone) => {
+        if (oldDroneId && drone.id === oldDroneId) {
+          return { ...drone, isApproved: false };
+        }
+        if (droneId && drone.id === droneId) {
+          return { ...drone, isApproved: false };
+        }
+        return drone;
+      })
+    );
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedDroneId: droneId }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mengatur data drone.");
+      
+      const successMessage = droneId 
+        ? "Akses identifikasi drone berhasil diberikan." 
+        : "Akses identifikasi drone berhasil dicabut.";
+
+      setNotification({ type: "success", message: successMessage });
     } catch (error: any) {
       setNotification({ type: "error", message: error.message });
       fetchUsers(); // Revert back if fail
@@ -314,34 +419,12 @@ export default function UserManagementSection() {
     }
   };
 
-  const handleDroneChange = (userId: string, droneId: string) => {
-    setUserDrones((prev) => ({
-      ...prev,
-      [userId]: droneId,
-    }));
-  };
-
-  const handleSort = () => {
-    if (sortOrder == "oldest") {
-      setSortOrder("newest");
-    } else {
-      setSortOrder("oldest");
-    }
-  };
-
   const formatDate = (dateString: string | number | Date) => {
     const date = new Date(dateString);
     const addZero = (number: string | number | Date) =>
       String(number).padStart(2, "0");
 
-    const day = addZero(date.getDate());
-    const month = addZero(date.getMonth() + 1);
-    const year = date.getFullYear();
-    const hours = addZero(date.getHours());
-    const minutes = addZero(date.getMinutes());
-    const seconds = addZero(date.getSeconds());
-
-    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+    return `${addZero(date.getDate())}-${addZero(date.getMonth() + 1)}-${date.getFullYear()} ${addZero(date.getHours())}:${addZero(date.getMinutes())}:${addZero(date.getSeconds())}`;
   };
 
   return (
@@ -378,7 +461,7 @@ export default function UserManagementSection() {
         </div>
       )}
 
-      {/* STATS CARDS (Mengacu pada Gambar Pengguna.png) */}
+      {/* STATS CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 shrink-0">
         <div className="bg-white dark:bg-[#16161a] p-2.5 rounded-xl border border-[#E5E7EB] dark:border-zinc-800 shadow-sm">
           <p className="text-xs font-semibold text-[#191919] dark:text-zinc-300">
@@ -452,24 +535,18 @@ export default function UserManagementSection() {
               OPERATOR: "Operator",
               ADMIN: "Admin",
             };
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  setCurrentPage(1);
-                }}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all
-                  ${
-                    isActive
-                      ? "bg-[#84994F] text-white shadow-sm"
-                      : "text-[#5B6068] dark:text-zinc-400 hover:text-[#191919] dark:hover:text-white"
-                  }`}
-              >
+            return <button
+            key={tab} onClick={() => {
+              setActiveTab(tab);
+              setCurrentPage(1); }}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all
+              ${activeTab === tab
+                ? "bg-[#84994F] text-white shadow-sm"
+                : "text-[#5B6068] dark:text-zinc-400 hover:text-[#191919] dark:hover:text-white"
+              }`}
+            >
                 {labels[tab]}
-              </button>
-            );
+            </button>;
           })}
         </div>
 
@@ -494,16 +571,9 @@ export default function UserManagementSection() {
             value={selectedDroneFilter}
             onChange={setSelectedDroneFilter}
           />
-          {/* <SortDateDropdown
-            value={sortOrder}
-            onChange={(value) => {
-              setSortOrder(value);
-              setCurrentPage(1);
-            }}
-          /> */}
           <button
             type="button"
-            onClick={() => handleSort()}
+            onClick={() => setSortOrder(sortOrder == "oldest" ? "newest" : "oldest")}
             className={`p-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white`}
             title="Urutkan tanggal masuk"
           >
@@ -522,42 +592,26 @@ export default function UserManagementSection() {
       {/* USER TABLE CARD */}
       <div className="z-0 flex-1 min-h-0 flex flex-col justify-between bg-white dark:bg-[#16161a] rounded-xl border border-[#E5E7EB] dark:border-zinc-800 overflow-hidden shadow-sm">
         <div className="flex-1 min-h-0 overflow-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#84994F] text-white">
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  No.
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  User ID
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Pengguna
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Tanggal Bergabung
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Drone
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">
-                  Aksi
-                </th>
+                <th className="w-[3%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">No.</th>
+                <th className="w-[7%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">User ID</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Pengguna</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Role</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Tanggal Bergabung</th>
+                <th className="w-[15%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Perangkat</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Akun</th>
+                <th className="w-[7%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Inactive Timeout</th>
+                <th className="w-[7%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-zinc-800/60">
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-8 text-center text-xs text-[#6A717F]"
-                  >
+                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-[#6A717F]">
+                  
                     <div className="inline-flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-[#84994F]" />
                       <span>Memuat data pengguna...</span>
@@ -570,136 +624,231 @@ export default function UserManagementSection() {
                   const shortId = user.id.slice(0, 8).toUpperCase();
                   const joinDate = formatDate(user.createdAt);
 
-                  // Logika Disabled
+                  // Logika Verifikasi
                   const isUserVerified = !!user.emailVerified;
 
+                  const activeDroneId = userDrones[user.id] !== undefined ? userDrones[user.id] : user.assignedDroneId;
+                  const hasDroneAssigned = !!activeDroneId;
+                  
+                  // Logika Status Approval Drone
+                  let DeviceStatusIcon = Ban; 
+                  let deviceIconBg = "bg-gray-100 dark:bg-[#202024] border-gray-200 dark:border-zinc-800 text-[#6A717F]";
+                  let deviceTooltip = "N/A";
+
+                  if (user.role === "OPERATOR") {
+                    if (!isUserVerified) {
+                      // Kondisi 1: Akun baru/belum verifikasi email -> WAITING
+                      DeviceStatusIcon = Clock;
+                      deviceIconBg = "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-500";
+                      deviceTooltip = "Menunggu Verifikasi Pengguna";
+                    } else if (user.status === "PENDING") {
+                      // Kondisi 2: Admin mengubah ke INACTIVE manual -> DISABLED
+                      DeviceStatusIcon = Ban;
+                      deviceIconBg = "bg-gray-100 dark:bg-[#202024] border-gray-200 dark:border-zinc-800 text-[#6A717F]";
+                      deviceTooltip = "Disabled Account";
+                    } else {
+                      // Kondisi 3: Akun berstatus ACTIVE
+                      const userDrone = drones.find(d => d.id === activeDroneId);
+                      
+                      if (hasDroneAssigned && userDrone?.isApproved) {
+                        // Jika sudah di-assign DAN sudah di-approve di Drone Management -> ACCEPTED (Centang)
+                        DeviceStatusIcon = CheckCircle2;
+                        deviceIconBg = "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-500";
+                        deviceTooltip = "Perangkat Terhubung";
+                      } else {
+                        // Jika belum di-assign ATAU belum di-approve -> WAITING
+                        DeviceStatusIcon = Clock;
+                        deviceIconBg = "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-500";
+                        deviceTooltip = hasDroneAssigned ? "Waiting Approval" : "Belum di-assign perangkat";
+                      }
+                    }
+                  }
+
                   return (
-                    <tr
-                      key={user.id}
-                      className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors"
-                    >
+                    <tr key={user.id} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/20 transition-colors h-[60px]">
+                      
+                      {/* No */}
                       <td className="px-3 py-2.5 text-center text-xs font-semibold text-[#191919] dark:text-zinc-300">
                         {rowNum}
                       </td>
+                      
+                      {/* User ID */}
                       <td className="px-3 py-2.5 text-center text-xs font-mono text-[#6A717F]">
                         #{shortId}
                       </td>
+                      
+                      {/* Nama Pengguna */}
                       <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white">
                         <div className="flex flex-col items-center text-center">
-                          <span className="block font-bold leading-tight truncate max-w-[150px]">
+                          <span className="block font-bold leading-tight truncate w-full">
                             {user.name || "Tanpa Nama"}
                           </span>
-                          <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate max-w-[150px]">
+                          <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
                             {user.email}
                           </span>
                         </div>
                       </td>
 
+                      {/* Role */}
                       <td className="px-3 py-2.5 text-center">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#191919] dark:text-zinc-200">
                           <span
-                            className={`w-2 h-2 rounded-full 
-                            ${
-                              user.role === "ADMIN"
-                                ? "bg-red-500"
-                                : user.role === "OPERATOR"
-                                  ? "bg-purple-500"
-                                  : user.role === "FARMER"
-                                    ? "bg-emerald-500"
-                                    : "bg-gray-400"
+                            className={`w-2 h-2 rounded-full ${
+                              user.role === "ADMIN" ? "bg-red-500"
+                              : user.role === "OPERATOR" ? "bg-purple-500"
+                              : user.role === "FARMER" ? "bg-emerald-500"
+                              : "bg-gray-400"
                             }`}
                           />
                           {user.role}
                         </span>
                       </td>
 
+                      {/* Tanggal Bergabung */}
                       <td className="px-3 py-2.5 text-center text-xs text-[#5B6068] dark:text-zinc-400 whitespace-nowrap">
                         {joinDate}
                       </td>
 
-                      <td className="px-3 py-2.5 text-center text-xs min-w-35 relative">
-                        <div className="w-full flex justify-center">
-                          <SearchableDropdown
-                            options={drones}
-                            value={userDrones[user.id] ?? null}
-                            onChange={(droneId) => {
-                              handleDroneChange(user.id, droneId);
-                            }}
-                            placeholder="Pilih Drone"
-                            searchPlaceholder="Cari drone..."
-                            getOptionLabel={(drone) => drone.name}
-                            getOptionValue={(drone) => drone.id}
-                            placement={index >= 3 ? "top" : "bottom"} 
-                          />
+                      {/* Nama Perangkat */}
+                      <td className="px-3 py-2.5 text-center text-xs relative">
+                        <div className="w-[180px] md:w-full max-w-[270px] mx-auto"> 
+                          {user.role === "OPERATOR" ? (
+                            !isUserVerified || user.status !== "APPROVED" ? (
+                              <div className="flex items-center justify-center w-full h-[38px] px-3 rounded-lg border text-xs font-medium bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500">
+                                <span className="w-full text-center truncate">
+                                  {activeDroneId 
+                                    ? drones.find(d => d.id === activeDroneId)?.name || "DISABLED ACCOUNT" 
+                                    : "DISABLED ACCOUNT"}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="w-full text-left flex items-center justify-center h-[38px]">
+                                <div className="w-full">
+                                  <SearchableDropdown
+                                    options={drones}
+                                    value={activeDroneId || null}
+                                    onChange={(droneId) => handleDroneChange(user.id, droneId)}
+                                    placeholder="Pilih Drone"
+                                    searchPlaceholder="Cari drone..."
+                                    getOptionLabel={(drone) => drone.name}
+                                    getOptionValue={(drone) => drone.id}
+                                    placement={index >= (itemsPerPage - 2) ? "top" : "bottom"} 
+                                  />
+                                </div>
+                              </div>
+                            )
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-[38px] px-3 rounded-lg border text-xs font-medium bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500">
+                              <span className="w-full text-center truncate">N/A</span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
+                      {/* Status Perangkat */}
                       <td className="px-3 py-2.5 text-center">
-                        <div className="relative inline-block">
+                        <div className="flex items-center justify-center">
+                          <div 
+                            className={`flex items-center justify-center w-7 h-7 rounded-md border shadow-sm ${deviceIconBg}`}
+                            title={deviceTooltip}
+                          >
+                            <DeviceStatusIcon className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Status Akun */}
+                      <td className="px-3 py-2.5 text-center">
+                        <div className="relative inline-block w-full max-w-[100px]">
                           <select
                             value={user.status}
                             disabled={!isUserVerified}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                user.id,
-                                e.target.value as ApprovalStatus,
-                              )
-                            }
-                            className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-bold border transition-colors outline-none
-                              ${
-                                !isUserVerified
-                                  ? "bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500"
-                                  : user.status === "APPROVED"
-                                    ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
-                                    : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                            onChange={(e) => handleStatusChange(user.id, e.target.value as ApprovalStatus)}
+                            className={`w-full appearance-none pl-2.5 pr-6 py-1.5 rounded-lg text-xs font-bold border transition-colors outline-none cursor-pointer
+                              ${!isUserVerified
+                                ? "bg-gray-100 border-gray-200 text-[#6A717F] cursor-not-allowed opacity-70 dark:bg-[#202024] dark:border-zinc-800 dark:text-zinc-500"
+                                : user.status === "APPROVED"
+                                  ? "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                  : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
                               }`}
                           >
                             <option value="APPROVED">ACTIVE</option>
                             <option value="PENDING">INACTIVE</option>
                           </select>
                           <ChevronDown
-                            className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none
-                            ${
-                              !isUserVerified
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none
+                              ${!isUserVerified
                                 ? "text-gray-400 dark:text-zinc-600"
-                                : user.status === "APPROVED"
-                                  ? "text-emerald-600"
-                                  : "text-amber-600"
-                            }`}
+                                : user.status === "APPROVED" ? "text-emerald-600" : "text-amber-600"
+                              }`}
                           />
                         </div>
                       </td>
 
+                      {/* Inactive Timeout */}
+                      <td className="px-3 py-2.5 text-center">
+                        <div className="flex items-center justify-center">
+                          {isUserVerified ? (
+                            user.status === "APPROVED" ? (
+                              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span className="text-xs font-semibold">Verified</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-[#6A717F] dark:text-zinc-400 px-2 py-1 rounded-md bg-gray-100 dark:bg-[#202024] border border-gray-200 dark:border-zinc-800 opacity-80">
+                                <Ban className="w-3.5 h-3.5" />
+                                <span className="text-xs font-semibold">Disabled</span>
+                              </div>
+                            )
+                          ) : (
+                            <CountdownTimer createdAt={user.createdAt} />
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Aksi */}
                       <td className="px-3 py-1.5 text-center">
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* Tombol Revoke: Muncul hanya jika user sudah di-assign drone */}
+                          <button 
+                            onClick={() => hasDroneAssigned ? handleDroneChange(user.id, null) : undefined}
+                            disabled={!hasDroneAssigned}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              hasDroneAssigned 
+                                ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer" 
+                                : "text-gray-300 dark:text-zinc-700 cursor-not-allowed opacity-50"
+                            }`}
+                            title={hasDroneAssigned ? "Revoke akses drone" : "Tidak ada akses untuk di-revoke"}>
+                            <Link2Off className="w-4 h-4" />
+                          </button>
+                          
                           <button
                             onClick={() => openEditModal(user)}
-                            className="p-1 rounded-lg text-[#5B6068] hover:text-[#191919] hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                            className="p-1.5 rounded-lg text-[#5B6068] hover:text-[#191919] hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                             title="Edit pengguna"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-4 h-4" />
                           </button>
+                          
                           <button
                             onClick={() => {
                               setCurrentUser(user);
                               setIsDeleteModalOpen(true);
                             }}
-                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                             title="Hapus pengguna"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
+                      
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-6 text-center text-xs text-[#6A717F]"
-                  >
+                  <td colSpan={8} className="px-6 py-6 text-center text-xs text-[#6A717F]">
                     Tidak ada pengguna yang sesuai dengan filter/pencarian Anda.
                   </td>
                 </tr>
@@ -829,6 +978,22 @@ export default function UserManagementSection() {
                   <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
+
+              {formData.role === "OPERATOR" && !currentUser && (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
+                    Nama Perangkat
+                  </label>
+                  <div className="w-full px-3.5 py-3 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-gray-50/50 dark:bg-[#202024] text-sm text-[#6A717F] dark:text-zinc-500 cursor-not-allowed flex items-center justify-between">
+                    <span>
+                      <span className="font-semibold text-[#191919] dark:text-zinc-300">Auto-Generate: </span>
+                    </span>
+                    <span className="font-mono text-[10px] font-bold bg-[#E5E7EB] dark:bg-zinc-800 px-2 py-0.5 rounded text-gray-500 dark:text-gray-400">
+                      DreamPalm Drone V1-XXX
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {!currentUser && (
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">

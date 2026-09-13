@@ -1,16 +1,19 @@
 import { app } from "./app";
 import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
+import { initMqtt } from "./services/mqtt.service";
 
 async function bootstrap() {
   await prisma.$connect();
 
+  initMqtt();
+
   const server = app.listen(env.PORT, () => {
-    console.info(`FreshScan backend running on http://localhost:${env.PORT}`);
+    console.info(`DreamPalm backend running on http://localhost:${env.PORT}`);
   });
 
   const shutdown = async (signal: string) => {
-    console.info(`${signal} received. Closing FreshScan backend...`);
+    console.info(`${signal} received. Closing DreamPalm backend...`);
     
     server.close(async () => {
       await prisma.$disconnect();
@@ -32,7 +35,7 @@ async function bootstrap() {
 }
 
 bootstrap().catch(async (error) => {
-  console.error("Failed to start FreshScan backend.", error);
+  console.error("Failed to start DreamPalm backend.", error);
   await prisma.$disconnect();
   process.exit(1);
 });

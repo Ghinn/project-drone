@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import admin from '../lib/firebase/admin';
+import { firebaseAuth } from '../lib/firebase';
 
 export const verifyEmail = async (req: Request, res: Response) => {
     try {
@@ -36,7 +36,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
         });
 
         // Update status emailVerified di Firebase Auth
-        await admin.auth().updateUser(user.firebaseUid!, {
+        await firebaseAuth.updateUser(user.firebaseUid, {
             emailVerified: true
         });
 

@@ -8,6 +8,19 @@ import { prisma } from "../src/lib/prisma";
 import { env } from "../src/config/env";
 import { ApprovalStatus, Role } from "../src/generated/prisma";
 
+const SEED_DRONES = [
+  {
+    id: "v1-001",
+    name: "DreamPalm Drone V1-001",
+    status: "offline",
+  },
+  {
+    id: "v1-002",
+    name: "DreamPalm Drone V1-002",
+    status: "offline",
+  },
+];
+
 const SEED_USERS = [
   {
     email: "halo.dreampalm@gmail.com",
@@ -15,6 +28,7 @@ const SEED_USERS = [
     name: "Super Admin",
     role: Role.ADMIN,
     status: ApprovalStatus.APPROVED,
+    assignedDroneId: null,
   },
   {
     email: "ahmadsaiziraden@apps.ipb.ac.id",
@@ -22,6 +36,15 @@ const SEED_USERS = [
     name: "Ahmad Sazira",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
+    assignedDroneId: "v1-002",
+  },
+  {
+    email: "dioaranda2004@gmail.com",
+    password: "@admin123",
+    name: "Dio Aranda",
+    role: Role.OPERATOR,
+    status: ApprovalStatus.APPROVED,
+    assignedDroneId: "v1-001",
   },
   {
     email: "ghiinarania@apps.ipb.ac.id",
@@ -29,6 +52,7 @@ const SEED_USERS = [
     name: "Ghina Rania",
     role: Role.FARMER,
     status: ApprovalStatus.APPROVED,
+    assignedDroneId: null,
   },
   {
     email: "dellaarviyanti@apps.ipb.ac.id",
@@ -36,20 +60,9 @@ const SEED_USERS = [
     name: "Della Arviyanti",
     role: Role.FARMER,
     status: ApprovalStatus.APPROVED,
+    assignedDroneId: null,
   },
 ];
-
-const placeholder = (label: string) =>
-  `https://placehold.co/1200x800/png?text=${encodeURIComponent(label)}`;
-
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
 
 function firebaseSeedApp() {
   const hasInlineCredentials =
@@ -78,6 +91,24 @@ function firebaseSeedApp() {
   });
 }
 
+async function seedDrones() {
+  for (const droneData of SEED_DRONES) {
+    const drone = await prisma.drone.upsert({
+      where: { id: droneData.id },
+      update: {
+        name: droneData.name,
+        status: droneData.status,
+      },
+      create: {
+        id: droneData.id,
+        name: droneData.name,
+        status: droneData.status,
+      },
+    });
+    console.info(`Drone seeded: ${drone.id}`);
+  }
+}
+
 async function seedUser(userData: typeof SEED_USERS[0]) {
   const passwordHash = await hash(userData.password, 12);
 
@@ -89,6 +120,7 @@ async function seedUser(userData: typeof SEED_USERS[0]) {
       role: userData.role,
       status: userData.status,
       emailVerified: true,
+      assignedDroneId: userData.assignedDroneId,
     },
     create: {
       email: userData.email,
@@ -97,6 +129,7 @@ async function seedUser(userData: typeof SEED_USERS[0]) {
       role: userData.role,
       status: userData.status,
       emailVerified: true,
+      assignedDroneId: userData.assignedDroneId,
     },
   });
 
@@ -131,7 +164,12 @@ async function syncUserToFirebase(userId: string, userData: typeof SEED_USERS[0]
       });
     }
 
-    await auth.setCustomUserClaims(firebaseUser.uid, { role: userData.role });
+    const claims: any = { role: userData.role };
+    if (userData.assignedDroneId) {
+      claims.assignedDrone = userData.assignedDroneId;
+    }
+
+    await auth.setCustomUserClaims(firebaseUser.uid, claims);
 
     // Update Firebase UID kembali ke Prisma
     await prisma.user.update({
@@ -153,6 +191,8 @@ async function syncUserToFirebase(userId: string, userData: typeof SEED_USERS[0]
 
 async function main() {
   console.info("Starting multi-role seed process...\n");
+
+  await seedDrones();
 
   for (const userData of SEED_USERS) {
     const user = await seedUser(userData);
