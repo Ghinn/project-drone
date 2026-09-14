@@ -40,6 +40,7 @@ interface User {
 interface Drone {
   id: string;
   name: string;
+  isApproved: boolean;
 }
 
 const CountdownTimer = ({ createdAt }: { createdAt: string }) => {
@@ -965,12 +966,13 @@ export default function UserManagementSection() {
                 <select
                   name="role"
                   value={formData.role}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormData((prev) => ({
                       ...prev,
                       role: e.target.value as Role,
-                    }))
-                  }
+                    }));
+                    setFormData((prev) => ({ ...prev, assignedDroneId: "" }));
+                  }}
                   className="w-full px-3 py-2.5 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-white dark:bg-[#111115] text-sm text-[#191919] dark:text-white outline-none focus:border-[#84994F]"
                 >
                   <option value="FARMER">FARMER</option>
@@ -979,7 +981,29 @@ export default function UserManagementSection() {
                 </select>
               </div>
 
-              {/* HOLD DULU (nanti ganti ke Dropdown) */}
+              {formData.role === "OPERATOR" && !currentUser && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
+                    DRONE
+                  </label>
+                  <SearchableDropdown
+                    options={drones}
+                    value={formData.assignedDroneId || ""}
+                    onChange={(droneId) => {
+                      if (formData.assignedDroneId !== droneId) {
+                        setFormData((prev) => ({ ...prev, assignedDroneId: droneId }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, assignedDroneId: "" }));
+                      }
+                    }}
+                    placeholder="Pilih Drone"
+                    searchPlaceholder="Cari drone..."
+                    getOptionLabel={(drone) => drone.name}
+                    getOptionValue={(drone) => drone.id}
+                    // placement={index >= (itemsPerPage - 2) ? "top" : "bottom"} 
+                  />
+                </div>
+              )}
               {/* {formData.role === "OPERATOR" && !currentUser && (
                 <div className="animate-in fade-in zoom-in-95 duration-200">
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
