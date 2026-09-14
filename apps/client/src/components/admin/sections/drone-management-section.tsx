@@ -360,7 +360,7 @@ return sortedIds;
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-zinc-800/60">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-xs text-[#6A717F]">
+                  <td colSpan={7} className="px-4 py-8 text-center text-xs text-[#6A717F]">
                     <div className="inline-flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-[#84994F] inline-block mr-2" />
                     <span>Memuat data drone...</span>
