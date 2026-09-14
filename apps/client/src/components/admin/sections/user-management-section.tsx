@@ -979,7 +979,8 @@ export default function UserManagementSection() {
                 </select>
               </div>
 
-              {formData.role === "OPERATOR" && !currentUser && (
+              {/* HOLD DULU (nanti ganti ke Dropdown) */}
+              {/* {formData.role === "OPERATOR" && !currentUser && (
                 <div className="animate-in fade-in zoom-in-95 duration-200">
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
                     Nama Perangkat
@@ -993,7 +994,7 @@ export default function UserManagementSection() {
                     </span>
                   </div>
                 </div>
-              )}
+              )} */}
 
               {!currentUser && (
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
