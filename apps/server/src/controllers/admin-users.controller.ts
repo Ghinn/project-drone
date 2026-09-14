@@ -33,7 +33,7 @@ const createUserSchema = z.object({
   name: z.string().trim().min(1, "Nama wajib diisi"),
   email: z.string().trim().email("Format email tidak valid"),
   role: z.nativeEnum(Role).default(Role.FARMER),
-  status: z.nativeEnum(ApprovalStatus).default(ApprovalStatus.PENDING), 
+  status: z.nativeEnum(ApprovalStatus).default(ApprovalStatus.PENDING),
   assignedDroneId: z.string().nullable().optional(),
 });
 
@@ -46,11 +46,11 @@ export const listUsers = asyncHandler(async (req, res) => {
     ...(query.status ? { status: query.status } : {}),
     ...(query.search
       ? {
-          OR: [
-            { email: { contains: query.search, mode: "insensitive" } },
-            { name: { contains: query.search, mode: "insensitive" } },
-          ],
-        }
+        OR: [
+          { email: { contains: query.search, mode: "insensitive" } },
+          { name: { contains: query.search, mode: "insensitive" } },
+        ],
+      }
       : {}),
   };
 
@@ -112,26 +112,27 @@ export const updateUser = asyncHandler(async (req, res) => {
       firebaseUid: true,
       role: true,
       status: true,
-      assignedDroneId: true  },
+      assignedDroneId: true
+    },
   });
 
   if (!existingUser) {
     throw new AppError(404, "User record not found.");
   }
 
-  if (input.assignedDroneId !== undefined && input.assignedDroneId !== null) {
-    const droneTaken = await prisma.user.findUnique({
-      where: { assignedDroneId: input.assignedDroneId },
-      select: { id: true, name: true, email: true }
-    });
+  // if (input.assignedDroneId !== undefined && input.assignedDroneId !== null) {
+  //   const droneTaken = await prisma.user.findUnique({
+  //     where: { assignedDroneId: input.assignedDroneId },
+  //     select: { id: true, name: true, email: true }
+  //   });
 
-    if (droneTaken && droneTaken.id !== userId) {
-      throw new AppError(
-        400, 
-        `Drone ini sedang digunakan oleh akun ${droneTaken.name || droneTaken.email}. Harap cabut pengidentifikasi sebelumnya.`
-      );
-    }
-  }
+  //   if (droneTaken && droneTaken.id !== userId) {
+  //     throw new AppError(
+  //       400, 
+  //       `Drone ini sedang digunakan oleh akun ${droneTaken.name || droneTaken.email}. Harap cabut pengidentifikasi sebelumnya.`
+  //     );
+  //   }
+  // }
 
   const targetRole = input.role ?? existingUser.role;
   const targetStatus = input.status ?? existingUser.status;
@@ -140,7 +141,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   // Sinkronisasi Perubahan Status dan Firebase Custom Claims (RBAC)
   if (existingUser.firebaseUid) {
     const isDisabled = targetStatus !== ApprovalStatus.APPROVED;
-    
+
     try {
       await firebaseAuth.updateUser(existingUser.firebaseUid, {
         disabled: isDisabled,
@@ -165,10 +166,10 @@ export const updateUser = asyncHandler(async (req, res) => {
   if (existingUser.assignedDroneId && existingUser.assignedDroneId !== targetDrone) {
     await prisma.drone.update({
       where: { id: existingUser.assignedDroneId },
-      data: { 
-        status: "offline", 
+      data: {
+        status: "offline",
         isApproved: false
-      } 
+      }
     });
   }
 
@@ -176,7 +177,7 @@ export const updateUser = asyncHandler(async (req, res) => {
     const droneStatus = targetStatus === ApprovalStatus.APPROVED ? "Waiting Approval" : "Pending Approval";
     await prisma.drone.update({
       where: { id: targetDrone },
-      data: { 
+      data: {
         status: droneStatus,
         isApproved: false
       }
