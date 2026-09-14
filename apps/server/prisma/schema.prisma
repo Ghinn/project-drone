@@ -34,7 +34,7 @@ model Drone {
   createdAt   DateTime @default(now())
 
   // Relasi 1:1 ke User (Operator)
-  operator    User?
+  operator    User[]
   
   // Relasi 1:M ke log telemetri
   telemetryLogs TelemetryLog[]
@@ -53,7 +53,7 @@ model User {
   status        ApprovalStatus @default(PENDING)
 
   // Identifier Drone
-  assignedDroneId String?      @unique
+  assignedDroneId String?      
   assignedDrone   Drone?       @relation(fields: [assignedDroneId], references: [id])
 
   lastLoginAt   DateTime?
