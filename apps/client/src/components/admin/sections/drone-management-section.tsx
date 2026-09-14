@@ -11,7 +11,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Ban
+  Ban,
+  Plus,
+  X
 } from "lucide-react";
 
 interface Operator {
@@ -46,6 +48,8 @@ export default function DroneManagementSection() {
   const [currentDrone, setCurrentDrone] = useState<Drone | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   const [notification, setNotification] = useState<{
     type: "success" | "error";
@@ -174,6 +178,37 @@ export default function DroneManagementSection() {
     return `${addZero(date.getDate())}-${addZero(date.getMonth() + 1)}-${date.getFullYear()} ${addZero(date.getHours())}:${addZero(date.getMinutes())}:${addZero(date.getSeconds())}`;
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setNotification(null);
+
+    try {
+      const res = await fetch("/api/admin/drones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || "Gagal menambahkan drone.");
+
+      setNotification({
+        type: "success",
+        message:
+          "Drone baru berhasil ditambahkan. Tautan pembuatan sandi telah dikirim!",
+      });
+
+      fetchDrones();
+    } catch (error: any) {
+      setNotification({ type: "error", message: error.message });
+    } finally {
+      setIsSubmitting(false);
+      setIsFormModalOpen(false);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col gap-2.5 animate-in fade-in duration-300 min-h-0">
       {/* HEADER SECTION */}
@@ -273,6 +308,9 @@ export default function DroneManagementSection() {
             className="p-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white"
           >
             <ArrowUpDown className="w-4 h-4" />
+          </button>
+          <button onClick={() => {setIsFormModalOpen(true)}} className="flex flex-row items-center gap-2 px-3 py-1.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white">
+            <Plus className="w-4 h-4" /> Tambah
           </button>
         </div>
       </div>
@@ -453,6 +491,56 @@ export default function DroneManagementSection() {
           </div>
         )}
       </div>
+
+      {/* MODAL TAMBAH DRONE */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-md p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-5">
+              <button
+                onClick={() => setIsFormModalOpen(false)}
+                className="text-[#6A717F] hover:text-[#191919]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-[#191919] dark:text-white">
+                  Tambah Drone Baru
+                </h2>
+              </div>
+
+              <div className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
+                <div>Sistem akan membuat drone baru secara otomatis.</div>
+                <div>Data seperti ID dan MAC Address akan dibuat oleh sistem.</div>
+                <br />
+                <div>Apakah anda yakin ingin menambahkan drone baru?</div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-[#E5E7EB] dark:border-zinc-800 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsFormModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#84994F] hover:bg-[#e65c00] transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting
+                    ? "Menyimpan..."
+                      : "Generate Drone"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL KONFIRMASI DELETE */}
       {isDeleteModalOpen && currentDrone && (
