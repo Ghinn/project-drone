@@ -14,13 +14,14 @@ import {
   listDrones,
   updateDrone,
   deleteDrone,
+  createDrone,
 } from "../controllers/admin-drone.controller";
 
 // Import Controllers (Admin)
-import { 
-  getOverviewData, 
-  getSystemLogsData, 
-  getSettingsData 
+import {
+  getOverviewData,
+  getSystemLogsData,
+  getSettingsData
 } from "../controllers/admin.controller";
 
 import { requireAdmin, requireSession } from "../middleware/auth.middleware";
@@ -54,6 +55,7 @@ router.delete("/users/:id", deleteUser);
 
 // CRUD Specific Drone Operations
 router.get("/drones", listDrones);
+router.post("/drones", createDrone);
 router.patch("/drones/:id", updateDrone);
 router.delete("/drones/:id", deleteDrone);
 
