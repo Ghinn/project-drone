@@ -64,14 +64,19 @@ export const deleteDrone = asyncHandler(async (req, res) => {
     include: { operator: true }
   });
 
+  console.log(existingDrone, 'exist');
+
+
   if (!existingDrone) {
     throw new AppError(404, "Data drone tidak ditemukan.");
   }
 
-  if (existingDrone.operator) {
+  if (existingDrone.operator.length > 0) {
     throw new AppError(
       400,
-      `Drone tidak dapat dihapus karena masih di-assign ke pengguna ${existingDrone.operator.name}. Cabut assign terlebih dahulu di User Management.`
+      `Drone tidak dapat dihapus karena masih di-assign ke pengguna 
+      ${existingDrone.operator.map(op => op.name).join(", ")}. 
+      Cabut assign terlebih dahulu di User Management.`
     );
   }
 
