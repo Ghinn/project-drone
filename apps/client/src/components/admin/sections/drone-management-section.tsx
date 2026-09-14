@@ -97,6 +97,25 @@ export default function DroneManagementSection() {
     online: drones.filter((d) => d.status.toLowerCase() === "online").length,
   }), [drones]);
 
+
+  const getIdOrder = (drones: Drone[], order = "newest") => {
+    const ids = drones.map((drone) => drone.id);
+    const numericOrder = ids.map((id) => parseInt(id.substring(3))).sort((a, b) => {
+      if (order === "newest") {
+        return b - a;
+      } else {
+        return a - b;
+      }
+    });
+    let sortedIds: string[] = []
+    numericOrder.forEach((order) => {
+      const id = `v1-${order.toString().padStart(3, "0")}`;
+      sortedIds.push(id);
+    });
+
+return sortedIds;
+  }
+
   // Filter berdasarkan Tab & Search Query
   const filteredDrones = useMemo(() => {
     const result = drones.filter((drone) => {
@@ -106,11 +125,13 @@ export default function DroneManagementSection() {
       return matchesTab && matchesSearch;
     });
 
-    return [...result].sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
-    });
+    const sortedIds = getIdOrder(result, sortOrder);
+    
+    const sortedDrones = sortedIds
+      .map((id) => result.find((drone) => drone.id === id))
+      .filter((drone) => drone !== undefined) as Drone[];
+
+    return sortedDrones;
   }, [drones, activeTab, searchQuery, sortOrder]);
 
   // Pagination Slicing
