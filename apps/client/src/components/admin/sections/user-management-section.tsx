@@ -601,7 +601,7 @@ export default function UserManagementSection() {
                 <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Role</th>
                 <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Tanggal Bergabung</th>
                 <th className="w-[15%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Perangkat</th>
-                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th>
+                {/* <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th> */}
                 <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Akun</th>
                 <th className="w-[7%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Inactive Timeout</th>
                 <th className="w-[7%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Aksi</th>
@@ -746,7 +746,7 @@ export default function UserManagementSection() {
                       </td>
 
                       {/* Status Perangkat */}
-                      <td className="px-3 py-2.5 text-center">
+                      {/* <td className="px-3 py-2.5 text-center">
                         <div className="flex items-center justify-center">
                           <div 
                             className={`flex items-center justify-center w-7 h-7 rounded-md border shadow-sm ${deviceIconBg}`}
@@ -755,7 +755,7 @@ export default function UserManagementSection() {
                             <DeviceStatusIcon className="w-4 h-4" />
                           </div>
                         </div>
-                      </td>
+                      </td> */}
 
                       {/* Status Akun */}
                       <td className="px-3 py-2.5 text-center">

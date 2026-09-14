@@ -135,13 +135,15 @@ export default function SearchableDropdown<T>({
           </div>
 
           <div className="max-h-[72px] overflow-y-auto p-1">
-            {search.length === 0 ? (
-              <div className="px-3 py-4 text-center">
-                <p className="text-xs text-zinc-500">
-                  Ketik nama untuk mencari...
-                </p>
-              </div>
-            ) : filteredOptions.length > 0 ? (
+            {
+            // search.length !== 0 ? (
+            //   <div className="px-3 py-4 text-center">
+            //     <p className="text-xs text-zinc-500">
+            //       Ketik nama untuk mencari...
+            //     </p>
+            //   </div>
+            // ) :
+             filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const optionValue = getOptionValue(option);
                 const optionLabel = getOptionLabel(option);
