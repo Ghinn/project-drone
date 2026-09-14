@@ -13,7 +13,11 @@ import {
   Clock,
   Ban,
   Plus,
-  X
+  X,
+  Eye,
+  Users,
+  CircleSlash,
+  CircleSlash2
 } from "lucide-react";
 
 interface Operator {
@@ -31,7 +35,7 @@ interface Drone {
   status: string;
   isApproved: boolean;
   createdAt: string;
-  operator: Operator | null;
+  operator: Operator[] | null;
 }
 
 export default function DroneManagementSection() {
@@ -50,6 +54,7 @@ export default function DroneManagementSection() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const [notification, setNotification] = useState<{
     type: "success" | "error";
@@ -347,7 +352,7 @@ return sortedIds;
                 <th className="w-[16%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Perangkat</th>
                 <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Tanggal Bergabung</th>
                 <th className="w-[20%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Pengguna</th>
-                <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Drone</th>
+                {/* <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Drone</th> */}
                 <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th>
                 <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Aksi</th>
               </tr>
@@ -371,23 +376,27 @@ return sortedIds;
                   let droneApprovalText = "-";
                   let droneApprovalStyle = "text-gray-400";
 
-                  if (drone.operator) {
-                    const op = drone.operator;
-                    if (op.status === "PENDING") {
-                      if (op.emailVerified) {
-                        droneApprovalText = "Disabled Account"; 
-                        droneApprovalStyle = "bg-gray-100 text-gray-600 border-gray-200";
-                      } else {
-                        droneApprovalText = "Pending Approval"; 
-                        droneApprovalStyle = "bg-amber-50 text-amber-600 border-amber-200";
-                      }
-                    } else if (op.status === "APPROVED") {
-                      if (drone.isApproved) {
-                        droneApprovalText = "Accepted";
-                        droneApprovalStyle = "bg-emerald-50 text-emerald-600 border-emerald-200";
-                      } else {
-                        droneApprovalText = "Waiting Approval"; 
-                        droneApprovalStyle = "bg-blue-50 text-blue-600 border-blue-200";
+                  if (drone.operator && drone.operator.length > 0) {
+                    const ops = drone.operator;
+                    for (const op of ops) {
+                      if (op.status === "PENDING") {
+                        if (op.emailVerified) {
+                          droneApprovalText = "Disabled Account"; 
+                          droneApprovalStyle = "bg-gray-100 text-gray-600 border-gray-200";
+                          break;
+                        } else {
+                          droneApprovalText = "Pending Approval"; 
+                          droneApprovalStyle = "bg-amber-50 text-amber-600 border-amber-200";
+                          break;
+                        }
+                      } else if (op.status === "APPROVED") {
+                        if (drone.isApproved) {
+                          droneApprovalText = "Accepted";
+                          droneApprovalStyle = "bg-emerald-50 text-emerald-600 border-emerald-200";
+                        } else {
+                          droneApprovalText = "Waiting Approval"; 
+                          droneApprovalStyle = "bg-blue-50 text-blue-600 border-blue-200";
+                        }
                       }
                     }
                   }
@@ -416,16 +425,26 @@ return sortedIds;
                       </td>
 
                       {/* Nama Pengguna */}
-                      <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white">
-                        {drone.operator ? (
-                          <div className="flex flex-col items-center text-center">
-                            <span className="block font-bold leading-tight truncate w-full">
-                              {drone.operator.name || "Tanpa Nama"}
-                            </span>
-                            <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
-                              {drone.operator.email}
-                            </span>
-                          </div>
+                      <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white text-center">
+                        {drone.operator && drone.operator.length > 0 ? (
+                          <button onClick={() => {
+                            setIsUserModalOpen(true); 
+                            setCurrentDrone(drone);
+                          }} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-xs font-bold">
+                            <div className="flex justify-center items-center gap-2">
+                              <Users/>
+                            </div>
+                          </button>
+                          // drone.operator.map((op, idx) => (
+                          //   <div key={idx} className="flex flex-col items-center text-center">
+                          //     <span className="block font-bold leading-tight truncate w-full">
+                          //       {op.name || "Tanpa Nama"}
+                          //     </span>
+                          //     <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
+                          //       {op.email}
+                          //     </span>
+                          //   </div>
+                          // ))
                         ) : (
                           <div className="flex flex-col items-center">
                             <span className="text-[11px] px-2 py-1 bg-gray-100 dark:bg-zinc-800 rounded-md text-[#5B6068]">
@@ -436,11 +455,11 @@ return sortedIds;
                       </td>
                       
                       {/* Status Drone */}
-                      <td className="px-3 py-2.5 text-center">
+                      {/* <td className="px-3 py-2.5 text-center">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${droneApprovalStyle}`}>
                           {droneApprovalText}
                         </span>
-                      </td>
+                      </td> */}
 
                       {/* Nama Perangkat */}
                       <td className="px-3 py-2.5 text-center">
@@ -454,28 +473,34 @@ return sortedIds;
                         <div className="inline-flex items-center justify-center gap-1.5">
                           
                           {/* Skenario 1: PENDING APPROVAL */}
-                          {droneApprovalText === "Pending Approval" && (
+                          {/* {droneApprovalText === "Pending Approval" && (
                             <div className="p-1.5 text-amber-500 dark:text-amber-400 cursor-help" title="Menunggu Verifikasi Pengguna">
                               <Clock className="w-4 h-4" />
                             </div>
-                          )}
+                          )} */}
 
                           {/* Skenario B: WAITING APPROVAL */}
-                          {droneApprovalText === "Waiting Approval" && drone.operator && (
+                          {/* {droneApprovalText === "Waiting Approval" && drone.operator && drone.operator.length > 0 && (
                             <>
-                              <button onClick={() => handleApprovalAction(drone.id, drone.operator!.id, 'ACCEPT')} disabled={isSubmitting} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors disabled:opacity-50" title="ACCEPT">
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => handleApprovalAction(drone.id, drone.operator!.id, 'DECLINE')} disabled={isSubmitting} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50" title="DECLINE">
-                                <XCircle className="w-4 h-4" />
-                              </button>
+                            {drone.operator.map((op, idx) => {
+                              return (
+                                <div key={idx} className="">
+                                  <button onClick={() => handleApprovalAction(drone.id, op.id, 'ACCEPT')} disabled={isSubmitting} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors disabled:opacity-50" title="ACCEPT">
+                                    <CheckCircle className="w-4 h-4" />
+                                  </button>
+                                  <button onClick={() => handleApprovalAction(drone.id, op.id, 'DECLINE')} disabled={isSubmitting} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50" title="DECLINE">
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )
+                            })}
                             </>
-                          )}
+                          )} */}
 
                           {/* Skenario C: ACCEPTED / DISABLED / KOSONG */}
-                          {(droneApprovalText === "Accepted" || droneApprovalText === "Disabled Account" || droneApprovalText === "-") && (
+                          {(droneApprovalText === "Accepted" || droneApprovalText === "Disabled Account" || droneApprovalText === "-" || (drone.operator && drone.operator.length > 0)) && (
                             <>
-                              {droneApprovalText === "Accepted" ? (
+                              {droneApprovalText === "Accepted" || (drone.operator && drone.operator.length > 0) ? (
                                 /* ikon BAN */
                                 <button disabled className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-600 cursor-not-allowed" title="Perangkat sedang aktif digunakan dan tidak dapat dihapus">
                                   <Ban className="w-4 h-4" />
@@ -562,7 +587,38 @@ return sortedIds;
           </div>
         </div>
       )}
-
+      
+      {/* MODAL LIHAT PENGGUNA */}
+      {isUserModalOpen && currentDrone && currentDrone.operator && currentDrone.operator.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className=" bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 text-left">
+            <div className="flex w-full justify-between pb-8">
+              <div className="">
+                <h2 className="text-lg font-bold text-[#191919] dark:text-white">Pengguna Terkait</h2>
+              </div>
+              <button
+                onClick={() => {setIsUserModalOpen(false); setCurrentDrone(null)}}
+                className="text-[#6A717F]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {currentDrone.operator.map((op) => (
+              <ul key={op.id} className="text-center px-20 mb-5">
+                <li className="list-disc">
+                  <span className="block font-bold leading-tight truncate w-full">
+                    {op.name || "Tanpa Nama"}
+                  </span>
+                  <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
+                    {op.email}
+                  </span>
+                </li>
+              </ul>
+            ))}
+          </div>
+        </div>
+      )}
+  
       {/* MODAL KONFIRMASI DELETE */}
       {isDeleteModalOpen && currentDrone && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
