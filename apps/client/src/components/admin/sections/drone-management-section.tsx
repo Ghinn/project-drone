@@ -4,20 +4,15 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Search,
   ArrowUpDown,
+  UserPlus,
   Trash2,
   Loader2,
   Wifi,
   WifiOff,
-  CheckCircle,
-  XCircle,
-  Clock,
   Ban,
-  Plus,
   X,
-  Eye,
   Users,
-  CircleSlash,
-  CircleSlash2
+  AlertCircle
 } from "lucide-react";
 
 interface Operator {
@@ -52,7 +47,6 @@ export default function DroneManagementSection() {
   const [currentDrone, setCurrentDrone] = useState<Drone | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
@@ -93,6 +87,31 @@ export default function DroneManagementSection() {
   useEffect(() => {
     fetchDrones();
   }, []);
+
+  const nextDroneInfo = useMemo(() => {
+    const usedNumbers = drones
+      .map((d) => {
+        const match = d.id.match(/v1-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter((n) => n > 0)
+      .sort((a, b) => a - b);
+
+    let nextSequence = 1;
+    for (const num of usedNumbers) {
+      if (num === nextSequence) {
+        nextSequence++;
+      } else if (num > nextSequence) {
+        break;
+      }
+    }
+
+    const seqStr = nextSequence.toString().padStart(3, "0");
+    return {
+      id: `v1-${seqStr}`,
+      name: `DreamPalm Drone V1-${seqStr}`,
+    };
+  }, [drones]);
 
   // Perhitungan Statistik Kartu
   const stats = useMemo(() => ({
@@ -152,35 +171,6 @@ return sortedIds;
     }
   };
 
-  // Handle Logic APPROVAL
-  const handleApprovalAction = async (droneId: string, userId: string, action: 'ACCEPT' | 'DECLINE') => {
-    setIsSubmitting(true);
-    try {
-      if (action === 'ACCEPT') {
-        const res = await fetch(`/api/admin/drones/${droneId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isApproved: true }),
-        });
-        if (!res.ok) throw new Error("Gagal menyetujui akses drone.");
-      } else {
-        const res = await fetch(`/api/admin/users/${userId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assignedDroneId: null }),
-        });
-        if (!res.ok) throw new Error("Gagal menolak/mencabut akses drone.");
-      }
-      
-      setNotification({ type: "success", message: `Berhasil melakukan ${action} pada identifikasi drone.` });
-      fetchDrones(); 
-    } catch (error: any) {
-      setNotification({ type: "error", message: error.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDeleteConfirm = async () => {
     if (!currentDrone) return;
     setIsSubmitting(true);
@@ -223,7 +213,7 @@ return sortedIds;
       setNotification({
         type: "success",
         message:
-          "Drone baru berhasil ditambahkan. Tautan pembuatan sandi telah dikirim!",
+          "Drone baru berhasil ditambahkan.",
       });
 
       fetchDrones();
@@ -314,6 +304,7 @@ return sortedIds;
           })}
         </div>
 
+        {/* SEARCH & ACTION TOOLS */}
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6A717F]" />
@@ -335,8 +326,12 @@ return sortedIds;
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
-          <button onClick={() => {setIsFormModalOpen(true)}} className="flex flex-row items-center gap-2 px-3 py-1.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white">
-            <Plus className="w-4 h-4" /> Tambah
+          <button
+            onClick={() => {setIsFormModalOpen(true)}}
+            className="inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl bg-white dark:bg-[#16161a] transition-colors border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:text-[#191919] dark:hover:text-white text-xs font-semibold rounded-xl whitespace-nowrap"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Tambah</span>
           </button>
         </div>
       </div>
@@ -347,14 +342,14 @@ return sortedIds;
           <table className="w-full text-left border-collapse table-fixed">
             <thead className="sticky top-0 z-10">
               <tr className="bg-[#84994F] text-white">
-                <th className="w-[4%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">No.</th>
+                <th className="w-[8%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">No.</th>
                 <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Drone ID</th>
                 <th className="w-[16%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Perangkat</th>
-                <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Tanggal Bergabung</th>
-                <th className="w-[20%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Pengguna</th>
+                <th className="w-[16%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Tanggal Bergabung</th>
+                <th className="w-[13%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Nama Pengguna</th>
                 {/* <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Drone</th> */}
-                <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th>
-                <th className="w-[12%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Aksi</th>
+                <th className="w-[13%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Status Perangkat</th>
+                <th className="w-[13%] px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-zinc-800/60">
@@ -425,26 +420,20 @@ return sortedIds;
                       </td>
 
                       {/* Nama Pengguna */}
-                      <td className="px-3 py-2.5 text-xs text-[#191919] dark:text-white text-center">
+                      <td className="px-3 py-2.5 text-center">
                         {drone.operator && drone.operator.length > 0 ? (
-                          <button onClick={() => {
-                            setIsUserModalOpen(true); 
-                            setCurrentDrone(drone);
-                          }} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-xs font-bold">
-                            <div className="flex justify-center items-center gap-2">
-                              <Users/>
-                            </div>
-                          </button>
-                          // drone.operator.map((op, idx) => (
-                          //   <div key={idx} className="flex flex-col items-center text-center">
-                          //     <span className="block font-bold leading-tight truncate w-full">
-                          //       {op.name || "Tanpa Nama"}
-                          //     </span>
-                          //     <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
-                          //       {op.email}
-                          //     </span>
-                          //   </div>
-                          // ))
+                          <div className="flex items-center justify-center">
+                            <button 
+                              onClick={() => {
+                                setCurrentDrone(drone);
+                                setIsUserModalOpen(true);
+                              }} 
+                              className="inline-flex items-center justify-center p-1.5 rounded-lg border border-[#E5E7EB] dark:border-zinc-800 bg-white dark:bg-[#202024] text-[#5B6068] dark:text-zinc-400 hover:text-[#191919] dark:hover:text-white hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors shadow-sm"
+                              title="Lihat Detail Pengguna"
+                            >
+                              <Users className="w-4 h-4" />
+                            </button>
+                          </div>
                         ) : (
                           <div className="flex flex-col items-center">
                             <span className="text-[11px] px-2 py-1 bg-gray-100 dark:bg-zinc-800 rounded-md text-[#5B6068]">
@@ -472,32 +461,7 @@ return sortedIds;
                       <td className="px-3 py-1.5 text-center">
                         <div className="inline-flex items-center justify-center gap-1.5">
                           
-                          {/* Skenario 1: PENDING APPROVAL */}
-                          {/* {droneApprovalText === "Pending Approval" && (
-                            <div className="p-1.5 text-amber-500 dark:text-amber-400 cursor-help" title="Menunggu Verifikasi Pengguna">
-                              <Clock className="w-4 h-4" />
-                            </div>
-                          )} */}
-
-                          {/* Skenario B: WAITING APPROVAL */}
-                          {/* {droneApprovalText === "Waiting Approval" && drone.operator && drone.operator.length > 0 && (
-                            <>
-                            {drone.operator.map((op, idx) => {
-                              return (
-                                <div key={idx} className="">
-                                  <button onClick={() => handleApprovalAction(drone.id, op.id, 'ACCEPT')} disabled={isSubmitting} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors disabled:opacity-50" title="ACCEPT">
-                                    <CheckCircle className="w-4 h-4" />
-                                  </button>
-                                  <button onClick={() => handleApprovalAction(drone.id, op.id, 'DECLINE')} disabled={isSubmitting} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50" title="DECLINE">
-                                    <XCircle className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )
-                            })}
-                            </>
-                          )} */}
-
-                          {/* Skenario C: ACCEPTED / DISABLED / KOSONG */}
+                          {/* DELETE */}
                           {(droneApprovalText === "Accepted" || droneApprovalText === "Disabled Account" || droneApprovalText === "-" || (drone.operator && drone.operator.length > 0)) && (
                             <>
                               {droneApprovalText === "Accepted" || (drone.operator && drone.operator.length > 0) ? (
@@ -543,6 +507,11 @@ return sortedIds;
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-md p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#191919] dark:text-white">
+                  Tambah Drone Baru
+                </h2>
+              </div>
               <button
                 onClick={() => setIsFormModalOpen(false)}
                 className="text-[#6A717F] hover:text-[#191919]"
@@ -552,17 +521,34 @@ return sortedIds;
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              
+
+              {/* Kolom Preview DRONE ID */}
               <div>
-                <h2 className="text-lg font-bold text-[#191919] dark:text-white">
-                  Tambah Drone Baru
-                </h2>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
+                  Drone ID
+                </label>
+                <div className="w-full px-3.5 py-2.5 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-gray-50/50 dark:bg-[#202024] text-sm font-mono font-semibold text-[#6A717F] dark:text-zinc-500 cursor-not-allowed">
+                  {nextDroneInfo.id}
+                </div>
               </div>
 
-              <div className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
-                <div>Sistem akan membuat drone baru secara otomatis.</div>
-                <div>Data seperti ID dan MAC Address akan dibuat oleh sistem.</div>
-                <br />
-                <div>Apakah anda yakin ingin menambahkan drone baru?</div>
+              {/* Kolom Preview NAMA PERANGKAT */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#6A717F] mb-1.5">
+                  Nama Perangkat
+                </label>
+                <div className="w-full px-3.5 py-2.5 border border-[#E5E7EB] dark:border-zinc-800 rounded-xl bg-gray-50/50 dark:bg-[#202024] text-sm font-semibold text-[#6A717F] dark:text-zinc-500 cursor-not-allowed">
+                  {nextDroneInfo.name}
+                </div>
+              </div>
+
+              {/* Spanduk Informasi */}
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 rounded-xl flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300">
+                <AlertCircle className="w-4 h-4" />
+                <span>
+                  Sistem akan membuat perangkat ini secara otomatis.
+                </span>
               </div>
 
               <div className="pt-4 flex justify-end gap-3 border-t border-[#E5E7EB] dark:border-zinc-800 mt-6">
@@ -578,9 +564,7 @@ return sortedIds;
                   disabled={isSubmitting}
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#84994F] hover:bg-[#e65c00] transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting
-                    ? "Menyimpan..."
-                      : "Generate Drone"}
+                  {isSubmitting ? "Menyimpan..." : "Generate Drone"}
                 </button>
               </div>
             </form>
@@ -589,47 +573,66 @@ return sortedIds;
       )}
       
       {/* MODAL LIHAT PENGGUNA */}
-      {isUserModalOpen && currentDrone && currentDrone.operator && currentDrone.operator.length > 0 && (
+      {isUserModalOpen && currentDrone?.operator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className=" bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 text-left">
-            <div className="flex w-full justify-between pb-8">
-              <div className="">
-                <h2 className="text-lg font-bold text-[#191919] dark:text-white">Pengguna Terkait</h2>
+          <div className="bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+            
+            {/* Header Modal */}
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#191919] dark:text-white">
+                  Pengguna Terkait
+                </h2>
               </div>
               <button
-                onClick={() => {setIsUserModalOpen(false); setCurrentDrone(null)}}
-                className="text-[#6A717F]"
+                onClick={() => {
+                  setIsUserModalOpen(false);
+                  setCurrentDrone(null);
+                }}
+                className="text-[#6A717F] hover:text-[#191919]"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            {currentDrone.operator.map((op) => (
-              <ul key={op.id} className="text-center px-20 mb-5">
-                <li className="list-disc">
-                  <span className="block font-bold leading-tight truncate w-full">
+
+            {/* Kartu Profil */}
+            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-3 mb-6">
+              {currentDrone.operator.map((op) => (
+                <div key={op.id} className="bg-gray-50/50 dark:bg-[#202024] border border-[#E5E7EB] dark:border-zinc-800 rounded-xl p-5 flex flex-col items-center text-center gap-1 shadow-sm">
+                  <div className="w-12 h-12 bg-[#84994F]/10 text-[#84994F] rounded-full flex items-center justify-center mb-2">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-[#191919] dark:text-white text-base">
                     {op.name || "Tanpa Nama"}
-                  </span>
-                  <span className="block text-[11px] leading-tight font-normal text-[#5B6068] dark:text-zinc-400 truncate w-full">
+                  </h3>
+                  <p className="text-xs text-[#5B6068] dark:text-zinc-400">
                     {op.email}
-                  </span>
-                </li>
-              </ul>
-            ))}
+                  </p>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       )}
   
-      {/* MODAL KONFIRMASI DELETE */}
+      {/* MODAL DELETE */}
       {isDeleteModalOpen && currentDrone && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-[#16161a] border border-[#E5E7EB] dark:border-zinc-800 w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 text-left">
-            <h2 className="text-lg font-bold text-red-600 mb-2">Hapus Perangkat?</h2>
+            <h2 className="text-lg font-bold text-red-600 mb-2">
+              Hapus Perangkat?
+            </h2>
             <p className="text-sm text-[#5B6068] dark:text-zinc-400 mb-6 leading-relaxed">
               Apakah Anda yakin ingin menghapus perangkat <span className="font-semibold text-[#191919] dark:text-white">{currentDrone.name || currentDrone.id}</span> secara permanen dari sistem?
             </p>
             <div className="flex justify-end gap-3 pt-4">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold border border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">Batal</button>
-              <button onClick={handleDeleteConfirm} disabled={isSubmitting} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50">{isSubmitting ? "Menghapus..." : "Hapus Permanen"}</button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 rounded-xl text-sm font-semibold border border-[#E5E7EB] dark:border-zinc-800 text-[#5B6068] hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                Batal
+              </button>
+              <button onClick={handleDeleteConfirm} disabled={isSubmitting} className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50">
+                {isSubmitting ? "Menghapus..." : "Hapus Permanen"}
+              </button>
             </div>
           </div>
         </div>
