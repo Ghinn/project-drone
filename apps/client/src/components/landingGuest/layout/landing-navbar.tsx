@@ -89,16 +89,16 @@ export function LandingNavbar() {
             width={36}
             height={36}
             priority
-            className="h-9 w-auto object-contain"
+            className="h-10 w-auto object-contain"
           />
           <Image
             src="/images/logo-text.svg"
             alt="Logo Perusahaan Text"
-            width={120}
-            height={120}
+            width={200}
+            height={200}
             priority
             objectFit='cover'
-            className="w-20 h-20 object-contain"
+            className="w-28 h-28 object-contain"
           />
         </a>
 
