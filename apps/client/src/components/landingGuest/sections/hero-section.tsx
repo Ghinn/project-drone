@@ -2,23 +2,18 @@
 
 import { useTranslations } from 'next-intl';
 import { LandingPrimaryCta } from '@/components/landingGuest/layout/landing-primary-cta';
+import Image from 'next/image';
 
 export function HeroSection() {
   const t = useTranslations('Landing');
 
   return (
     <section
-      className="relative min-h-screen flex items-center scroll-mt-24"
-      style={{ background: '#0d1a06' }}
+      className="relative min-h-screen bg-no-repeat bg-cover bg-left flex items-center scroll-mt-24"
+      style={{ backgroundImage: 'url("/assets/images/hero-bg.svg")' }}
       id="home"
     >
-      <div className="absolute inset-0">
-        <img
-          alt="Aerial plantation"
-          className="w-full h-full object-cover"
-          style={{ opacity: 0.35 }}
-          src="https://images.unsplash.com/photo-1697350978674-4b40261b0dc3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920"
-        />
+      <div className="absolute inset-0 w-full h-full bg-[#0D1A06]/60">
       </div>
 
       <div className="relative max-w-6xl mx-auto px-6 py-32 w-full">
