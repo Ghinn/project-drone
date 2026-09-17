@@ -14,7 +14,7 @@ const NAV_ORDER: LandingSectionId[] = [
   'about',
   'platform',
   'capability',
-  'safety',
+  'security',
   // 'research',
   // 'features',
   // 'partners',

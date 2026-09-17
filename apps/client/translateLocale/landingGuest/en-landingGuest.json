@@ -38,7 +38,7 @@
       "about": "About",
       "platform": "Platform",
       "capability": "Capability",
-      "safety": "Safety"
+      "security": "Security"
     },    "hero": {
       "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Smart Solution for<br></br>Oil Palm<br></br>Health Detection",
       "description": "Integrating multispectral drones with real-time AI processing via a web dashboard to accurately predict tree health status. This enables responsive spot-spraying operations without the need to land the fleet.",
@@ -98,6 +98,25 @@
     "photoBreak": {
       "imageAlt": "Plantation canopy",
       "quote": "Instant identification of tree health status from the air, for targeted treatment operations."
+    },
+    "security": {
+      "eyebrow": "Security & Access",
+      "title": "Data Security & Flexible Access Management",
+      "description": "The Dreampalm platform is equipped with a Role-Based Access Control (RBAC) system to allocate specific access rights. This system ensures a secure and seamless workflow between analytical monitoring on the web interface and execution actions in the field.",
+      "items": {
+        "access": {
+          "title": "Administrators & Plantation Managers",
+          "body": "Granted comprehensive access rights to manage team accounts, monitor fleet inspection history, and evaluate overall plant health data summaries."
+        },
+        "operator": {
+          "title": "Web Operators",
+          "body": "Provided with a specialized dashboard view focused on monitoring drone movements, triggering live snapshots, and receiving real-time AI prediction results (Healthy/Unhealthy)."
+        },
+        "data": {
+          "title": "Encrypted Communication Sessions",
+          "body": "All data communication workflows, ranging from web-triggered snapshots to the reception of AI prediction results, are protected by strict authentication and encryption to ensure plantation data confidentiality."
+        }
+      }
     },
     "partners": {
       "eyebrow": "Institutional Partners",

@@ -9,6 +9,7 @@ import { PhotoBreakSection } from "@/components/landingGuest/sections/photo-brea
 import { PartnersSection } from "@/components/landingGuest/sections/partners-section";
 import { ContactSection } from "@/components/landingGuest/sections/contact-section";
 import { FooterSection } from "@/components/landingGuest/sections/footer-section";
+import { SecuritySection } from "@/components/landingGuest/sections/security-section";
 
 export default function LandingPage() {
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function LandingPage() {
         <ResearchSection />
         <FeaturesSection />
         <PhotoBreakSection />
+        <SecuritySection />
         {/* <PartnersSection /> */}
         {/* <ContactSection /> */}
         <FooterSection />

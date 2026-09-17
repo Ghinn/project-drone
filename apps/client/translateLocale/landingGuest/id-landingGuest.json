@@ -38,7 +38,7 @@
       "about": "Tentang",
       "platform": "Platform",
       "capability": "Kapabilitas",
-      "safety": "Keamanan"
+      "security": "Keamanan"
     },
     "hero": {
       "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Solusi Cerdas<br></br>Deteksi Kesehatan<br></br>Kelapa Sawit",
@@ -99,6 +99,25 @@
     "photoBreak": {
       "imageAlt": "Kanopi perkebunan",
       "quote": "Identifikasi status kesehatan pohon secara instan dari udara, untuk tindakan perawatan yang tepat sasaran."
+    },
+    "security": {
+      "eyebrow": "Keamanan & Akses",
+      "title": "Keamanan Data & Manajemen Akses Fleksibel",
+      "description": "Platform Dreampalm dilengkapi dengan sistem Role-Based Access Control (RBAC) untuk membagi hak akses secara spesifik. Sistem ini memastikan alur kerja yang aman dan mulus antara pemantauan analitik di layar web dengan tindakan eksekusi di lapangan.",
+      "items": {
+        "access": {
+          "title": "Administrator & Manajer Kebun",
+          "body": "Memiliki hak akses menyeluruh untuk mengelola akun tim, memantau riwayat inspeksi armada, serta mengevaluasi rekapitulasi data kesehatan tanaman secara keseluruhan."
+        },
+        "operator": {
+          "title": "Operator Web",
+          "body": "Mendapatkan tampilan dashboard khusus yang difokuskan untuk memantau pergerakan drone, memicu pengambilan gambar (live snapshot), dan menerima hasil prediksi AI (Sehat/Tidak Sehat) secara seketika."
+        },
+        "data": {
+          "title": "Sesi Komunikasi Terenskripsi",
+          "body": "Seluruh alur komunikasi data mulai dari pemicuan snapshot di web hingga penerimaan hasil prediksi AI dilindungi oleh autentikasi dan enkripsi ketat guna memastikan kerahasiaan informasi perkebunan."
+        }
+      }
     },
     "partners": {
       "eyebrow": "Mitra Institusional",
