@@ -36,12 +36,10 @@
   "Landing": {
     "nav": {
       "about": "About",
-      "research": "Research",
-      "features": "Features",
-      "partners": "Partners",
-      "contact": "Contact"
-    },
-    "hero": {
+      "platform": "Platform",
+      "capability": "Capability",
+      "safety": "Safety"
+    },    "hero": {
       "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Smart Solution for<br></br>Oil Palm<br></br>Health Detection",
       "description": "Integrating multispectral drones with real-time AI processing via a web dashboard to accurately predict tree health status. This enables responsive spot-spraying operations without the need to land the fleet.",
       "learnMore": "Learn More",

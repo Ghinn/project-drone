@@ -8,13 +8,17 @@ import {ThemeToggle} from '@/components/theme-toggle';
 import {LocaleToggle} from '@/components/locale-toggle';
 import {useAuth} from '@/providers/auth-provider';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const NAV_ORDER: LandingSectionId[] = [
   'about',
-  'research',
-  'features',
-  'partners',
-  'contact'
+  'platform',
+  'capability',
+  'safety',
+  // 'research',
+  // 'features',
+  // 'partners',
+  // 'contact'
 ];
 
 export function LandingNavbar() {
@@ -56,17 +60,20 @@ export function LandingNavbar() {
       ? role ?? initialSession?.role ?? null
       : initialSession?.role ?? null;
 
-  const headerBgClass = scrolled 
-    ? 'bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md' 
-    : 'bg-transparent';
+  // const headerBgClass = scrolled 
+  //   ? 'bg-white/95 dark:bg-[#121212]/95 backdrop-blur-md' 
+  //   : 'bg-transparent';
+  const headerBgClass = 'bg-white dark:bg-[#121212]/95 backdrop-blur-md';
   
-  const headerBorderClass = scrolled 
-    ? 'border-b border-[#e5e7eb] dark:border-[#2a2a2a]' 
-    : 'border-b border-transparent';
+  // const headerBorderClass = scrolled 
+  //   ? 'border-b border-[#e5e7eb] dark:border-[#2a2a2a]' 
+  //   : 'border-b border-transparent';
+  const headerBorderClass = 'border-b border-[#e5e7eb] dark:border-[#2a2a2a]';
 
-  const textColorClass = scrolled
-    ? 'text-[#1a1a1a] dark:text-[#e5e7eb]'
-    : 'text-white';
+  // const textColorClass = scrolled
+  //   ? 'text-[#1a1a1a] dark:text-[#e5e7eb]'
+  //   : 'text-white';
+  const textColorClass = 'text-[#1a1a1a] dark:text-[#e5e7eb]';
 
   return (
     <header
@@ -76,12 +83,23 @@ export function LandingNavbar() {
         
         {/* BRANDING / LOGO KIRI */}
         <a href="#home" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded bg-[#84994F] text-xs font-bold text-white">
-            PS
-          </span>
-          <span className={`text-base font-bold tracking-tight ${textColorClass}`}>
-            Drone
-          </span>
+          <Image
+            src="/images/logo.svg"
+            alt="Logo Perusahaan"
+            width={36}
+            height={36}
+            priority
+            className="h-9 w-auto object-contain"
+          />
+          <Image
+            src="/images/logo-text.svg"
+            alt="Logo Perusahaan Text"
+            width={120}
+            height={120}
+            priority
+            objectFit='cover'
+            className="w-20 h-20 object-contain"
+          />
         </a>
 
         {/* NAVIGASI UTAMA (DESKTOP) */}
@@ -103,9 +121,9 @@ export function LandingNavbar() {
 
         {/* KONTROL KANAN (DESKTOP & MOBILE) */}
         <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2 border-r border-[#e5e7eb] pr-3 dark:border-[#2a2a2a]">
-            <ThemeToggle />
+          <div className="hidden md:flex items-center gap-2">
             <LocaleToggle />
+            <ThemeToggle />
           </div>
 
           {hasAccount ? (

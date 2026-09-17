@@ -36,10 +36,9 @@
   "Landing": {
     "nav": {
       "about": "Tentang",
-      "research": "Riset",
-      "features": "Fitur",
-      "partners": "Kolaborasi",
-      "contact": "Kontak"
+      "platform": "Platform",
+      "capability": "Kapabilitas",
+      "safety": "Keamanan"
     },
     "hero": {
       "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Solusi Cerdas<br></br>Deteksi Kesehatan<br></br>Kelapa Sawit",

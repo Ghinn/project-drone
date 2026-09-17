@@ -50,10 +50,10 @@ export function LocaleToggle() {
   return (
     <div
       aria-label={t('label')}
-      className="flex items-center gap-1 rounded-full border border-neutral-200 p-1 dark:border-neutral-800"
+      className="flex items-center"
       role="group"
     >
-      {LOCALE_OPTIONS.map((option) => {
+      {/* {LOCALE_OPTIONS.map((option) => {
         const active = option.code === locale;
         const label = t(option.labelKey);
 
@@ -76,7 +76,17 @@ export function LocaleToggle() {
             <span aria-hidden="true">{option.flag}</span>
           </button>
         );
-      })}
+      })} */}
+      <button onClick={() => {
+        if(locale === 'en'){
+          handleChange('id')
+        } else{
+          handleChange('en')
+        }
+      }
+      } className='px-5 py-2 w-14 flex justify-center items-center rounded bg-[#C8553D1A] text-[#C8553D] font-semibold'>
+        {locale === 'en' ? 'EN' : 'ID'}
+      </button>
     </div>
   );
 }
