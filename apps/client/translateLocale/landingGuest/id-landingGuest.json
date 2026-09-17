@@ -47,9 +47,9 @@
       "primaryAction": "Masuk Dashboard",
       "metrics": {
         "accuracy": "Akurasi klasifikasi AI",
-        "coverage": "Cakupan per penerbangan",
         "sensor": "Sensor multispektral",
-        "latency": "Latensi inferensi"
+        "telemetry": "Pemantauan Telemetri Real-Time",
+        "treatment": "Penyemprotan Tepat Sasaran"
       }
     },
     "about": {

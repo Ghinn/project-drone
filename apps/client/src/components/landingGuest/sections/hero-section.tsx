@@ -55,9 +55,9 @@ export function HeroSection() {
         >
           {[
             { v: '94.7%', l: t('hero.metrics.accuracy') },
-            { v: '±12 ha', l: t('hero.metrics.coverage') },
             { v: '5-band', l: t('hero.metrics.sensor') },
-            { v: '< 80 ms', l: t('hero.metrics.latency') },
+            { v: 'IoT Web App', l: t('hero.metrics.telemetry') },
+            { v: 'Spot Treatment', l: t('hero.metrics.treatment') },
           ].map((m, idx) => (
             <div key={idx} className="pr-8">
               <div className="text-2xl font-bold mb-1" style={{ color: '#C1D343' }}>{m.v}</div>

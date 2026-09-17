@@ -46,9 +46,9 @@
       "primaryAction": "Access Dashboard",
       "metrics": {
         "accuracy": "AI Classification Accuracy",
-        "coverage": "Coverage per sortie",
-        "sensor": "Multispectral sensor",
-        "latency": "Inference latency"
+        "sensor": "Multispectral Sensor",
+        "telemetry": "Real-Time Telemetry Monitoring",
+        "treatment": "Targeted Spraying"
       }
     },
     "about": {
