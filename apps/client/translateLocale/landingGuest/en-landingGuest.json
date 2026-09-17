@@ -64,18 +64,17 @@
       }
     },
     "research": {
-      "imageAlt": "Research drone",
-      "imageCaption": "Drone UAV Platform · Multispectral & RC Spray Module",
+      "imageAlt": "Research Drone",
+      "imageCaption": "UAV Drone Platform · Multispectral Module & RC Spraying",
       "eyebrow": "Platform Overview",
-      "title": "A purpose-built UAV<br></br>for plantation monitoring",
-      "description": "The Drone drone integrates a 5-band multispectral sensor, an onboard NVIDIA Jetson Nano for real-time inference, RTK-GPS for sub-metre positioning, and a 2-litre spray tank actuated by RC command for precision fungicide application.",
+      "title": "High-Performance<br></br>Hardware Architecture",
+      "description": "The Dreampalm drone is specifically engineered to integrate a reliable propulsion system, edge computing, and precision spraying mechanisms into a unified system.",
       "specs": {
-        "specSensor": "Sensor", "valSensor": "5-band multispectral (NIR, RedEdge, NDVI, RGB)",
-        "specAi": "AI module", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
-        "specPositioning": "Positioning", "valPositioning": "RTK-GPS · ±0.8 m horizontal",
-        "specEndurance": "Endurance", "valEndurance": "28 min · 5,200 mAh LiPo 6S",
-        "specSpray": "Spray tank", "valSpray": "2 L · RC-triggered nozzle array",
-        "specComm": "Comm. link", "valComm": "5.8 GHz video + 915 MHz telemetry"
+        "specDriver": "Propulsion System", "valDriver": "Utilizes an 8-rotor configuration to ensure high flight stability and resistance to strong winds while operating over plantations.",
+        "specSensor": "Camera Sensor", "valSensor": "Advanced 5-band multispectral camera that captures specialized light spectra to detect hidden leaf health conditions invisible to the naked eye.",
+        "specAi": "Edge Computing", "valAi": "On-board mini-computer responsible for managing automated flight stability while processing artificial intelligence tasks in real-time.",
+        "specNavigation": "Navigation & Signals", "valNavigation": "High-precision location tracking module enabling the system to accurately lock onto tree coordinates without deviation, supported by a radio transmitter for long-range data communication.",
+        "specSpray": "Spray System", "valSpray": "Metered electric pump with specialized nozzle sets to apply treatment liquids precisely to targeted plant spots."
       }
     },
     "features": {

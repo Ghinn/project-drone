@@ -67,16 +67,15 @@
     "research": {
       "imageAlt": "Drone penelitian",
       "imageCaption": "Platform UAV Drone · Modul Multispektral & Penyemprotan RC",
-      "eyebrow": "Tinjauan Platform",
-      "title": "UAV yang dirancang khusus<br></br>untuk pemantauan perkebunan",
-      "description": "Drone Drone mengintegrasikan sensor multispektral 5-band, NVIDIA Jetson Nano terintegrasi untuk inferensi real-time, RTK-GPS untuk penentuan posisi sub-meter, dan tangki semprot 2 liter yang diaktifkan oleh perintah RC untuk aplikasi fungisida presisi.",
+      "eyebrow": "Gambaran Platform",
+      "title": "Arsitektur Hardware<br></br>Beperforma Tinggi",
+      "description": "Drone Dreampalm dirancang secara khusus mengintegrasikan sistem propulsi andal, komputasi edge, dan mekanisme penyemprotan presisi ke dalam satu kesatuan sistem.",
       "specs": {
-        "specSensor": "Sensor", "valSensor": "Multispektral 5-band (NIR, RedEdge, NDVI, RGB)",
-        "specAi": "Modul AI", "valAi": "NVIDIA Jetson Nano · YOLOv8-S",
-        "specPositioning": "Posisi", "valPositioning": "RTK-GPS · Horizontal ±0.8 m",
-        "specEndurance": "Daya Tahan", "valEndurance": "28 menit · 5,200 mAh LiPo 6S",
-        "specSpray": "Tangki semprot", "valSpray": "2 L · Susunan nosel dipicu RC",
-        "specComm": "Link Komun.", "valComm": "Video 5.8 GHz + telemetri 915 MHz"
+        "specDriver": "Sistem Penggerak", "valDriver": "Menggunakan konfigurasi 8 baling-baling untuk memastikan drone bermanuver dengan sangat stabil dan tidak goyah oleh angin saat mengudara di perkebunan.",
+        "specSensor": "Sensor Kamera", "valSensor": "Kamera multispektral canggih (5-Band) yang menangkap spektrum cahaya khusus untuk mendeteksi kondisi kesehatan daun yang tidak kasatmata.",
+        "specAi": "Otak Komputasi", "valAi": "Komputer mini bawaan (on-board) yang bertugas mengatur kestabilan penerbangan otomatis sekaligus memproses kecerdasan buatan (AI) secara instan.",
+        "specNavigation": "Navigasi & Sinyal", "valNavigation": "Modul pelacak lokasi presisi tinggi agar sistem dapat mengunci koordinat pohon secara akurat tanpa meleset, didukung pemancar radio untuk komunikasi data jarak jauh.",
+        "specSpray": "Sistem semprot", "valSpray": "Pompa elektrik bertenaga terukur dengan set nosel khusus untuk menembakkan cairan perawatan tepat ke titik sasaran tanaman."
       }
     },
     "features": {
