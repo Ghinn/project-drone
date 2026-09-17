@@ -42,13 +42,12 @@
       "contact": "Kontak"
     },
     "hero": {
-      "eyebrow": "Riset AgriTech · IoT & AI",
-      "title": "Deteksi Dini Penyakit<br></br>untuk Perkebunan<br></br><highlight>Kelapa Sawit</highlight>",
-      "description": "Drone menggabungkan pencitraan UAV multispektral dan inferensi AI terintegrasi untuk mengidentifikasi Busuk Pangkal Batang akibat Ganoderma pada tahap awal — sebelum gejala fisik terlihat.",
-      "learnMore": "Pelajari Lanjut",
-      "primaryAction": "Akses Dasbor",
+      "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Solusi Cerdas<br></br>Deteksi Kesehatan<br></br>Kelapa Sawit",
+      "description": "Integrasi drone multispektral dan pemrosesan AI instan via dashboard web untuk memprediksi status kesehatan pohon secara presisi, memungkinkan eksekusi penyemprotan (spot-spraying) yang responsif tanpa harus mendaratkan armada.",
+      "learnMore": "Pelajari Lebih Lanjut",
+      "primaryAction": "Masuk Dashboard",
       "metrics": {
-        "accuracy": "Akurasi klasifikasi",
+        "accuracy": "Akurasi klasifikasi AI",
         "coverage": "Cakupan per penerbangan",
         "sensor": "Sensor multispektral",
         "latency": "Latensi inferensi"

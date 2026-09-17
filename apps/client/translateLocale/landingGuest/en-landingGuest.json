@@ -42,13 +42,12 @@
       "contact": "Contact"
     },
     "hero": {
-      "eyebrow": "AgriTech Research · IoT & AI",
-      "title": "Early Disease Detection<br></br>for Palm Oil<br></br><highlight>Plantations</highlight>",
-      "description": "Drone combines multispectral UAV imaging and onboard AI inference to identify Ganoderma-driven Basal Stem Rot at early stages — before visible symptoms appear.",
+      "title": "<highlight>Dream</highlight><highlight2>Palm</highlight2><br></br>Smart Solution for<br></br>Oil Palm<br></br>Health Detection",
+      "description": "Integrating multispectral drones with real-time AI processing via a web dashboard to accurately predict tree health status. This enables responsive spot-spraying operations without the need to land the fleet.",
       "learnMore": "Learn More",
-      "primaryAction": "Enter Dashboard",
+      "primaryAction": "Access Dashboard",
       "metrics": {
-        "accuracy": "Classification accuracy",
+        "accuracy": "AI Classification Accuracy",
         "coverage": "Coverage per sortie",
         "sensor": "Multispectral sensor",
         "latency": "Inference latency"

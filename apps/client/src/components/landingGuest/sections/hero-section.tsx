@@ -23,27 +23,20 @@ export function HeroSection() {
 
       <div className="relative max-w-6xl mx-auto px-6 py-32 w-full">
         <div className="max-w-2xl">
-          {/* Eyebrow Label */}
-          <span
-            className="inline-block text-xs font-semibold tracking-widest uppercase mb-6 px-3 py-1 rounded-sm"
-            style={{ color: '#C1D343' }}
-          >
-            {t('hero.eyebrow')}
-          </span>
-
           <h1
             className="font-bold leading-tight mb-6"
             style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)', color: '#fff', lineHeight: 1.08 }}
           >
             {t.rich('hero.title', {
               br: () => <br />,
-              highlight: (chunks) => <span style={{ color: '#C1D343' }}>{chunks}</span>
+              highlight: (chunks) => <span style={{ color: '#C8553D' }}>{chunks}</span>,
+              highlight2: (chunks) => <span style={{ color: '#6B8E23' }}>{chunks}</span>
             })}
           </h1>
 
           <p
             className="text-lg leading-relaxed mb-10 font-light"
-            style={{ color: '#c8d4b8', maxWidth: 520 }}
+            style={{ color: '#DCFA92', maxWidth: 520 }}
           >
             {t('hero.description')}
           </p>
