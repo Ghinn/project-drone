@@ -40,7 +40,7 @@ export default function LandingPage() {
         <AboutSection />
         <ResearchSection />
         <FeaturesSection />
-        {/* <PhotoBreakSection /> */}
+        <PhotoBreakSection />
         {/* <PartnersSection /> */}
         {/* <ContactSection /> */}
         <FooterSection />
