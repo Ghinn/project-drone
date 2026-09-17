@@ -79,25 +79,21 @@
       }
     },
     "features": {
-      "eyebrow": "Kemampuan Sistem",
-      "title": "Deteksi ujung-ke-ujung<br></br>dalam satu penerbangan",
+      "eyebrow": "Kapabilitas Sistem",
+      "title": "Deteksi End-to-End dalam<br></br>Satu Ekosistem Terpadu",
       "items": {
         "classification": {
-          "title": "Klasifikasi Multispektral AI",
-          "body": "Model YOLOv8-Small yang dilatih pada 8,000 bingkai kanopi sawit beranotasi mengklasifikasikan keparahan penyakit ke dalam empat tahap — Sehat, Ringan, Sedang, dan Parah — di seluruh lima pita spektral dalam latensi di bawah 80 ms per siklus inferensi."
+          "title": "Klasifikasi AI Multispektral",
+          "body": "Menggunakan model Convolutional Neural Network (CNN) yang memproses nilai indeks vegetasi (NDVI) dan 5 spektrum cahaya untuk membedakan tanaman sehat dan tidak sehat dengan akurasi hingga 95,38%."
         },
         "monitoring": {
-          "title": "Pemantauan Video Real-Time",
-          "body": "Video H.264 langsung dengan anotasi deteksi AI dialirkan melalui downlink 5.8 GHz ke web dasbor stasiun darat. Operator dapat mengintervensi dari jarak jauh dan memicu penyemprotan presisi melalui perintah RC."
+          "title": "Web Monitoring & Live Snapshot",
+          "body": "Dashboard interaktif berbasis low latency memungkinkan operator memantau data telemetri, posisi GPS, dan melakukan capture/snapshot gambar tanaman secara langsung dari layar web saat drone melayang (hovering)."
         },
         "mapping": {
-          "title": "Pemetaan GPS Presisi",
-          "body": "Setiap deteksi ditandai dengan koordinat RTK-GPS akurat hingga ±0.8 m. Pasca-penerbangan, klaster penyakit dirender sebagai overlay perkebunan yang dapat diekspor agronomis untuk perencanaan perawatan."
+          "title": "Spot Spraying Responsif",
+          "body": "Ketika layar dashboard mengonfirmasi status 'Tidak Sehat', tindakan perawatan (spot-spraying) dapat segera dieksekusi langsung di lokasi target melalui aktuator pompa bertenaga tinggi, tanpa perlu mendaratkan armada."
         }
-      },
-      "specialFeature": {
-        "title": "Penyemprotan Presisi Dipicu RC",
-        "body": "Ketika AI menandai klaster penyakit, operator darat dapat mengaktifkan tangki semprot melalui perintah RC. Susunan nosel yang digerakkan servo melepaskan fungisida tepat di atas sawit terinfeksi, mengurangi konsumsi bahan kimia hingga 60% dibandingkan metode tabur konvensional. Data geolokasi dan waktu log disimpan di dasbor untuk pelacakan."
       }
     },
     "photoBreak": {

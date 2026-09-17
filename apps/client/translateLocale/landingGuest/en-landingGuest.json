@@ -79,24 +79,20 @@
     },
     "features": {
       "eyebrow": "System Capabilities",
-      "title": "End-to-end detection<br></br>in a single flight",
+      "title": "End-to-End Detection within<br></br>a Unified Ecosystem",
       "items": {
         "classification": {
-          "title": "AI Multispectral Classification",
-          "body": "A YOLOv8-Small model trained on 8,000 annotated palm canopy frames classifies disease severity into four stages — Healthy, Mild, Moderate, and Severe — across five spectral bands in under 80 ms per inference cycle."
+          "title": "Multispectral AI Classification",
+          "body": "Utilizes a Convolutional Neural Network (CNN) model that processes Normalized Difference Vegetation Index (NDVI) values and 5 light spectra to differentiate between healthy and unhealthy plants with up to 95.38% accuracy."
         },
         "monitoring": {
-          "title": "Real-Time Video Monitoring",
-          "body": "Live H.264 video with AI detection annotations is streamed over a 5.8 GHz downlink to the ground station web dashboard. Operators can intervene remotely and trigger precision spraying via RC command."
+          "title": "Web Monitoring & Live Snapshot",
+          "body": "A low-latency interactive dashboard enables operators to monitor telemetry data and GPS positions, as well as trigger instant image captures directly from the web interface while the drone is hovering."
         },
         "mapping": {
-          "title": "Precision GPS Mapping",
-          "body": "Each detection event is geo-tagged with RTK-GPS coordinates accurate to ±0.8 m. Post-flight, disease clusters are rendered as a plantation overlay that agronomists can export for field treatment planning."
+          "title": "Responsive Spot-Spraying",
+          "body": "Upon confirming an 'Unhealthy' status on the dashboard, precision spot-spraying can be triggered immediately at the target location via high-power pump actuators, without the need to land the fleet."
         }
-      },
-      "specialFeature": {
-        "title": "RC-Triggered Precision Spraying",
-        "body": "When the AI flags a disease cluster, the ground operator can activate the onboard spray tank via RC command. A servo-actuated nozzle array releases fungicide directly above infected palms, reducing chemical consumption by up to 60% compared to conventional broadcast application. The spray event timestamp and GPS coordinate are logged to the dashboard for traceability."
       }
     },
     "photoBreak": {
