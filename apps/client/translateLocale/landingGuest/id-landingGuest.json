@@ -147,14 +147,29 @@
       }
     },
     "footer": {
-      "brand": "Drone",
-      "tagline": "Proyek Riset",
-      "copyright": "© {year} Drone · Penggunaan Khusus Riset Akademis · Semua data disimulasikan",
-      "links": {
-        "privacy": "Privasi",
-        "terms": "Syarat",
-        "contact": "Kontak"
-      }
+      "tagline": "Solusi cerdas pemantauan dan perawatan kelapa sawit terpadu berbasis drone & AI.",
+      "exploration": {
+        "title": "Eksplorasi",
+        "links": {
+          "about": "Tentang",
+          "platform": "Platform",
+          "capabilities": "Kapabilitas",
+          "security": "Keamanan",
+          "login": "Login"
+        }
+      },
+      "contact": {
+        "title": "Alamat & Kontak",
+        "address": "Jl. Kumbang No.14, Kelurahan Babakan, Kecamatan Bogor Tengah, Kota Bogor, Jawa Barat 16128",
+        "email": "halo.dreampalm@gmail.com"
+      },
+      "partnership": {
+        "title": "Program Kemitraan",
+        "trials": "Uji Coba Lahan Perkebunan",
+        "collaboration": "Kolaborasi Riset Agritech",
+        "action": "Masuk Dashboard"
+      },
+      "copyright": "© 2026 DreamPalm Project. Hak Cipta Dilindungi Undang-Undang."
     }
   },
   "LocaleToggle": {

@@ -38,7 +38,7 @@ export function SecuritySection() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {MAIN_SECURITY.map((f, idx) => {
-            const CardColor = idx % 2 == 1 ? 'bg-[#6B8E231A] dark:bg-[#6B8E231A]/30' : 'bg-[#F9FAFB] dark:bg-[#1A1A1A]';
+            const CardColor = idx % 2 == 1 ? 'bg-[#6B8E231A] dark:bg-[#1A1A1A]' : 'bg-[#F9FAFB] dark:bg-[#6B8E231A]/30';
             const NumberColor = idx % 2 == 1 ? 'text-[#C8553D]' : 'text-[#6B8E23]';
             return (
               <div 

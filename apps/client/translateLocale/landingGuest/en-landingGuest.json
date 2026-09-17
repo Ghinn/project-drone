@@ -146,14 +146,29 @@
       }
     },
     "footer": {
-      "brand": "Drone",
-      "tagline": "Research Project",
-      "copyright": "© {year} Drone · Academic Research Use Only · All data is simulated",
-      "links": {
-        "privacy": "Privacy",
-        "terms": "Terms",
-        "contact": "Contact"
-      }
+      "tagline": "An integrated smart oil palm monitoring and maintenance solution powered by drones & AI.",
+      "exploration": {
+        "title": "Exploration",
+        "links": {
+          "about": "About",
+          "platform": "Platform",
+          "capabilities": "Capabilities",
+          "security": "Security",
+          "login": "Login"
+        }
+      },
+      "contact": {
+        "title": "Address & Contact",
+        "address": "Jl. Kumbang No.14, Kelurahan Babakan, Kecamatan Bogor Tengah, Kota Bogor, Jawa Barat 16128",
+        "email": "halo.dreampalm@gmail.com"
+      },
+      "partnership": {
+        "title": "Partnership Programs",
+        "trials": "Plantation Field Trials",
+        "collaboration": "Agritech Research Collaboration",
+        "action": "Access Dashboard"
+      },
+      "copyright": "© 2026 DreamPalm Project. All rights reserved."
     }
   },
   "LocaleToggle": {

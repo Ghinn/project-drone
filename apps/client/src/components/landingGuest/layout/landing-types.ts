@@ -10,6 +10,7 @@ export const LANDING_SECTION_IDS = [
   'platform',
   'capability',
   'security',
+  'footer'
 ] as const;
 
 export type LandingSectionId = (typeof LANDING_SECTION_IDS)[number];
