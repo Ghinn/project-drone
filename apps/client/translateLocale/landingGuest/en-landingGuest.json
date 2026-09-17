@@ -52,15 +52,15 @@
       }
     },
     "about": {
-      "eyebrow": "Research Background",
-      "title": "Digital agriculture for<br></br>sustainable oil palm",
-      "description1": "Basal Stem Rot (BSR), caused by <em>Ganoderma boninense</em>, is responsible for the loss of millions of oil palm trees annually across Southeast Asia. Conventional field scouting is too slow and too costly to catch the disease before it becomes systemic.",
-      "description2": "Drone replaces reactive scouting with proactive, data-driven monitoring. The system mounts a compact multispectral camera on a custom UAV platform, captures canopy-level imagery on a regular flight schedule, and runs an edge-AI classifier onboard — delivering geolocation-tagged treatment recommendations within minutes.",
-      "stats": {
-        "hectares": { "label": "Hectares surveyed", "note": "Field trial total" },
-        "f1score": { "label": "Model F1-score", "note": "Validation dataset" },
-        "endurance": { "label": "Flight endurance", "note": "Per battery cycle" },
-        "gps": { "label": "GPS accuracy", "note": "With RTK module" }
+      "eyebrow": "About the System",
+      "title": "Digital Agriculture for<br></br>the Future of Oil Palm",
+      "description1": "Oil palms frequently encounter health issues that have the potential to significantly reduce plantation productivity. Dreampalm is designed as an integrated agricultural drone system that combines aerial monitoring capabilities with artificial intelligence to differentiate between healthy and unhealthy palms directly in the field.",
+      "description2": "Unlike conventional maintenance methods that rely on blanket chemical spraying across the entire plantation, the Dreampalm system enables a precision spot-treatment approach. It automatically maps areas containing unhealthy palms and applies sprays only where necessary, significantly reducing operational costs while preserving the plantation's environmental sustainability.",
+      "features": {
+        "spray": { "label": "Spot Spraying", "note": "Targeted Application" },
+        "protocol": { "label": "WebRTC & MQTT", "note": "Real-Time Telemetry" },
+        "ai": { "label": "AI Multispectral CNN", "note": "Plant Health Detection" },
+        "camera": { "label": "Live Snapshot", "note": "Web-Triggered Instant Capture" }
       }
     },
     "research": {

@@ -97,7 +97,6 @@ export function LandingNavbar() {
             width={200}
             height={200}
             priority
-            objectFit='cover'
             className="w-28 h-28 object-contain"
           />
         </a>

@@ -10,12 +10,27 @@ const ICON_MAP = {
   satellite: Satellite
 };
 
-const ABOUT_STATS = [
-  { id: 'hectares', iconKey: 'leaf', value: '2,400+' },
-  { id: 'f1score', iconKey: 'target', value: '0.947' },
-  { id: 'endurance', iconKey: 'timer', value: '28 min' },
-  { id: 'gps', iconKey: 'satellite', value: '±0.8 m' },
+const ABOUT_FEATURES = [
+  { id: 'spray', iconKey: 'leaf', variant: 'green' },
+  { id: 'protocol', iconKey: 'target', variant: 'red' },
+  { id: 'ai', iconKey: 'timer', variant: 'red' },
+  { id: 'camera', iconKey: 'satellite', variant: 'green' },
 ] as const;
+
+const VARIANT_STYLES = {
+  green: {
+    card: 'border-[#BADC75] bg-[#6B8E231A] dark:border-[#384B20] dark:bg-[#18240F]/80',
+    icon: 'text-[#6B8E23] dark:text-[#B4CC40]',
+    title: 'text-[#6B8E23] dark:text-[#B4CC40]',
+    note: 'text-slate-900 dark:text-[#D1D5DB]',
+  },
+  red: {
+    card: 'border-[#FFBAAC] bg-[#C8553D1A] dark:border-[#50231B] dark:bg-[#251210]/80',
+    icon: 'text-[#C8553D] dark:text-[#E8735C]',
+    title: 'text-[#C8553D] dark:text-[#E8735C]',
+    note: 'text-slate-900 dark:text-[#D1D5DB]',
+  },
+} as const;
 
 const TECH_TAGS = [
   'Ganoderma Detection', 'Edge AI / YOLOv8', 'Multispectral NDVI',
@@ -31,15 +46,15 @@ export function AboutSection() {
       className="scroll-mt-10 bg-white py-28 transition-colors duration-300 dark:bg-[#121212]"
     >
       <div className="mx-auto max-w-6xl px-6">
-        <div className="grid grid-cols-1 items-start gap-20 lg:grid-cols-2">
+        <div className="items-start gap-20">
           
-          {/* BAGIAN KIRI: DESKRIPSI & TAGS */}
+          {/* JUDUL SECTION */}
           <div>
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-[#84994F]">
-              {t('about.eyebrow')} {/* Fallback: Research Background */}
+              {t('about.eyebrow')} 
             </p>
             
-            <h2 className="mb-6 font-bold leading-tight text-[#111827] dark:text-[#f3f4f6]" style={{ fontSize: 'clamp(1.8rem,3vw,2.8rem)' }}>
+            <h2 className="mb-6 font-bold leading-tight text-[#C8553D] dark:text-[#f3f4f6]" style={{ fontSize: 'clamp(1.8rem,3vw,2.8rem)' }}>
               {t.rich('about.title', {
                 br: () => <br />
               })}
@@ -55,42 +70,29 @@ export function AboutSection() {
               {t('about.description2')}
             </p>
             
-            <div className="flex flex-wrap gap-2">
-              {TECH_TAGS.map(tag => (
-                <span 
-                  key={tag} 
-                  className="rounded-sm bg-[#f0f5e3] px-3 py-1 text-xs font-medium text-[#84994F] dark:bg-[#1e2a0e] dark:text-[#C1D343]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
 
-          {/* BAGIAN KANAN: BENTO GRID STATS */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            {ABOUT_STATS.map((stat) => {
-              const Icon = ICON_MAP[stat.iconKey];
+          {/* FEATURES */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            {ABOUT_FEATURES.map((feature) => {
+              const Icon = ICON_MAP[feature.iconKey];
+              const Style = VARIANT_STYLES[feature.variant];
               
               return (
                 <div 
-                  key={stat.id} 
-                  className="rounded-sm border border-[#e5e7eb] bg-[#f9fafb] p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:border-[#2a2a2a] dark:bg-[#1a1a1a]"
+                  key={feature.id} 
+                  className={`rounded-sm border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${Style.card}`}
                 >
-                  <div className="mb-4 text-[#84994F] dark:text-[#C1D343]">
+                  <div className={`mb-4 ${Style.icon}`}>
                     <Icon className="h-6 w-6" strokeWidth={2} />
                   </div>
                   
-                  <div className="mb-0.5 text-2xl font-bold text-[#111827] dark:text-[#f3f4f6]">
-                    {stat.value}
+                  <div className={`mb-0.5 text-lg font-bold ${Style.title}`}>
+                    {t(`about.features.${feature.id}.label`)}
                   </div>
                   
-                  <div className="mb-0.5 text-xs font-semibold text-[#111827] dark:text-[#f3f4f6]">
-                    {t(`about.stats.${stat.id}.label`)}
-                  </div>
-                  
-                  <div className="text-xs text-[#4b5563] dark:text-[#9ca3af]">
-                    {t(`about.stats.${stat.id}.note`)}
+                  <div className={`text-xs ${Style.note}`}>
+                    {t(`about.features.${feature.id}.note`)}
                   </div>
                 </div>
               );

@@ -53,15 +53,15 @@
       }
     },
     "about": {
-      "eyebrow": "Latar Belakang Riset",
-      "title": "Pertanian digital untuk<br></br>kelapa sawit berkelanjutan",
-      "description1": "Busuk Pangkal Batang (BPB), yang disebabkan oleh <em>Ganoderma boninense</em>, bertanggung jawab atas hilangnya jutaan pohon kelapa sawit setiap tahun di seluruh Asia Tenggara. Pemantauan lapangan konvensional terlalu lambat dan memakan biaya tinggi untuk menangani penyakit sebelum menyebar.",
-      "description2": "Drone menggantikan pencarian reaktif dengan pemantauan proaktif berbasis data. Sistem ini memasang kamera multispektral ringkas pada platform UAV khusus, menangkap citra kanopi pada jadwal penerbangan rutin, dan menjalankan klasifikasi AI lokal secara langsung — memberikan rekomendasi perawatan ber-tag geolokasi dalam hitungan menit.",
-      "stats": {
-        "hectares": { "label": "Hektar disurvei", "note": "Total uji lapangan" },
-        "f1score": { "label": "F1-score Model", "note": "Dataset validasi" },
-        "endurance": { "label": "Daya tahan terbang", "note": "Per siklus baterai" },
-        "gps": { "label": "Akurasi GPS", "note": "Dengan modul RTK" }
+      "eyebrow": "Tentang Sistem",
+      "title": "Pertanian Digital untuk<br></br>Kelapa Sawit Masa Depan",
+      "description1": "Tanaman kelapa sawit sering kali menghadapi berbagai masalah kesehatan yang berpotensi menurunkan produktivitas perkebunan secara masif. Dreampalm hadir sebagai robot terbang pertanian terpadu yang menggabungkan kemampuan pemantauan udara dengan kecerdasan buatan untuk membedakan mana tanaman yang sehat dan tidak sehat secara langsung di lapangan.",
+      "description2": "Berbeda dengan metode pemeliharaan konvensional yang cenderung menyemprotkan bahan kimia ke seluruh lahan, sistem Dreampalm memungkinkan pendekatan penanganan tepat sasaran (spot-treatment). Sistem ini secara otomatis memetakan area yang berisi tanaman tidak sehat dan melakukan penyemprotan hanya pada titik yang membutuhkan penanganan, sehingga mampu menghemat biaya sekaligus menjaga kelestarian lingkungan perkebunan.",
+      "features": {
+        "spray": { "label": "Spot Spraying", "note": "Penyemprotan Tepat Sasaran" },
+        "protocol": { "label": "WebRTC & MQTT", "note": "Telemetri Real-Time" },
+        "ai": { "label": "AI Multispectral CNN", "note": "Deteksi Kesehatan Tanaman" },
+        "camera": { "label": "Live Snapshot", "note": "Pemicuan Foto Instan via Web" }
       }
     },
     "research": {
