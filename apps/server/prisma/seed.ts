@@ -19,6 +19,11 @@ const SEED_DRONES = [
     name: "DreamPalm Drone V1-002",
     status: "offline",
   },
+  {
+    id: "v1-003",
+    name: "DreamPalm Drone V1-003",
+    status: "offline",
+  },
 ];
 
 const SEED_USERS = [
