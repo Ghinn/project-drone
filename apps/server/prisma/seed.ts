@@ -6,7 +6,7 @@ import { getAuth } from "firebase-admin/auth";
 
 import { prisma } from "../src/lib/prisma";
 import { env } from "../src/config/env";
-import { ApprovalStatus, Role } from "../src/generated/prisma";
+import { ApprovalStatus, Role } from "@prisma/client";
 
 const SEED_DRONES = [
   {
@@ -31,20 +31,28 @@ const SEED_USERS = [
     assignedDroneId: null,
   },
   {
-    email: "ahmadsaiziraden@apps.ipb.ac.id",
+    email: "halo.operator@gmail.com",
     password: "admin123",
-    name: "Ahmad Sazira",
+    name: "Halo Operator",
+    role: Role.OPERATOR,
+    status: ApprovalStatus.APPROVED,
+    assignedDroneId: "v1-001",
+  },
+  {
+    email: "dioaranda2004@gmail.com",
+    password: "admin123",
+    name: "Dio Aranda",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
     assignedDroneId: "v1-002",
   },
   {
-    email: "dioaranda2004@gmail.com",
-    password: "@admin123",
-    name: "Dio Aranda",
+    email: "ahmadsaiziraden@apps.ipb.ac.id",
+    password: "admin123",
+    name: "Ahmad Sazira",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
-    assignedDroneId: "v1-001",
+    assignedDroneId: "v1-003",
   },
   {
     email: "ghiinarania@apps.ipb.ac.id",
