@@ -28,9 +28,9 @@ const SEED_DRONES = [
 
 const SEED_USERS = [
   {
-    email: "halo.dreampalm@gmail.com",
-    password: "dreampalm123",
-    name: "Super Admin",
+    email: "halo.admin@gmail.com",
+    password: "admin123",
+    name: "Halo Admin",
     role: Role.ADMIN,
     status: ApprovalStatus.APPROVED,
     assignedDroneId: null,
