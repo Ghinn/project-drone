@@ -201,7 +201,7 @@ prisma db seed  # Must run explicitly
 The `prisma-client` generator no longer exposes `Prisma.validator`. Use TypeScript's `satisfies` operator instead.
 
 ```typescript
-import { Prisma } from '../generated/prisma/client'
+import { Prisma } from '@prisma/client'
 
 const userSelect = {
   id: true,

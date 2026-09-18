@@ -49,7 +49,7 @@ If the rest of your app is still CommonJS, keep that setup and make the generate
 ```prisma
 generator client {
   provider     = "prisma-client"
-  output       = "../generated/prisma"
+  output       = "@prisma/client"
   moduleFormat = "cjs"
 }
 ```
@@ -66,7 +66,7 @@ Example:
 ```prisma
 generator client {
   provider               = "prisma-client"
-  output                 = "../generated/prisma"
+  output                 = "@prisma/client"
   runtime                = "nodejs"
   moduleFormat           = "esm"
   generatedFileExtension = "ts"
@@ -79,15 +79,15 @@ generator client {
 ### Server Code
 
 ```typescript
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 ```
 
 ### Browser-Safe Types
 
 ```typescript
-import { Prisma } from '../generated/prisma/browser'
-import { Role } from '../generated/prisma/enums'
-import type { UserModel } from '../generated/prisma/models/User'
+import { Prisma } from '@prisma/client/browser'
+import { Role } from '@prisma/client/enums'
+import type { UserModel } from '@prisma/client/models/User'
 ```
 
 ## File Extensions

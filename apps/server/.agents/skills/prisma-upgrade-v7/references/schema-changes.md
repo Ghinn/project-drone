@@ -9,7 +9,7 @@ This guide is for projects that are actually migrating to Prisma 7. Do not apply
 ```prisma
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "@prisma/client"
 }
 ```
 
@@ -26,7 +26,7 @@ The `output` field is mandatory when using `prisma-client`. Prisma Client no lon
 ```prisma
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "@prisma/client"
 }
 ```
 
@@ -37,7 +37,7 @@ Legacy Rust engine settings are gone. With `prisma-client`, the relevant value i
 ```prisma
 generator client {
   provider   = "prisma-client"
-  output     = "../generated/prisma"
+  output     = "@prisma/client"
   engineType = "client"
 }
 ```
@@ -49,7 +49,7 @@ If you must stay on CommonJS:
 ```prisma
 generator client {
   provider     = "prisma-client"
-  output       = "../generated/prisma"
+  output       = "@prisma/client"
   moduleFormat = "cjs"
 }
 ```
@@ -59,7 +59,7 @@ generator client {
 ### Standard project
 
 ```prisma
-output = "../generated/prisma"
+output = "@prisma/client"
 ```
 
 Creates files like:
@@ -116,7 +116,7 @@ export default defineConfig({
 
 2. Update imports throughout your codebase:
    ```typescript
-   import { PrismaClient } from '../generated/prisma/client'
+   import { PrismaClient } from '@prisma/client'
    ```
 
 3. Update `.gitignore` if you manage this manually:
@@ -126,7 +126,7 @@ export default defineConfig({
 
 4. Replace `Prisma.validator()` with TypeScript `satisfies` when using `prisma-client`:
    ```typescript
-   import { Prisma } from '../generated/prisma/client'
+   import { Prisma } from '@prisma/client'
 
    const userSelect = {
      id: true,
@@ -148,7 +148,7 @@ Preview features still work as before:
 ```prisma
 generator client {
   provider        = "prisma-client"
-  output          = "../generated/prisma"
+  output          = "@prisma/client"
   previewFeatures = ["relationJoins", "fullTextSearch"]
 }
 ```
@@ -158,7 +158,7 @@ Recent preview-feature examples also include `partialIndexes` for PostgreSQL, SQ
 ```prisma
 generator client {
   provider        = "prisma-client"
-  output          = "../generated/prisma"
+  output          = "@prisma/client"
   previewFeatures = ["partialIndexes"]
 }
 ```

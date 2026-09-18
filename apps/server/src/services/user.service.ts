@@ -1,5 +1,5 @@
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { Prisma, ApprovalStatus, Role } from "../generated/prisma";
+import { Prisma, ApprovalStatus, Role, User } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../lib/http";
 
@@ -78,7 +78,7 @@ export async function upsertUserFromDecodedToken(decoded: DecodedIdToken): Promi
   return prisma.user.create({
     data: {
       ...sharedData,
-      role: Role.PENGUSAHA,
+      role: Role.FARMER,
       status: ApprovalStatus.PENDING,
     },
   });

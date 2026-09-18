@@ -150,7 +150,7 @@ generator client {
 // After (v7)
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "@prisma/client"
   // Optional if you need CommonJS:
   // moduleFormat = "cjs"
 }
@@ -205,7 +205,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // After (v7)
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 
 const adapter = new PrismaPg({
@@ -218,7 +218,7 @@ const prisma = new PrismaClient({ adapter })
 ### 7. Replace Prisma.validator with satisfies
 
 ```typescript
-import { Prisma } from '../generated/prisma/client'
+import { Prisma } from '@prisma/client'
 
 const userSelect = {
   id: true,

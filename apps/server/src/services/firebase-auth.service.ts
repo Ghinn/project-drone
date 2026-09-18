@@ -1,5 +1,5 @@
 import { firebaseAuth } from "../lib/firebase";
-import { Role } from "../generated/prisma";
+import { Role } from "@prisma/client";
 import { AppError } from "../lib/http";
 
 export async function setCustomUserRole(uid: string, role: Role, droneId: string | null = null) {

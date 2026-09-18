@@ -1,5 +1,5 @@
 import type { DecodedIdToken } from "firebase-admin/auth";
-import type { User } from "../generated/prisma/client";
+import type { User } from "@prisma/client";
 
 declare global {
   namespace Express {

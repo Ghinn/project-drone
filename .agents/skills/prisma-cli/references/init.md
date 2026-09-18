@@ -87,7 +87,7 @@ prisma init --preview-feature relationJoins --preview-feature fullTextSearch
 ```prisma
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "@prisma/client"
 }
 
 datasource db {

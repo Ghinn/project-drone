@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Prisma, ApprovalStatus, Role } from "../generated/prisma";
+import { Prisma, ApprovalStatus, Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError, asyncHandler } from "../lib/http";
 import { publicUserSelect } from "../services/user.service";

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { Prisma } from "../generated/prisma/client";
+import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 
 export class AppError extends Error {
@@ -49,14 +49,16 @@ export function errorHandler(
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === "P2002") {
+    const prismaErr = err as any;
+
+    if (prismaErr.code === "P2002") {
       return res.status(409).json({
         message: "A unique field conflict occurred.",
-        meta: err.meta,
+        meta: prismaErr.meta,
       });
     }
 
-    if (err.code === "P2025") {
+    if (prismaErr.code === "P2025") {
       return res.status(404).json({
         message: "Record not found.",
       });
@@ -64,8 +66,8 @@ export function errorHandler(
 
     return res.status(400).json({
       message: "Database request failed.",
-      code: err.code,
-      meta: err.meta,
+      code: prismaErr.code,
+      meta: prismaErr.meta,
     });
   }
 

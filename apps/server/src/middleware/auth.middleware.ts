@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ApprovalStatus, Role } from "../generated/prisma";
+import { ApprovalStatus, Role } from "@prisma/client";
 import { env } from "../config/env";
 import { firebaseAuth } from "../lib/firebase";
 import { getClearSessionCookieOptions } from "../lib/cookies";

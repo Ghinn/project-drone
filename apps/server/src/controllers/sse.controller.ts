@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
-import { addClient, removeClient } from '../services/sse.service';
+import { addClient } from '../services/sse.service';
 
 export const streamTelemetrySSE = (req: Request, res: Response) => {
-    addClient(res);
+    addClient(req, res);
 
     req.on('close', () => {
-        removeClient(res);
         res.end();
     });
 };

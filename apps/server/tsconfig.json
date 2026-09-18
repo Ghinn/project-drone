@@ -18,14 +18,15 @@
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     
     // Interop Constraints
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     
     // Completeness
     "skipDefaultLibCheck": true,

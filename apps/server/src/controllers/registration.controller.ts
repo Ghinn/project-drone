@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma';
 import { firebaseAuth } from '../lib/firebase';
 import { setCustomUserRole } from '../services/firebase-auth.service';
 import { sendVerificationEmail } from '../lib/mailer';
-import { Role } from '../generated/prisma';
+import { Role } from '@prisma/client';
 
 export const registerFarmer = async (req: Request, res: Response) => {
     try {

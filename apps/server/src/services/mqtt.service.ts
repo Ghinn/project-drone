@@ -1,6 +1,6 @@
 import mqtt from 'mqtt';
 import { prisma } from '../lib/prisma';
-import env from '../config/env';
+import { env } from '../config/env';
 import { EventEmitter } from 'events';
 
 export const telemetryEmitter = new EventEmitter();
@@ -9,8 +9,8 @@ export const telemetryEmitter = new EventEmitter();
 const activeDronesState = new Map<string, any>();
 
 export function initMqtt() {
-    const client = mqtt.connect('mqtt://mqtt-dreampalm.duckdns.org:1883', {
-        username: process.env.MQTT_USERNAME || 'mqtt_dreampalm',
+    const client = mqtt.connect('mqtt://mqtt.dreampalm.id:1883', {
+        username: process.env.MQTT_USERNAME || 'mqtt-dreampalm',
         password: process.env.MQTT_PASSWORD || 'dreampalm'
     });
 
@@ -44,7 +44,7 @@ client.on('connect', () => {
                 await prisma.drone.upsert({
                     where: { id: droneId },
                     update: { status: statusStr },
-                    create: { id: droneId, status: statusStr }
+                    create: { id: droneId as string, status: statusStr }
                 });
 
                 telemetryEmitter.emit(`status_update_${droneId}`, { status: statusStr });

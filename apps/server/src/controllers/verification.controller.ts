@@ -36,7 +36,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
         });
 
         // Update status emailVerified di Firebase Auth
-        await firebaseAuth.updateUser(user.firebaseUid, {
+        await firebaseAuth.updateUser(user.firebaseUid as string, {
             emailVerified: true
         });
 
