@@ -21,9 +21,9 @@ export default function AppHeader() {
           <span className="font-semibold text-gray-900 dark:text-gray-100">
             {getPageTitle()}
           </span>
-          <span className="text-gray-400 dark:text-gray-600 text-xs hidden sm:inline">
+          {/* <span className="text-gray-400 dark:text-gray-600 text-xs hidden sm:inline">
             / {getPageTitleEn()}
-          </span>
+          </span> */}
         </div>
       </div>
 

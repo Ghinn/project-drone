@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef } from 'react';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 
 const T = DRONE_TOKENS;
@@ -15,17 +16,20 @@ export type MapWaypoint = {
 
 type DroneMapProps = {
   /** Mode: 'live' = drone bergerak, 'waypoints' = tampilkan riwayat titik */
-  mode: 'live' | 'waypoints';
+  mode?: 'live' | 'waypoints';
   /** Posisi drone saat ini (live) */
   dronePosition?: { lat: number; lng: number };
   /** Daftar titik waypoint (riwayat/log) */
   waypoints?: MapWaypoint[];
   /** Tinggi map dalam px */
-  height?: number;
+  height?: number | string;
   /** Callback saat waypoint diklik */
   onWaypointClick?: (wp: MapWaypoint) => void;
   /** Apakah drone aktif */
   droneOn?: boolean;
+  latDisplay?: string;
+  lngDisplay?: string;
+  altDisplay?: string;
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -34,202 +38,198 @@ const STATUS_COLOR: Record<string, string> = {
   warning:  T.orange,
   critical: T.red,
 };
+const CIKABAYAN_IPB_CENTER: [number, number] = [-6.5491118, 106.7160657];
 
 export default function DroneMap({
-  mode,
-  dronePosition,
+  mode = 'live',
+  dronePosition = { lat: -6.5491118, lng: 106.7160657 },
   waypoints = [],
-  height = 380,
+  height = 240,
   onWaypointClick,
   droneOn = true,
+  latDisplay,
+  lngDisplay,
+  altDisplay = '25.3 m',
 }: DroneMapProps) {
   const mapRef = useRef<import('leaflet').Map | null>(null);
   const containerId = useRef(`drone-map-${Math.random().toString(36).slice(2)}`).current;
-  const markersRef = useRef<import('leaflet').Marker[]>([]);
-  const polylineRef = useRef<import('leaflet').Polyline | null>(null);
   const droneMarkerRef = useRef<import('leaflet').Marker | null>(null);
+  const polylineRef = useRef<import('leaflet').Polyline | null>(null);
+  const pathHistoryRef = useRef<[number, number][]>([]);
 
-  // Default center: kebun sawit Kalimantan (mock)
-  const DEFAULT_CENTER: [number, number] = [3.3556, 114.5977];
-  const DEFAULT_ZOOM = 15;
+  const currentLat = dronePosition?.lat ?? CIKABAYAN_IPB_CENTER[0];
+  const currentLng = dronePosition?.lng ?? CIKABAYAN_IPB_CENTER[1];
+
+  const formattedLat = latDisplay ?? `${currentLat.toFixed(4)}°`;
+  const formattedLng = lngDisplay ?? `${currentLng.toFixed(4)}°`;
 
   useEffect(() => {
-    // Leaflet hanya bisa jalan di browser
     if (typeof window === 'undefined') return;
 
     let L: typeof import('leaflet');
-    let mounted = true;
+    let isMounted = true;
 
-    const init = async () => {
+    const initMap = async () => {
       L = (await import('leaflet')).default;
 
-      // Fix default icon path issue di Next.js
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      });
-
-      if (!mounted) return;
-
+      if (!isMounted) return;
       const container = document.getElementById(containerId);
       if (!container || mapRef.current) return;
 
-      // Inisialisasi map
+      const initialCenter: [number, number] = [currentLat, currentLng];
+
       const map = L.map(containerId, {
-        center: dronePosition
-          ? [dronePosition.lat, dronePosition.lng]
-          : waypoints.length > 0
-          ? [waypoints[0].lat, waypoints[0].lng]
-          : DEFAULT_CENTER,
-        zoom: DEFAULT_ZOOM,
-        zoomControl: true,
-        attributionControl: true,
+        center: initialCenter,
+        zoom: 18,
+        zoomControl: false,
+        attributionControl: false,
       });
 
       // OpenStreetMap tiles
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
       }).addTo(map);
 
-      mapRef.current = map;
-
-      // ── MODE LIVE: Drone marker ──
-      if (mode === 'live') {
-        const pos: [number, number] = dronePosition
-          ? [dronePosition.lat, dronePosition.lng]
-          : DEFAULT_CENTER;
-
-        const droneIcon = L.divIcon({
-          className: '',
-          html: `
-            <div style="
-              width: 32px; height: 32px;
-              background: ${T.green};
-              border: 3px solid white;
+      const droneHtml = `
+        <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; inset: -4px; border-radius: 50%; background: rgba(107, 142, 35, 0.35); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <img
+            src="/assets/images/icon-drone.svg"
+            alt="Drone Marker"
+            style="
+              width: 28px;
+              height: 28px;
               border-radius: 50%;
-              display: flex; align-items: center; justify-content: center;
-              font-size: 14px;
-              box-shadow: 0 0 0 4px ${T.green}44, 0 2px 8px rgba(0,0,0,0.4);
-            ">🚁</div>
-          `,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-        });
+              border: 2px solid white;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+              object-fit: contain;
+              display: block;
+              position: relative;
+              z-index: 1;
+            "
+          />
+        </div>
+      `;
 
-        droneMarkerRef.current = L.marker(pos, { icon: droneIcon })
-          .addTo(map)
-          .bindPopup(`<b>DP-DRONE-001</b><br/>Lat: ${pos[0].toFixed(5)}<br/>Lng: ${pos[1].toFixed(5)}`);
-      }
+      const droneIcon = L.divIcon({
+        className: 'custom-drone-icon',
+        html: droneHtml,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
 
-      // ── WAYPOINTS: Riwayat titik (berjalan di semua mode jika waypoints tersedia) ──
+      droneMarkerRef.current = L.marker(initialCenter, { icon: droneIcon }).addTo(map);
+
+      // Path trail line
+      pathHistoryRef.current = [initialCenter];
+      polylineRef.current = L.polyline(pathHistoryRef.current, {
+        color: '#5D7E2A',
+        weight: 3,
+        opacity: 0.85,
+        dashArray: '5 5',
+      }).addTo(map);
+
       if (waypoints.length > 0) {
-        const latlngs: [number, number][] = waypoints.map(wp => [wp.lat, wp.lng]);
-
-        // Polyline jejak
-        polylineRef.current = L.polyline(latlngs, {
-          color: T.green,
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '8 4',
-        }).addTo(map);
-
-        // Markers per waypoint
         waypoints.forEach((wp, idx) => {
           const color = STATUS_COLOR[wp.status ?? 'ok'];
-          const icon = L.divIcon({
+          const wpIcon = L.divIcon({
             className: '',
             html: `
               <div style="
-                width: 28px; height: 28px;
+                width: 22px; height: 22px;
                 background: ${color};
-                border: 2.5px solid white;
+                border: 2px solid white;
                 border-radius: 50%;
                 display: flex; align-items: center; justify-content: center;
-                font-size: 11px; font-weight: bold; color: white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                font-size: 10px; font-weight: bold; color: white;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.3);
               ">${idx + 1}</div>
             `,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
+            iconSize: [22, 22],
+            iconAnchor: [11, 11],
           });
 
-          const marker = L.marker([wp.lat, wp.lng], { icon })
-            .addTo(map)
-            .bindPopup(`
-              <b>${wp.id ?? `Titik ${idx + 1}`}</b><br/>
-              ${wp.label ?? ''}<br/>
-              <span style="color:${color};font-weight:bold;">${wp.status?.toUpperCase() ?? ''}</span><br/>
-              ${wp.time ? `🕐 ${wp.time}` : ''}
-            `);
-
-          if (onWaypointClick) {
-            marker.on('click', () => onWaypointClick(wp));
-          }
-
-          markersRef.current.push(marker);
+          const marker = L.marker([wp.lat, wp.lng], { icon: wpIcon }).addTo(map);
+          if (wp.label) marker.bindPopup(`<b>${wp.label}</b>`);
+          if (onWaypointClick) marker.on('click', () => onWaypointClick(wp));
         });
-
-        // Fit map ke bounds — hanya di waypoints-only mode agar live mode tidak re-center
-        if (mode === 'waypoints' && latlngs.length > 1) {
-          map.fitBounds(latlngs, { padding: [30, 30] });
-        }
       }
 
+      mapRef.current = map;
     };
 
-    init();
+    initMap();
 
     return () => {
-      mounted = false;
+      isMounted = false;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
-        markersRef.current = [];
-        polylineRef.current = null;
         droneMarkerRef.current = null;
+        polylineRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [containerId]);
 
   // Update drone marker posisi saat live mode
   useEffect(() => {
-    if (!mapRef.current || mode !== 'live' || !dronePosition || !droneMarkerRef.current) return;
-    droneMarkerRef.current.setLatLng([dronePosition.lat, dronePosition.lng]);
-    mapRef.current.panTo([dronePosition.lat, dronePosition.lng], { animate: true, duration: 1 });
-  }, [dronePosition, mode]);
+    if (!mapRef.current || !droneMarkerRef.current || !dronePosition) return;
+
+    const newPos: [number, number] = [dronePosition.lat, dronePosition.lng];
+    droneMarkerRef.current.setLatLng(newPos);
+    mapRef.current.panTo(newPos, { animate: true, duration: 3.5 });
+
+    // Path Terbang
+    if (polylineRef.current) {
+      pathHistoryRef.current = [...pathHistoryRef.current.slice(-30), newPos];
+      polylineRef.current.setLatLngs(pathHistoryRef.current);
+    }
+  }, [dronePosition]);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden" style={{ height }}>
+    <div
+      className="relative w-full rounded-xl overflow-hidden bg-white dark:bg-[#111] border border-gray-200 dark:border-[#222] flex flex-col justify-between select-none shadow-xs"
+      style={{ height: typeof height === 'number' ? `${height}px` : height, minHeight: '190px' }}
+    >
       {/* Leaflet CSS */}
       <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         crossOrigin=""
       />
+      <div className='flex justify-between items-center px-2'>
+        <div className="px-2.5 py-1">
+          <h3 className="text-[11px] font-bold tracking-wider text-gray-700 dark:text-gray-300 uppercase">GPS MAP</h3>
+        </div>
+
+        <div className="px-2.5 py-1 text-[10px] font-semibold text-[#5D7E2A]">
+          📍 Cikabayan IPB
+        </div>
+      </div>
 
       {/* Map Container */}
       <div
         id={containerId}
-        style={{ width: '100%', height: '100%', zIndex: 0 }}
+        className="w-full h-full z-0"
+        style={{ minHeight: '150px' }}
       />
 
-
-
-      {/* Mode badge */}
-      <div className="absolute top-2 right-2 z-10">
-        <span className="text-[10px] font-bold px-2 py-1 rounded-md"
-          style={{
-            background: mode === 'live' ? `${T.red}cc` : `${T.violet}cc`,
-            color: '#fff',
-            backdropFilter: 'blur(4px)',
-          }}>
-          {mode === 'live' ? '● LIVE GPS' : '📍 RIWAYAT GPS'}
-        </span>
+      {/* Bagian Lat Lng Alt */}
+      <div className="absolute bottom-2.5 left-0 right-0 z-[400] px-3 pointer-events-none">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
+            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">LAT</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{formattedLat}</span>
+          </div>
+          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
+            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">LNG</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{formattedLng}</span>
+          </div>
+          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
+            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">ALT</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{altDisplay}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

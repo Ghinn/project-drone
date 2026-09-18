@@ -1,24 +1,40 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
-import type { MapWaypoint } from './drone-map';
+import { 
+  Camera, 
+  Battery, 
+  Wifi, 
+  ArrowDown, 
+  CheckCircle2, 
+  AlertTriangle,
+  CheckCircle,
+  X,
+  Radio,
+  Dot
+} from 'lucide-react';
+import { MapWaypoint } from './drone-map';
 
 const T = DRONE_TOKENS;
 
 // Leaflet map harus dynamic import (tidak SSR) karena butuh window
-const DroneMap = dynamic(() => import('./drone-map'), { ssr: false, loading: () => (
-  <div className="w-full rounded-xl bg-[#0f172a] flex items-center justify-center" style={{ height: 380 }}>
-    <span className="text-xs text-gray-500">Memuat peta GPS...</span>
-  </div>
-)});
+const DroneMap = dynamic(() => import('./drone-map'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full rounded-xl bg-gray-100 dark:bg-[#111] flex items-center justify-center min-h-[210px]">
+      <span className="text-xs text-gray-400">Memuat peta GPS Leaflet...</span>
+    </div>
+  ),
+});
 
-const LIVE_IMG = 'https://images.unsplash.com/photo-1508175688576-0c076b47b5b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200';
-const NDVI_IMG = 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800';
+// Dummy asset paths
+const LIVE_VIDEO = '/assets/operator/dummy/live-drone.mp4';
+const SEHAT_IMG = '/assets/operator/dummy/sehat.png';
+const TIDAK_SEHAT_IMG = '/assets/operator/dummy/Tidak sehat.png';
 
-type CameraMode = 'live' | 'riwayat';
 
 type PredictionResult = {
   label: string;
@@ -73,315 +89,308 @@ const LIVE_POSITIONS = [
   { lat: 3.3572, lng: 114.5997 },
   { lat: 3.3578, lng: 114.6004 },
 ];
+// Koordinat Kebun Percobaan
+const CIKABAYAN_POSITIONS = [
+  { lat: -6.5491118, lng: 106.7160657 },
+  { lat: -6.5489800, lng: 106.7162400 },
+  { lat: -6.5488200, lng: 106.7164100 },
+  { lat: -6.5487100, lng: 106.7165800 },
+  { lat: -6.5489200, lng: 106.7167100 },
+  { lat: -6.5491800, lng: 106.7165600 },
+  { lat: -6.5493400, lng: 106.7163300 },
+  { lat: -6.5492100, lng: 106.7161100 },
+];
+
+type SnapshotCondition = 'idle' | 'sehat' | 'tidak_sehat';
 
 export default function PantauDroneSection() {
-  const { droneOn, setDroneOn, telemetry } = useMonitoringOperator();
-  const [tick, setTick] = useState<Date | null>(null);
-  const [cameraMode, setCameraMode] = useState<CameraMode>('live');
-  const [snapshotTaken, setSnapshotTaken] = useState(false);
+  const { droneOn, telemetry } = useMonitoringOperator();
+  const [timeStr, setTimeStr] = useState<string>('15.22');
   const [snapshotFlash, setSnapshotFlash] = useState(false);
-  const [snapshotTime, setSnapshotTime] = useState<string>('');
-  const [snapshotGps] = useState('3°21\'14.2"N 114°35\'48.9"E');
-  const [isPredicting, setIsPredicting] = useState(false);
-  const [predResult, setPredResult] = useState<PredictionResult>(null);
-  const [savedToLog, setSavedToLog] = useState(false);
-  const [livePosIdx, setLivePosIdx] = useState(0);
+  const [posIdx, setPosIdx] = useState(0);
+  const [snapshotCondition, setSnapshotCondition] = useState<SnapshotCondition>('idle');
+  const [currentSnapshotImg, setCurrentSnapshotImg] = useState<string | null>(null);
+  const [snapshotPos, setSnapshotPos] = useState<{ latStr: string; lngStr: string; altStr: string } | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showNozzleModal, setShowNozzleModal] = useState(false);
+  const [isSprayingActive, setIsSprayingActive] = useState(false);
 
-  const battColor = telemetry.battery > 50 ? T.green : telemetry.battery > 20 ? T.amber : T.red;
+  // Timer
+  const aiProcessTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const popupShowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const popupHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clock
+  // telemetri
+  const [batteryLevel, setBatteryLevel] = useState(84);
+  const [droneSpeed, setDroneSpeed] = useState(0.0);
+  const [altitude, setAltitude] = useState(25.3);
+
+  // semprot pestisida
+  const [spraySeconds, setSpraySeconds] = useState(0);
+  const [sprayVolume, setSprayVolume] = useState(0.0);
+  const [tankRemaining, setTankRemaining] = useState(98);
+
   useEffect(() => {
-    setTick(new Date());
-    const t = setInterval(() => setTick(new Date()), 1000);
-    return () => clearInterval(t);
+    return () => {
+      if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
+      if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
+      if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
+    };
   }, []);
 
-  // Simulasi drone bergerak (live GPS)
   useEffect(() => {
-    if (!droneOn || cameraMode !== 'live') return;
-    const t = setInterval(() => {
-      setLivePosIdx(i => (i + 1) % LIVE_POSITIONS.length);
-    }, 3000);
-    return () => clearInterval(t);
-  }, [droneOn, cameraMode]);
+    const updateTime = () => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      setTimeStr(`${hours}.${mins}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Reset saat drone mati
+  // Pergerakan GPS Drone
   useEffect(() => {
-    if (!droneOn) {
-      setSnapshotTaken(false);
-      setSnapshotFlash(false);
-      setSnapshotTime('');
-      setPredResult(null);
-      setSavedToLog(false);
-      setIsPredicting(false);
-    }
+    if (!droneOn) return;
+    const interval = setInterval(() => {
+      setPosIdx(prev => (prev + 1) % CIKABAYAN_POSITIONS.length);
+      setBatteryLevel(prev => (prev > 20 ? Number((prev - 0.01).toFixed(1)) : prev));
+      setAltitude(prev => Number((25.0 + Math.sin(Date.now() / 6000) * 0.3).toFixed(1)));
+      setDroneSpeed(prev => (Math.random() > 0.6 ? Number((1.2 + Math.random() * 0.5).toFixed(1)) : 1.4));
+    }, 9000);
+    return () => clearInterval(interval);
   }, [droneOn]);
 
+  // Monitor Penyemprotan Pestisida
+  useEffect(() => {
+    let sprayTimer: NodeJS.Timeout;
+
+    if (isSprayingActive) {
+      sprayTimer = setInterval(() => {
+        setSpraySeconds(prevSec => {
+          if (prevSec >= 60) {
+            clearInterval(sprayTimer);
+            return 60;
+          }
+          const nextSec = prevSec + 1;
+          const nextVol = Math.min(100.0, Number(((nextSec / 60) * 100).toFixed(1)));
+          setSprayVolume(nextVol);
+          const nextTank = Math.max(90, Math.round(98 - (nextSec / 60) * 8));
+          setTankRemaining(nextTank);
+          return nextSec;
+        });
+      }, 1000);
+    } else {
+      setSpraySeconds(0);
+      setSprayVolume(0.0);
+      setTankRemaining(98);
+    }
+
+    return () => clearInterval(sprayTimer);
+  }, [isSprayingActive]);
+
+  // Handle Snapshot, Kondisinya: Sehat > Tidak Sehat > Sehat lagi
   const handleSnapshot = () => {
-    if (!droneOn) return;
+    if (!droneOn || isAnalyzing) return;
+
+    if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
+    if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
+    if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
+
     setSnapshotFlash(true);
-    setTimeout(() => setSnapshotFlash(false), 350);
-    setSnapshotTime(new Date().toLocaleTimeString('id-ID'));
-    setSnapshotTaken(true);
-    setPredResult(null);
-    setSavedToLog(false);
+    setTimeout(() => setSnapshotFlash(false), 300);
+
+    // Target kondisi berikutnya
+    const nextCond: SnapshotCondition =
+      snapshotCondition === 'idle' || snapshotCondition === 'tidak_sehat'
+        ? 'sehat'
+        : 'tidak_sehat';
+
+    const nextImg = nextCond === 'sehat' ? SEHAT_IMG : TIDAK_SEHAT_IMG;
+    setCurrentSnapshotImg(nextImg);
+    setSnapshotPos({
+      latStr: `${Math.abs(currentPos.lat).toFixed(6)}°S`,
+      lngStr: `${Math.abs(currentPos.lng).toFixed(6)}°E`,
+      altStr: altDisplay,
+    });
+
+    // Mulai proses AI
+    setIsAnalyzing(true);
+    setShowNozzleModal(false);
+    setIsSprayingActive(false);
+
+    aiProcessTimerRef.current = setTimeout(() => {
+      setIsAnalyzing(false);
+      setSnapshotCondition(nextCond);
+
+      if (nextCond === 'tidak_sehat') {
+        // Tunggu 5 detik setelah hasil prediksi muncul, lalu buka popup
+        popupShowTimerRef.current = setTimeout(() => {
+          setShowNozzleModal(true);
+
+          // Tutup popup lalu nyalakan semprot pestisida
+          popupHideTimerRef.current = setTimeout(() => {
+            setShowNozzleModal(false);
+            setIsSprayingActive(true);
+          }, 10000);
+        }, 5000);
+      } else {
+        setShowNozzleModal(false);
+        setIsSprayingActive(false);
+      }
+    }, 3000);
   };
 
-  const handlePredict = () => {
-    if (!snapshotTaken) return;
-    setIsPredicting(true);
-    setPredResult(null);
-    setTimeout(() => { setIsPredicting(false); setPredResult(MOCK_RESULT); }, 2400);
-  };
+  const currentPos = (telemetry.latitude !== 0 && telemetry.longitude !== 0)
+    ? { lat: telemetry.latitude, lng: telemetry.longitude }
+    : CIKABAYAN_POSITIONS[posIdx];
 
-  const handleSaveToLog = () => {
-    setSavedToLog(true);
-    setTimeout(() => setSavedToLog(false), 3000);
-  };
+  const currentLatStr = `${Math.abs(currentPos.lat).toFixed(6)}°S`;
+  const currentLngStr = `${Math.abs(currentPos.lng).toFixed(6)}°E`;
 
-  const sev = predResult ? SEVERITY_STYLE[predResult.severity] : null;
+  const battDisplay = telemetry.battery ? telemetry.battery.toFixed(0) : Math.round(batteryLevel).toString();
+  const altDisplay = telemetry.altitude ? `${telemetry.altitude.toFixed(1)} m` : `${altitude} m`;
+  const speedDisplay = telemetry.groundSpeed ? `${telemetry.groundSpeed.toFixed(1)} m/s` : `${droneSpeed} m/s`;
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
 
-      {/* ── HEADER ──────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Pantau Drone</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Drone Monitor · Pemantauan real-time & analisis AI</p>
-        </div>
-
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a]">
-          <button
-            onClick={() => setCameraMode('live')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
-            style={cameraMode === 'live' ? { background: T.red, color: '#fff' } : { color: '#9ca3af' }}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${cameraMode === 'live' ? 'bg-white animate-pulse' : 'bg-gray-400'}`} />
-            LIVE
-          </button>
-          <button
-            onClick={() => setCameraMode('riwayat')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
-            style={cameraMode === 'riwayat' ? { background: T.violet, color: '#fff' } : { color: '#9ca3af' }}
-          >
-            📁 Riwayat / Record
-          </button>
-        </div>
-      </div>
-
-      {/* ── MAIN GRID: Camera | Map | Telemetri ─────────────── */}
-      {/* grid-cols-5: Camera=2, Map=2, Telemetri=1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
-        {/* ── CAMERA (2 col) ───────────────────────────────── */}
-        <div className="lg:col-span-2 flex flex-col gap-3">
-
-          {/* Video Frame */}
-          <div className="rounded-xl overflow-hidden bg-black border border-gray-200 dark:border-[#1e1e1e] relative" style={{ minHeight: 380 }}>
-
-            {/* DRONE OFF overlay */}
-            {!droneOn && cameraMode === 'live' ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ minHeight: 380, background: '#0a0a0a' }}>
-                <div className="absolute inset-0 opacity-10 pointer-events-none"
-                  style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.05) 2px, rgba(255,255,255,0.05) 4px)' }} />
-                <div className="w-20 h-20 rounded-full flex items-center justify-center border-2" style={{ borderColor: '#333', background: '#111' }}>
-                  <svg width="36" height="36" fill="none" stroke="#555" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"
-                      d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                    <line x1="3" y1="3" x2="21" y2="21" strokeLinecap="round" strokeWidth="1.5" />
-                  </svg>
-                </div>
-                <div className="text-center space-y-1.5">
-                  <p className="text-base font-bold" style={{ color: '#555' }}>KAMERA TIDAK AKTIF</p>
-                  <p className="text-sm" style={{ color: '#444' }}>Camera Offline</p>
-                  <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{ background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a' }}>
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#555' }} />
-                    Drone tidak aktif · DP-DRONE-001
-                  </div>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4 flex items-start gap-2 px-4 py-2.5 rounded-lg text-xs"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1e1e1e' }}>
-                  <svg width="14" height="14" fill="none" stroke="#555" viewBox="0 0 24 24" className="shrink-0 mt-0.5">
-                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
-                    <path strokeLinecap="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
-                  </svg>
-                  <span style={{ color: '#555' }}>
-                    {/* NOTE FOR BACKEND: Replace this offline screen with live stream feed
-                        (e.g. WebRTC / RTSP / WebSocket stream) when drone is connected.
-                        Condition: droneOn === true → show stream; droneOn === false → show this screen. */}
-                    Aktifkan drone dari menu Dashboard untuk memulai kamera live.
-                    <em className="block mt-0.5 opacity-60">Activate drone from Dashboard to start live feed.</em>
-                  </span>
-                </div>
-              </div>
-
-            ) : cameraMode === 'live' ? (
-              // ── DRONE ON: Live feed ──
-              <>
-                <img src={LIVE_IMG} alt="Live aerial view kebun sawit" className="w-full h-full object-cover" style={{ minHeight: 380 }} />
-                {/* HUD Corners */}
-                {['top-3 left-3 border-t-2 border-l-2','top-3 right-3 border-t-2 border-r-2','bottom-3 left-3 border-b-2 border-l-2','bottom-3 right-3 border-b-2 border-r-2'].map((pos, i) => (
-                  <div key={i} className={`absolute w-6 h-6 ${pos}`} style={{ borderColor: T.green }} />
-                ))}
-                {/* Crosshair */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="relative w-12 h-12">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-4" style={{ background: `${T.green}80` }} />
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-4" style={{ background: `${T.green}80` }} />
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-0.5" style={{ background: `${T.green}80` }} />
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-0.5" style={{ background: `${T.green}80` }} />
-                    <div className="absolute inset-3 rounded-full border" style={{ borderColor: `${T.green}60` }} />
-                  </div>
-                </div>
-                {/* Detection Box */}
-                <div className="absolute border-2 rounded" style={{ top: '28%', left: '38%', width: '120px', height: '90px', borderColor: T.red, boxShadow: `0 0 12px ${T.red}66` }}>
-                  <span className="absolute -top-5 left-0 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.red, color: '#fff' }}>BSR 94%</span>
-                </div>
-                {/* Top Bar */}
-                <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2.5 bg-gradient-to-b from-black/70 to-transparent">
-                  <span className="text-[10px] font-mono text-emerald-300">DJI Mavic 3 · DP-DRONE-001</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-gray-300">{tick ? tick.toLocaleTimeString('id-ID') : '--:--:--'}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: `${T.red}cc`, color: '#fff' }}>● REC</span>
-                  </div>
-                </div>
-                {/* Bottom GPS Bar */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-emerald-300">GPS: {snapshotGps}</span>
-                    <span className="text-xs font-mono text-emerald-300">ALT: 25.3 m · {telemetry.battery.toFixed(0)}% BAT</span>
-                  </div>
-                </div>
-                {snapshotFlash && <div className="absolute inset-0 bg-white/70 animate-ping pointer-events-none" />}
-              </>
-
-            ) : (
-              // ── RIWAYAT MODE kamera: full-width, tanpa sidebar ──
-              <div className="relative w-full" style={{ minHeight: 380 }}>
-                <img src={LIVE_IMG} alt="Rekaman" className="w-full h-full object-cover" style={{ minHeight: 380 }} />
-                <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2" style={{ borderColor: T.green }} />
-                <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2" style={{ borderColor: T.green }} />
-                <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2" style={{ borderColor: T.green }} />
-                <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2" style={{ borderColor: T.green }} />
-                {/* Detection box */}
-                <div className="absolute border-2 rounded" style={{ top: '28%', left: '38%', width: '120px', height: '90px', borderColor: T.red, boxShadow: `0 0 10px ${T.red}55` }}>
-                  <span className="absolute -top-4 left-0 text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.red, color: '#fff' }}>BSR 94%</span>
-                </div>
-                <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-2.5 bg-gradient-to-b from-black/70 to-transparent">
-                  <span className="text-[10px] font-mono text-emerald-300">DP-DRONE-001 · Misi #037</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-700 text-gray-300">📂 REKAMAN</span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 px-4 py-2.5 bg-gradient-to-t from-black/80 to-transparent">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-emerald-300">GPS: {snapshotGps}</span>
-                    <span className="text-xs font-mono text-emerald-300">14:32:17 WIB · ALT: 25.3 m</span>
-                  </div>
-                </div>
-              </div>
-            )}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <div className="lg:col-span-8 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16] animate-pulse" />
+              <h2 className="font-bold text-sm text-gray-800 dark:text-gray-200">Live Camera</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-gray-400 font-medium">{timeStr}</span>
+              <span className="px-2.5 py-0.5 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-[11px] rounded tracking-wide">
+                LIVE
+              </span>
+              <span className="px-2.5 py-0.5 bg-[#D8EFEB] text-[#23816F] font-bold text-[11px] rounded tracking-wide">
+                LOITER
+              </span>
+            </div>
           </div>
 
-          {/* Metrics bar */}
-          <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-lg bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e]">
-            {[
-              { k: 'NDVI',      v: '0.72',    c: T.green },
-              { k: 'BANDWIDTH', v: '4.8 Mbps',c: T.violet },
-              { k: 'LATENSI',   v: '48 ms',   c: T.greenLight },
-              { k: 'BATERAI',   v: `${telemetry.battery.toFixed(0)}%`, c: battColor },
-              { k: 'KETINGGIAN',v: '25.3 m',  c: T.green },
-              { k: 'KECEPATAN', v: '4.2 m/s', c: T.amber },
-              { k: 'GPS',       v: 'Kuat · 14 sat', c: T.green },
-              { k: 'LINK',      v: '5.8 GHz', c: T.greenLight },
-            ].map(i => (
-              <div key={i.k} className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-gray-400">{i.k}:</span>
-                <span className="text-[10px] font-bold font-mono" style={{ color: i.c }}>{i.v}</span>
-              </div>
-            ))}
-
-            {/* Snapshot button */}
-            {cameraMode === 'live' && (
-              <button
-                onClick={handleSnapshot}
-                disabled={!droneOn}
-                title={!droneOn ? 'Aktifkan drone terlebih dahulu' : 'Ambil snapshot dari kamera'}
-                className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all"
-                style={{
-                  background: droneOn ? `linear-gradient(135deg, ${T.green}, ${T.greenLight})` : '#2a2a2a',
-                  color: droneOn ? '#fff' : '#555',
-                  cursor: droneOn ? 'pointer' : 'not-allowed',
-                  opacity: droneOn ? 1 : 0.5,
-                }}
-              >
-                📷 {droneOn ? 'Ambil Snapshot' : 'Kamera Tidak Aktif'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── GPS MAP (2 col) ──────────────────────────────── */}
-        <div className="lg:col-span-2 flex flex-col gap-3">
-          <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-[#1e1e1e]">
-            {cameraMode === 'live' ? (
-              // LIVE: drone marker bergerak saja, tanpa waypoints
-              <DroneMap
-                key="map-live"
-                mode="live"
-                dronePosition={LIVE_POSITIONS[livePosIdx]}
-                droneOn={droneOn}
-                height={380}
+          <div className="relative w-full aspect-[16/9] sm:aspect-[16/8.5] bg-black overflow-hidden flex items-center justify-center">
+            {droneOn ? (
+              <video
+                src={LIVE_VIDEO}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
               />
             ) : (
-              // Riwayat: tampilkan semua waypoints + polyline jejak
-              <DroneMap
-                key="map-riwayat"
-                mode="waypoints"
-                waypoints={MOCK_WAYPOINTS}
-                height={380}
-              />
+              <div className="flex flex-col items-center justify-center text-gray-500 gap-2">
+                <Radio size={32} className="animate-pulse opacity-50" />
+                <span className="text-xs">Kamera Offline · Aktifkan Drone</span>
+              </div>
+            )}
+
+            <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#84CC16]" />
+            <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#84CC16]" />
+            <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#84CC16]" />
+            <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#84CC16]" />
+
+            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded text-[11px] font-mono text-[#86EFAC]">
+              {currentLatStr} {currentLngStr} · ALT {altDisplay}
+            </div>
+
+            {snapshotFlash && (
+              <div className="absolute inset-0 bg-white/80 transition-opacity duration-200 pointer-events-none" />
             )}
           </div>
 
-          {/* Map info bar */}
-          <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 rounded-lg bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] text-[10px]">
-            {cameraMode === 'live' ? (
-              <>
-                <span className="font-semibold text-gray-400">POSISI DRONE:</span>
-                <span className="font-mono" style={{ color: T.green }}>
-                  {LIVE_POSITIONS[livePosIdx].lat.toFixed(5)}°N, {LIVE_POSITIONS[livePosIdx].lng.toFixed(5)}°E
-                </span>
-                <span className="ml-auto font-semibold text-gray-400">AKURASI GPS:</span>
-                <span className="font-mono" style={{ color: T.green }}>±2.1 m</span>
-              </>
-            ) : (
-              <>
-                <span className="font-semibold text-gray-400">RIWAYAT KOORDINAT:</span>
-                <span className="font-mono text-gray-600">{MOCK_WAYPOINTS.length} titik terdeteksi</span>
-                <div className="ml-auto flex items-center gap-3">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.green }} />Sehat</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.amber }} />Perhatian</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.red }} />Kritis</span>
-                </div>
-              </>
-            )}
+          <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111]">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1.5 font-medium">
+                <Battery size={16} className="text-gray-500" />
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{battDisplay}%</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 font-medium">
+                <Wifi size={16} className="text-gray-500" />
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">52.4 GHz</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 font-medium">
+                <ArrowDown size={16} className="text-gray-500" />
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">0.0 m/s</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 size={16} className="text-gray-500" />
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{speedDisplay}</span>
+              </div>
+            </div>
+
+            {/* Snapshot Button */}
+            <button
+              onClick={handleSnapshot}
+              disabled={!droneOn || isAnalyzing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all shadow-xs ml-auto ${
+                isAnalyzing
+                  ? 'bg-amber-600 opacity-90 cursor-wait'
+                  : 'bg-[#5F802A] hover:bg-[#506D23] active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+              }`}
+            >
+              <Camera size={15} className={isAnalyzing ? 'animate-spin' : ''} />
+              <span>{isAnalyzing ? 'Memproses AI (3s)...' : 'Ambil Snapshot'}</span>
+            </button>
           </div>
+
         </div>
 
-        {/* ── TELEMETRI (1 col) ────────────────────────────── */}
-        <div className="lg:col-span-1 flex flex-col gap-3">
-          {/* Radar */}
-          <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] p-4">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Radar / Peta Posisi</p>
-            <div className="relative rounded-lg overflow-hidden flex items-center justify-center" style={{ height: 150, background: '#0F172A' }}>
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          
+          <div className="h-52.5 w-full">
+            <DroneMap
+              mode="live"
+              dronePosition={currentPos}
+              latDisplay={`${currentPos.lat.toFixed(4)}°`}
+              lngDisplay={`${currentPos.lng.toFixed(4)}°`}
+              altDisplay={altDisplay}
+              height="100%"
+            />
+          </div>
+
+          <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-3.5 flex flex-col justify-between flex-1 min-h-[170px] shadow-xs">
+            <div className='flex items-center justify-between px-2'>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Proximity Radar</p>
+              <p className='text-[10px] font-semibold text-[#3A6A3A] uppercase tracking-wide mb-2 flex items-center gap-1'><span className="w-2 h-2 rounded-full bg-[#A7D82E]" /> 50m Range</p>
+            </div>
+            <div className="relative rounded-lg overflow-hidden flex items-center justify-center w-full flex-1 min-h-31.25" style={{ background: '#0F172A' }}>
               {[60, 45, 30, 15].map((r, i) => (
-                <div key={i} className="absolute rounded-full border"
-                  style={{ width: r * 2, height: r * 2, borderColor: `${T.green}${i === 0 ? '18' : i === 1 ? '26' : i === 2 ? '40' : '70'}` }} />
+                <div
+                  key={i}
+                  className="absolute rounded-full border"
+                  style={{
+                    width: r * 2,
+                    height: r * 2,
+                    borderColor: `${T.green}${i === 0 ? '18' : i === 1 ? '26' : i === 2 ? '40' : '70'}`,
+                  }}
+                />
               ))}
-              <div className="absolute top-1/2 left-1/2 origin-left h-0.5 w-[60px]"
-                style={{ background: `linear-gradient(to right, transparent, ${T.green}80)`, transform: 'translateY(-50%) rotate(-30deg)' }} />
+              <div
+                className="absolute top-1/2 left-1/2 origin-left h-0.5 w-15 animate-[spin_4s_linear_infinite]"
+                style={{
+                  background: `linear-gradient(to right, transparent, ${T.green}90)`,
+                  transformOrigin: '0 50%',
+                }}
+              />
               <div className="absolute w-3 h-3 rounded-full border-2 border-white" style={{ background: T.green }} />
               <div className="absolute w-2 h-2 rounded-full animate-ping" style={{ background: T.red, top: '30%', left: '60%' }} />
               <span className="absolute top-1 text-[9px] font-mono text-gray-500">N</span>
@@ -389,216 +398,282 @@ export default function PantauDroneSection() {
               <span className="absolute left-1 text-[9px] font-mono text-gray-500">W</span>
               <span className="absolute right-1 text-[9px] font-mono text-gray-500">E</span>
             </div>
-            <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400">
+            {/* <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.green }} />Drone</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.red }} />Deteksi</span>
-            </div>
+            </div> */}
           </div>
 
-          {/* Telemetri (angka, tanpa bar) */}
-          <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] p-4 flex-1">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Telemetri Drone / Telemetry</p>
-            <div className="space-y-3">
-              {[
-                { label: 'Baterai',     value: `${telemetry.battery.toFixed(0)}%`, color: battColor },
-                { label: 'GPS Signal',  value: 'Kuat (14 sat)',          color: T.green },
-                { label: 'Ketinggian',  value: '25.3 m',                 color: T.green },
-                { label: 'Kecepatan',   value: '4.2 m/s',               color: T.amber },
-                { label: 'Link 5.8 GHz',value: '-72 dBm',               color: T.greenLight },
-                { label: 'NDVI',        value: '0.72',                   color: T.green },
-              ].map(item => (
-                <div key={item.label} className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">{item.label}</span>
-                  <span className="text-xs font-bold font-mono" style={{ color: item.color }}>{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
-      {/* ── SECTION: AI PREDIKSI KESEHATAN SAWIT ──────── */}
-      {/* ══════════════════════════════════════════════════ */}
-      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-base"
-              style={{ background: `linear-gradient(135deg, ${T.violet}, ${T.green})` }}>🤖</div>
-            <div>
-              <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Prediksi AI Kesehatan Sawit</h2>
-              <p className="text-[11px] text-gray-400">Palm Health AI Prediction · CNN ResNet-50 Model</p>
-            </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
+            <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Snapshot</h3>
+            <span className="text-xs font-mono text-gray-400 font-medium">
+              {currentSnapshotImg ? timeStr : '--.--'}
+            </span>
           </div>
-          {snapshotTaken && !predResult && (
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${T.green}20`, color: T.green }}>✓ Snapshot Siap</span>
-          )}
-          {predResult && (
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: `${T.violet}20`, color: T.violet }}>✓ Prediksi Selesai</span>
-          )}
+          
+          <div className="relative w-full aspect-[16/10] bg-gray-50 dark:bg-[#151515] overflow-hidden flex items-center justify-center">
+            {currentSnapshotImg ? (
+              <>
+                <img
+                  src={currentSnapshotImg}
+                  alt="Snapshot Pohon"
+                  className="w-full h-full object-cover"
+                />
+                {snapshotPos && (
+                  <div className="absolute bottom-3 left-3 text-[11px] font-mono text-white/90 bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
+                    {snapshotPos.latStr} {snapshotPos.lngStr} · ALT {snapshotPos.altStr}
+                  </div>
+                )}
+              </>
+            ) : (
+              // Mute State
+              <div className="flex flex-col items-center justify-center text-center p-6 text-gray-400">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-[#222] flex items-center justify-center mb-2">
+                  <Camera size={22} className="text-gray-400" />
+                </div>
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Belum ada snapshot</p>
+                <p className="text-[11px] text-gray-400 mt-1 max-w-[220px]">
+                  Posisikan drone di atas pohon lalu klik &quot;Ambil Snapshot&quot;
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Snapshot Card */}
-            <div className="rounded-xl border border-gray-100 dark:border-[#1e1e1e] overflow-hidden bg-gray-50 dark:bg-[#0f0f0f]">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-[#1e1e1e]">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: snapshotTaken ? T.green : '#9ca3af' }} />
-                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Gambar Snapshot Drone</span>
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: snapshotTaken ? `${T.green}20` : '#f3f4f6', color: snapshotTaken ? T.green : '#9ca3af' }}>
-                  {snapshotTaken ? 'TERSEDIA' : 'BELUM ADA'}
-                </span>
-              </div>
-              <div className="relative aspect-video bg-gray-100 dark:bg-[#0f0f0f] overflow-hidden">
-                {snapshotTaken ? (
-                  <>
-                    <img src={LIVE_IMG} alt="Drone snapshot" className="w-full h-full object-cover" />
-                    <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2" style={{ borderColor: T.green }} />
-                    <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2" style={{ borderColor: T.green }} />
-                    <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2" style={{ borderColor: T.green }} />
-                    <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2" style={{ borderColor: T.green }} />
-                    <div className="absolute border-2 rounded" style={{ top: '25%', left: '35%', width: '100px', height: '80px', borderColor: T.red, boxShadow: `0 0 10px ${T.red}55` }}>
-                      <span className="absolute -top-4 left-0 text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: T.red, color: '#fff' }}>ROI</span>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/75 to-transparent">
-                      <span className="text-[10px] font-mono text-emerald-300">GPS: {snapshotGps}</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                    <span className="text-4xl">📷</span>
-                    <p className="text-xs text-gray-400">
-                      {droneOn ? 'Belum ada snapshot' : 'Drone tidak aktif'}
-                    </p>
-                    {droneOn && <p className="text-[10px] text-gray-300 dark:text-gray-600">Klik tombol Ambil Snapshot</p>}
-                  </div>
-                )}
-              </div>
-              {snapshotTaken && (
-                <div className="px-4 py-2.5 flex items-center justify-between border-t border-gray-100 dark:border-[#1e1e1e]">
-                  <span className="text-[10px] font-mono text-gray-400">Diambil: {snapshotTime} WIB</span>
-                  <button onClick={() => { setSnapshotTaken(false); setPredResult(null); }}
-                    className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition">
-                    Ulangi Snapshot
-                  </button>
-                </div>
-              )}
+        <div className={`rounded-xl border shadow-xs p-5 flex flex-col justify-between transition-colors duration-300 ${
+          !isAnalyzing && snapshotCondition === 'tidak_sehat'
+            ? 'bg-[#FDF3F0] dark:bg-[#1E1412] border-[#FCE2DB] dark:border-[#38201a]'
+            : 'bg-white dark:bg-[#111] border-gray-100 dark:border-[#222]'
+        }`}>
+          
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Hasil Prediksi AI</h3>
+            {isAnalyzing ? (
+              <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 font-bold text-xs rounded tracking-wider animate-pulse flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                MENGANALISIS...
+              </span>
+            ) : snapshotCondition === 'idle' ? (
+              <span className="px-3 py-1 bg-gray-200 dark:bg-gray-800 text-gray-500 font-bold text-xs rounded tracking-wider">
+                ---
+              </span>
+            ) : snapshotCondition === 'sehat' ? (
+              <span className="px-3 py-1 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-xs rounded tracking-wider">
+                SEHAT
+              </span>
+            ) : (
+              <span className="px-3 py-1 bg-[#FCE8E6] text-[#C84030] font-bold text-xs rounded tracking-wider">
+                TIDAK SEHAT
+              </span>
+            )}
+          </div>
+
+          {/* Metric Center */}
+          <div className="my-auto py-4 flex flex-col items-center justify-center">
+            <span className="text-[11px] font-bold tracking-widest text-gray-400 uppercase">
+              INDEKS NDVI
+            </span>
+            <div className={`text-5xl sm:text-6xl font-extrabold tracking-tight my-2 font-mono ${
+              isAnalyzing
+                ? 'text-gray-300 dark:text-gray-700 animate-pulse'
+                : snapshotCondition === 'idle'
+                ? 'text-gray-300 dark:text-gray-700'
+                : snapshotCondition === 'sehat'
+                ? 'text-[#4D7C0F]'
+                : 'text-[#E59819]'
+            }`}>
+              {isAnalyzing ? '...' : snapshotCondition === 'idle' ? '0.00' : snapshotCondition === 'sehat' ? '0.28' : '0.18'}
             </div>
 
-            {/* Hasil AI */}
-            <div className="rounded-xl border border-gray-100 dark:border-[#1e1e1e] overflow-hidden bg-gray-50 dark:bg-[#0f0f0f]">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-[#1e1e1e]">
-                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Hasil Prediksi & NDVI</span>
-                <span className="text-[10px] font-mono" style={{ color: T.violet }}>CNN ResNet-50 · v2.4</span>
+            <div className="w-full max-w-md mt-2">
+              <div className="relative w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width:
+                      isAnalyzing || snapshotCondition === 'idle'
+                        ? '0%'
+                        : snapshotCondition === 'sehat'
+                        ? '28%'
+                        : '18%',
+                    background:
+                      isAnalyzing || snapshotCondition === 'idle'
+                        ? 'transparent'
+                        : snapshotCondition === 'sehat'
+                        ? 'linear-gradient(to right, #7A1414 0%, #C83B2B 60%, #E67E22 100%)'
+                        : 'linear-gradient(to right, #7A1414 0%, #C83B2B 100%)',
+                  }}
+                />
               </div>
-              <div className="relative aspect-video bg-gray-100 dark:bg-[#0f0f0f] overflow-hidden">
-                {isPredicting ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-full border-4 border-gray-200 dark:border-[#2a2a2a] animate-spin" style={{ borderTopColor: T.violet }} />
-                    <p className="text-xs font-semibold text-gray-500">Menunggu Prediksi</p>
-                    <p className="text-[10px] text-gray-400">AI sedang menganalisis gambar...</p>
-                  </div>
-                ) : predResult ? (
-                  <>
-                    <img src={NDVI_IMG} alt="NDVI" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 opacity-15"
-                      style={{ backgroundImage: `linear-gradient(${T.violet}44 1px, transparent 1px), linear-gradient(90deg, ${T.violet}44 1px, transparent 1px)`, backgroundSize: '28px 28px' }} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="px-3 py-2 rounded-lg text-center" style={{ background: `${T.violet}cc`, backdropFilter: 'blur(4px)' }}>
-                        <p className="text-xs font-bold text-white">NDVI Output</p>
-                        <p className="text-[10px] text-white/80">CNN ResNet-50 · {predResult.confidence.toFixed(1)}% conf</p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                    <span className="text-4xl">🤖</span>
-                    <p className="text-xs text-gray-400">
-                      {snapshotTaken ? 'Siap untuk prediksi' : 'Ambil snapshot terlebih dahulu'}
-                    </p>
-                  </div>
-                )}
+              <div className="flex justify-between text-[10px] font-mono text-gray-400 mt-1 px-0.5">
+                <span>0.0</span>
+                <span>0.2</span>
+                <span>0.4</span>
+                <span>0.6</span>
+                <span>0.8</span>
+                <span>1.0</span>
               </div>
             </div>
           </div>
 
-          {/* Hasil detail prediksi */}
-          {predResult && sev && (
-            <div className="rounded-xl border-2 p-5 space-y-4" style={{ borderColor: sev.border, background: sev.bg }}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white" style={{ background: sev.text }}>
-                      {sev.label} / {sev.labelEn}
-                    </span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{predResult.label}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">{predResult.disease}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-3xl font-bold" style={{ color: sev.text }}>{predResult.confidence.toFixed(1)}%</div>
-                  <div className="text-[10px] text-gray-400">Tingkat Keyakinan</div>
-                </div>
+          {/* loading AI ceritanya */}
+          {isAnalyzing ? (
+            <div className="bg-amber-50 dark:bg-[#20180a] border border-amber-200 dark:border-[#423214] rounded-xl p-3.5 text-center mt-2 animate-pulse">
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                ⏳ AI sedang menganalisis kesehatan tanaman dari citra drone...
+              </p>
+            </div>
+          ) : snapshotCondition === 'idle' ? (
+            <div className="bg-gray-100 dark:bg-[#1e1b18] border border-gray-200 dark:border-[#332b25] rounded-xl p-3.5 text-center mt-2">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Hasil analisis akan muncul setelah snapshot diambil
+              </p>
+            </div>
+          ) : snapshotCondition === 'sehat' ? (
+            <div className="bg-[#F4F9EB] dark:bg-[#16210f] border border-[#D5E8B5] dark:border-[#2d421e] rounded-xl p-3.5 flex items-start gap-3 mt-2">
+              <CheckCircle className="text-[#65A30D] shrink-0 mt-0.5" size={18} />
+              <div>
+                <h4 className="text-xs font-bold text-[#4D7C0F] dark:text-[#84cc16]">Tanaman Sehat</h4>
+                <p className="text-xs text-[#3F6212] dark:text-[#a3e635] mt-0.5 leading-relaxed">
+                  Tidak diperlukan tindakan. Lanjutkan ke pohon berikutnya.
+                </p>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Probabilitas Sehat</span>
-                    <span className="text-xs font-bold" style={{ color: T.green }}>{predResult.healthy}%</span>
-                  </div>
-                  <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-800">
-                    <div className="h-2.5 rounded-full" style={{ width: `${predResult.healthy}%`, background: T.green }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Probabilitas Tidak Sehat</span>
-                    <span className="text-xs font-bold" style={{ color: T.red }}>{predResult.unhealthy}%</span>
-                  </div>
-                  <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-800">
-                    <div className="h-2.5 rounded-full" style={{ width: `${predResult.unhealthy}%`, background: T.red }} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-lg p-3 bg-white/60 dark:bg-black/20">
-                <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">💡 Rekomendasi Tindakan:</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">{predResult.recommendation}</p>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <button onClick={handleSaveToLog} disabled={savedToLog}
-                  className="flex-1 min-w-[120px] py-2.5 rounded-lg text-xs font-bold transition hover:opacity-90 disabled:opacity-60"
-                  style={{ background: `${T.violet}20`, color: T.violet }}>
-                  {savedToLog ? '✓ Tersimpan ke Log!' : '💾 Simpan ke Log Prediksi'}
-                </button>
-                <button onClick={() => { setPredResult(null); setSnapshotTaken(false); }}
-                  className="px-4 py-2.5 rounded-lg text-xs font-bold text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800">
-                  ↺ Prediksi Ulang
-                </button>
+            </div>
+          ) : (
+            <div className="bg-[#FFF5ED] dark:bg-[#251810] border border-[#FFE4D3] dark:border-[#42291d] rounded-xl p-3.5 flex items-start gap-3 mt-2">
+              <AlertTriangle className="text-[#EA580C] shrink-0 mt-0.5" size={18} />
+              <div>
+                <h4 className="text-xs font-bold text-[#EA580C]">Tindakan Diperlukan</h4>
+                <p className="text-xs text-[#9A3412] dark:text-[#fdba74] mt-0.5 leading-relaxed">
+                  Instruksikan pilot untuk menyemprotkan pestisida ke pangkal batang menggunakan Remote Control.
+                </p>
               </div>
             </div>
           )}
 
-          {/* Prediksi button */}
-          {!predResult && (
-            <div className="flex items-center gap-3">
-              <button onClick={handlePredict}
-                disabled={!snapshotTaken || isPredicting}
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: `linear-gradient(135deg, ${T.violet}, ${T.green})` }}>
-                {isPredicting ? '⏳ Menganalisis...' : '🤖 Prediksi Sekarang'}
-              </button>
-            </div>
+        </div>
+
+      </div>
+
+
+      <div className={`bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs p-5 transition-opacity duration-300 ${
+        isSprayingActive ? 'opacity-100' : 'opacity-40 pointer-events-none'
+      }`}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Monitor Penyemprotan Pestisida</h3>
+          {isSprayingActive && (
+            spraySeconds >= 60 ? (
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-[#EAF5D6] text-[#6A9A1E] dark:bg-[#1f2d12] dark:text-[#a3e635] flex items-center gap-1">
+                PENYEMPROTAN SELESAI
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 animate-pulse">
+                ● PROSES PENYEMPROTAN
+              </span>
+            )
           )}
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-gray-100 dark:divide-[#222] gap-y-4 md:gap-y-0">
+          
+          {/* Durasi */}
+          <div className="flex flex-col items-center justify-center px-4 py-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              DURASI
+            </span>
+            <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
+              {formatDuration(spraySeconds)}
+            </div>
+            <span className="text-[11px] font-mono text-gray-400 mt-0.5">
+              01:00
+            </span>
+          </div>
+
+          {/* Volume Keluar */}
+          <div className="flex flex-col items-center justify-center px-4 py-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              VOLUME KELUAR
+            </span>
+            <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
+              {sprayVolume.toFixed(1)}
+            </div>
+            <span className="text-[11px] font-medium text-gray-400 mt-0.5">
+              ml
+            </span>
+          </div>
+
+          {/* Volume & Sisa Tangki */}
+          <div className="flex flex-col items-center justify-center px-4 py-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              VOLUME (ML)
+            </span>
+            <div className="text-xs font-bold text-gray-700 dark:text-gray-300 font-mono mt-0.5">
+              {Math.round(sprayVolume)} ml
+            </div>
+
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3">
+              SISA TANGKI
+            </span>
+            <div className="text-xs font-bold text-[#6B8E23] font-mono mt-0.5">
+              {tankRemaining}%
+            </div>
+          </div>
+
+          {/* Tangki Graphic */}
+          <div className="flex flex-col items-center justify-center px-4 py-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+              TANGKI
+            </span>
+
+            <div className="w-8 h-14 bg-gray-100 dark:bg-[#222] rounded-md border border-gray-300 dark:border-[#333] relative overflow-hidden flex flex-col justify-end p-0.5 shadow-2xs">
+              <div className="w-4 h-1 bg-gray-400 rounded-t-xs -mt-1 mx-auto z-10" />
+              <div
+                className="w-full bg-linear-to-t from-[#597B27] to-[#7EA635] rounded-xs transition-all duration-500"
+                style={{ height: `${tankRemaining}%` }}
+              />
+            </div>
+            
+            <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 mt-1">
+              {tankRemaining}%
+            </span>
+          </div>
+
         </div>
       </div>
+
+      {/* Popup Modal */}
+      {showNozzleModal && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-white dark:bg-[#181818] rounded-2xl p-7 shadow-2xl border border-gray-100 dark:border-[#333] flex flex-col items-center text-center">
+            
+            <div className="w-14 h-14 rounded-full bg-[#FCE8E6] dark:bg-[#381815] border border-[#F8B4AF] dark:border-[#5a2420] flex items-center justify-center mb-4 text-[#C84030]">
+              <AlertTriangle size={28} strokeWidth={2.2} />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-base font-bold text-[#A8281A] dark:text-[#f87171] leading-tight">
+              Tanaman Tidak Sehat Terdeteksi!
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs text-gray-600 dark:text-gray-300 mt-2.5 leading-relaxed">
+              Segera instruksikan pilot untuk mengaktifkan spray toggle pada Remote Control drone.
+            </p>
+
+            {/* Note */}
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 leading-normal">
+              Pop-up ini akan tertutup otomatis setelah 10 detik.
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
