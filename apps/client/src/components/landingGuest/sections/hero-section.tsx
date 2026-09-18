@@ -54,7 +54,7 @@ export function HeroSection() {
           style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 32 }}
         >
           {[
-            { v: '94.7%', l: t('hero.metrics.accuracy') },
+            { v: '92%', l: t('hero.metrics.accuracy') },
             { v: '5-band', l: t('hero.metrics.sensor') },
             { v: 'IoT Web App', l: t('hero.metrics.telemetry') },
             { v: 'Spot Treatment', l: t('hero.metrics.treatment') },

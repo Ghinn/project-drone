@@ -84,20 +84,12 @@ export function LandingNavbar() {
         {/* BRANDING / LOGO KIRI */}
         <a href="#home" className="flex items-center gap-2.5">
           <Image
-            src="/assets/images/logo.svg"
+            src="/assets/images/main-logo-horizontal.svg"
             alt="Logo Perusahaan"
             width={36}
             height={36}
             priority
-            className="h-10 w-auto object-contain"
-          />
-          <Image
-            src="/assets/images/logo-text.svg"
-            alt="Logo Perusahaan Text"
-            width={200}
-            height={200}
-            priority
-            className="w-28 h-28 object-contain"
+            className="h-12 w-auto object-contain"
           />
         </a>
 

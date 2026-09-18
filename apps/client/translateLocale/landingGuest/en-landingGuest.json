@@ -83,7 +83,7 @@
       "items": {
         "classification": {
           "title": "Multispectral AI Classification",
-          "body": "Utilizes a Convolutional Neural Network (CNN) model that processes Normalized Difference Vegetation Index (NDVI) values and 5 light spectra to differentiate between healthy and unhealthy plants with up to 95.38% accuracy."
+          "body": "Utilizes a Convolutional Neural Network (CNN) model that processes Normalized Difference Vegetation Index (NDVI) values and 5 light spectra to differentiate between healthy and unhealthy plants with up to 92% accuracy."
         },
         "monitoring": {
           "title": "Web Monitoring & Live Snapshot",
@@ -105,7 +105,7 @@
       "description": "The Dreampalm platform is equipped with a Role-Based Access Control (RBAC) system to allocate specific access rights. This system ensures a secure and seamless workflow between analytical monitoring on the web interface and execution actions in the field.",
       "items": {
         "access": {
-          "title": "Administrators & Plantation Managers",
+          "title": "Administrators",
           "body": "Granted comprehensive access rights to manage team accounts, monitor fleet inspection history, and evaluate overall plant health data summaries."
         },
         "operator": {
