@@ -1,44 +1,20 @@
 {
   "compilerOptions": {
-    // Modules
-    "module": "esnext",
-    "moduleResolution": "Bundler",
-    "noUncheckedSideEffectImports": true,
-    "resolveJsonModule": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2023",
+    "lib": ["es2023"],
+    "types": ["node"],
     "rootDir": "./src",
     "outDir": "./dist",
-    "types": ["node"],
-    
-    // Language and Environment
-    "jsx": "react-jsx",
-    "lib": ["es2023"],
-    "moduleDetection": "force",
-    "target": "es2023",
-    
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": false,
     "noImplicitAny": false,
-    
-    // Interop Constraints
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": false,
-    
-    // Completeness
-    "skipDefaultLibCheck": true,
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts", 
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "prisma"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "prisma"]
 }
