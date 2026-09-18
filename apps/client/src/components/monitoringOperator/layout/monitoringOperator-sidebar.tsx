@@ -2,37 +2,24 @@
 import { useRouter } from 'next/navigation';
 import { useMonitoringOperator } from './monitoringOperator-context';
 import { DRONE_TOKENS } from './monitoringOperator-types';
+import Image from 'next/image';
+import { ClipboardClock, Drone, LayoutDashboard, Menu, Settings, X } from 'lucide-react';
 
 const T = DRONE_TOKENS;
 
 // SVG icons untuk setiap menu
 const NAV_ICONS: Record<string, React.ReactNode> = {
   dashboard: (
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <rect x="3" y="3" width="7" height="7" rx="1" strokeWidth="2" />
-      <rect x="14" y="3" width="7" height="7" rx="1" strokeWidth="2" />
-      <rect x="3" y="14" width="7" height="7" rx="1" strokeWidth="2" />
-      <rect x="14" y="14" width="7" height="7" rx="1" strokeWidth="2" />
-    </svg>
+    <LayoutDashboard size={16}/>
   ),
-  camera: (
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-        d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-    </svg>
+  drone: (
+    <Drone size={16}/>
   ),
-  log: (
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-    </svg>
+  listClock: (
+    <ClipboardClock size={16}/>
   ),
   settings: (
-    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
+    <Settings size={16}/>
   ),
 };
 
@@ -46,29 +33,52 @@ export default function MonitoringOperatorNavbar() {
       style={{ width: collapsed ? 56 : 220 }}
     >
       {/* Logo DreamPalm */}
-      <div className="flex items-center gap-3 px-3.5 h-14 shrink-0 border-b border-gray-200 dark:border-[#1e1e1e]">
-        <span
-          className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0 text-white"
-          style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}
-        >
-          DP
-        </span>
+      <div className="flex items-center gap-3 px-3.5 h-14 shrink-0 border-gray-200 dark:border-[#1e1e1e]">
+          <Image
+            src="/assets/images/main-logomark.svg"
+            alt="DreamPalm Logo"
+            width={32}
+            height={32}
+            className="object-contain"
+          />
         {!collapsed && (
-          <div className="flex flex-col leading-tight">
-            <span className="font-bold text-sm text-gray-900 dark:text-gray-100 tracking-tight">
-              DreamPalm
-            </span>
-            <span className="text-[10px] text-gray-400">Drone Operator</span>
+          <div className='flex justify-between items-center w-full'>
+            <div className="flex flex-col leading-tight">
+              <Image
+                src="/assets/images/main-logo-logotype.svg"
+                alt="DreamPalm Logo"
+                width={100}
+                height={100}
+                className="object-contain"
+              />
+              <span className="text-[10px] text-gray-400">Drone Operator</span>
+            </div>
+              {/* Collapse Toggle */}
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-fit h-fit rounded-md transition-all hover:opacity-70 bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500"
+                title={collapsed ? 'Perlebar Sidebar' : 'Perkecil Sidebar'}
+              >
+                <X size={18}/>
+              </button>
+
           </div>
         )}
       </div>
-
       {/* Nav List */}
       <nav className="flex-1 py-4 flex flex-col gap-0.5 px-2">
-        {!collapsed && (
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-2.5 mb-2">
-            Menu
+        {!collapsed ? (
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-2.5 py-3">
+            {/* Menu */}
           </p>
+        ) : (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={`flex justify-center items-center pb-2 rounded-md transition-all hover:opacity-70 text-gray-400 dark:text-gray-500`}
+            title={collapsed ? 'Perlebar Sidebar' : 'Perkecil Sidebar'}
+          >
+            <Menu size={18}/>
+          </button>
         )}
         {navItems.map(n => {
           const isActive = activeTab === n.id;
@@ -79,8 +89,8 @@ export default function MonitoringOperatorNavbar() {
               title={collapsed ? `${n.label} · ${n.labelEn}` : undefined}
               className={`flex items-center gap-3 rounded-md px-2.5 py-2.5 w-full text-left transition-all duration-150 ${
                 isActive
-                  ? 'bg-gray-100 dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100'
-                  : 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'bg-[#6B8E2326] dark:bg-[#1a1a1a] text-[#6B8E23] dark:text-[#6B8E23]'
+                  : 'text-[#6B8E23]/70 hover:bg-[#6B8E2326] hover:text-[#6B8E23]'
               }`}
               style={{
                 borderLeft: isActive
@@ -102,9 +112,9 @@ export default function MonitoringOperatorNavbar() {
                   <span className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
                     {n.label}
                   </span>
-                  <span className="text-[10px] text-gray-400 truncate">
+                  {/* <span className="text-[10px] text-gray-400 truncate">
                     {n.labelEn}
-                  </span>
+                  </span> */}
                 </div>
               )}
             </button>
@@ -125,22 +135,6 @@ export default function MonitoringOperatorNavbar() {
           {!collapsed && <span className="text-xs">Kembali ke Beranda</span>}
         </button>
       </div>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="mx-2 mb-3 py-2 rounded-md flex items-center justify-center transition-all hover:opacity-70 bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500"
-        title={collapsed ? 'Perlebar Sidebar' : 'Perkecil Sidebar'}
-      >
-        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d={collapsed ? 'M9 5l7 7-7 7' : 'M15 19l-7-7 7-7'}
-          />
-        </svg>
-      </button>
     </aside>
   );
 }

@@ -20,9 +20,9 @@ export default function MonitoringOperatorShell({ children }: { children: React.
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },
-    { id: 'pantau-drone', label: 'Pantau Drone', labelEn: 'Drone Monitor', icon: 'camera' },
-    { id: 'log-prediksi', label: 'Log Prediksi', labelEn: 'Prediction Log', icon: 'log' },
-    { id: 'settings', label: 'Settings', labelEn: 'Pengaturan', icon: 'settings' },
+    { id: 'pantau-drone', label: 'Pantau Drone', labelEn: 'Drone Monitor', icon: 'drone' },
+    { id: 'log-prediksi', label: 'Log Prediksi', labelEn: 'Prediction Log', icon: 'listClock' },
+    { id: 'settings', label: 'Pengaturan', labelEn: 'Settings', icon: 'settings' },
   ];
 
   const getPageTitle = () => {

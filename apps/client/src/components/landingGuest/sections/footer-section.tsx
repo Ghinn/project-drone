@@ -36,18 +36,11 @@ export function FooterSection() {
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
               <Image
-                src="/assets/images/logo.svg"
+                src="/assets/images/main-logo-horizontal.svg"
                 alt="DreamPalm Logo"
-                width={36}
-                height={36}
-                className="h-10 w-auto object-contain"
-              />
-              <Image
-                src="/assets/images/logo-text.svg"
-                alt="DreamPalm Logo Text"
-                width={160}
-                height={40}
-                className="h-7 w-auto object-contain"
+                width={38}
+                height={38}
+                className="h-12 w-auto object-contain"
               />
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
