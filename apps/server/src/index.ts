@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { app } from './app.js';
-import { initMqtt } from './services/mqtt.service';
+import { initMqtt } from './services/mqtt.service.js';
 
 const port = Number(process.env.PORT ?? 4000);
 

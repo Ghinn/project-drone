@@ -1,0 +1,7 @@
+export default function AdminChatPage() {
+  return (
+    <div>
+      <h1>Halaman Chat Admin</h1>
+    </div>
+  );
+}

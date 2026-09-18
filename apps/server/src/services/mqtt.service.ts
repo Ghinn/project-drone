@@ -1,6 +1,6 @@
 import mqtt from 'mqtt';
-import { prisma } from '../lib/prisma';
-import { env } from '../config/env';
+import { prisma } from '../lib/prisma.js';
+import { env } from '../config/env.js';
 import { EventEmitter } from 'events';
 
 export const telemetryEmitter = new EventEmitter();

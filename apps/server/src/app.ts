@@ -4,11 +4,11 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 
-import { env } from "./config/env";
-import adminRoutes from "./routes/admin.route";
-import authRoutes from "./routes/auth.route";
-import dataRoutes from "./routes/data.route"; 
-import { errorHandler, notFoundHandler } from "./lib/http";
+import { env } from "./config/env.js";
+import adminRoutes from "./routes/admin.route.js";
+import authRoutes from "./routes/auth.route.js";
+import dataRoutes from "./routes/data.route.js"; 
+import { errorHandler, notFoundHandler } from "./lib/http.js";
 
 export const app = express();
 
