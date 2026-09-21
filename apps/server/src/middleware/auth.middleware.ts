@@ -34,7 +34,6 @@ export async function requireSession(req: Request, res: Response, next: NextFunc
 
     return next();
   } catch {
-    res.clearCookie(env.SESSION_COOKIE_NAME, getClearSessionCookieOptions());
     return res.status(401).json({
       message: "Invalid or expired session.",
     });

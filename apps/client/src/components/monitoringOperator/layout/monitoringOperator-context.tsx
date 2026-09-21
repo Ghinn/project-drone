@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type {
   MonitoringOperatorTab,
   NavItem
@@ -43,6 +43,8 @@ export const defaultTelemetry: DroneTelemetry = {
   rc: { ch6: 'OFF', ch7: 'OFF', ch8: 'OFF', ch9: 'OFF' }
 };
 
+export type SseConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed';
+
 type MonitoringOperatorContextValue = {
   activeTab: MonitoringOperatorTab;
   setActiveTab: (tab: MonitoringOperatorTab) => void;
@@ -72,13 +74,22 @@ export const useMonitoringOperator = () => {
 
 };
 
+const SSE_MAX_CONSECUTIVE_ERRORS = 3;
+
 // Custom Hook untuk menangkap SSE
 export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
   const [telemetry, setTelemetry] = useState<DroneTelemetry>(defaultTelemetry);
   const [droneStatus, setDroneStatus] = useState<'online' | 'offline' | 'unknown'>('unknown');
 
+  const [connectionStatus, setConnectionStatus] = useState<SseConnectionStatus>('connecting');
+  const consecutiveErrorsRef = useRef<number>(0);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
   useEffect(() => {
-    if (!apiUrl) return; 
+    if (!apiUrl) return;
+
+    consecutiveErrorsRef.current = 0;
+    setConnectionStatus('connecting');
 
     // URL Endpoint Topic_MQTT
     const streamUrl = droneId 
@@ -86,8 +97,13 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
       : `${apiUrl}/api/drone/telemetryState/stream`;
 
     const eventSource = new EventSource(streamUrl, { withCredentials: true });
+    eventSourceRef.current = eventSource;
 
-    eventSource.onopen = () => console.log(`[SSE] Terhubung ke stream perangkat ${droneId ?? 'ditugaskan'}`);
+    eventSource.onopen = () => {
+      consecutiveErrorsRef.current = 0;
+      setConnectionStatus('connected');
+      console.log(`[SSE] Terhubung ke stream perangkat ${droneId ?? 'ditugaskan'}`);
+    };
     
     eventSource.onmessage = (event) => {
       try {
@@ -103,15 +119,37 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
       }
     };
 
-    eventSource.onerror = (error) => {
-        console.error('[SSE] Koneksi terputus. Mencoba menghubungkan kembali...', error);
-        setDroneStatus('unknown');
-    }
+    eventSource.onerror = () => {
+      consecutiveErrorsRef.current += 1;
+      setDroneStatus('unknown');
+      setConnectionStatus('error');
+
+      if (consecutiveErrorsRef.current === 1) {
+        console.error(
+          `[SSE] Koneksi gagal. Kemungkinan penyebab:\n` +
+          `  1. CORS: Server mengembalikan 'Access-Control-Allow-Origin: *' ` +
+              `sementara EventSource menggunakan { withCredentials: true }.\n` +
+          `  2. Auth: Cookie sesi tidak dikirim (mismatch domain atau secure flag).\n` +
+          `  3. Server: Backend tidak berjalan atau endpoint tidak tersedia.\n` +
+          `Memeriksa ulang konfigurasi server...`
+        );
+      }
+
+      if (consecutiveErrorsRef.current >= SSE_MAX_CONSECUTIVE_ERRORS) {
+        console.error(
+          `[SSE] ${SSE_MAX_CONSECUTIVE_ERRORS} kegagalan berturut-turut terdeteksi. ` +
+          `EventSource dihentikan. Periksa CORS dan autentikasi server.`
+        );
+        eventSource.close();
+        setConnectionStatus('closed');
+      }
+    };
 
     return () => {
       eventSource.close();
+      eventSourceRef.current = null;
     };
   }, [apiUrl, droneId]);
 
-  return { telemetry, droneStatus };
+  return { telemetry, droneStatus, connectionStatus };
 };

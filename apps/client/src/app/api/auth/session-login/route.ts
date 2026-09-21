@@ -18,38 +18,27 @@ export async function POST(request: Request) {
       );
     }
 
-    let backendRes: Response | { status: number } = { status: 0 };
-    let allCookies: string[] = [];
-    
-    try {
-      backendRes = await fetch(`${API_URL}/api/auth/session-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if ('headers' in backendRes) {
-        const setCookies = backendRes.headers.getSetCookie?.() || [];
-        allCookies = setCookies.length > 0 
-          ? setCookies 
-          : backendRes.headers.get("set-cookie") 
-            ? [backendRes.headers.get("set-cookie")!] 
-            : [];
-      }
-
-    } catch (syncError) {
-      console.warn("Gagal memanggil Express Backend untuk sinkronisasi database Prisma.", syncError);
-    }
-
-    // Verifikasi Token menggunakan Firebase Admin SDK
+    // Verifikasi token
     const decodedToken = await auth.verifyIdToken(idToken);
 
-    // Generate Session Cookie Firebase
+    // Sinkronisasi DB ke Express (upsert user record di Prisma)
+    try {
+      await fetch(`${API_URL}/api/auth/session-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+    } catch (syncError) {
+      // Gagal sync DB tidak menghentikan proses login
+      console.warn('[BFF] Gagal sinkronisasi DB ke Express:', syncError);
+    }
+
+    // Buat session cookie via Firebase Admin SDK di Next.js BFF
     const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: SESSION_MAX_AGE_MS,
     });
 
-    // Find Cookie menggunakan API Native SSR
+    // Simpan ke cookie store Next.js (HttpOnly, tidak dapat diakses JS browser)
     const cookieStore = await cookies();
     const isProduction = process.env.NODE_ENV === 'production';
 
@@ -68,8 +57,8 @@ export async function POST(request: Request) {
     console.log(' -> UID Pengguna  :', decodedToken.uid);
     console.log(' -> Email Pengguna:', decodedToken.email);
     console.log(' -> Nama Cookie   :', SESSION_COOKIE_NAME);
-    console.log(" -> Status        :", backendRes.status);
-    console.log(" -> Jumlah Cookie :", allCookies.length);
+    // console.log(" -> Status        :", backendRes.status);
+    // console.log(" -> Jumlah Cookie :", allCookies.length);
     console.log('=========================================');
 
     return NextResponse.json(
@@ -84,7 +73,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("BFF Sync Session Proxy Error:", error);
+    console.error('[BFF] Session Login Error:', error);
     return NextResponse.json(
       { error: "Terjadi kesalahan pada server saat sinkronisasi sesi." },
       { status: 500 }

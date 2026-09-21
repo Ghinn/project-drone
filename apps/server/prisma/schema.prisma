@@ -25,12 +25,13 @@ enum ApprovalStatus {
 }
 
 model Drone {
-  id          String   @id
-  name        String?
-  macAddress  String?  @unique
-  status      String   @default("offline")
-  isApproved  Boolean  @default(false) 
-  createdAt   DateTime @default(now())
+  id            String   @id
+  name          String?
+  macAddress    String?  @unique
+  linkFrequency String?
+  status        String   @default("offline")
+  isApproved    Boolean  @default(false) 
+  createdAt     DateTime @default(now())
 
   // Relasi 1:1 ke User (Operator)
   operator    User[]

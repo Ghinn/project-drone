@@ -15,6 +15,7 @@ import {
   updateDrone,
   deleteDrone,
   createDrone,
+  getDroneById,
 } from "../controllers/admin-drone.controller";
 
 // Import Controllers (Admin)
@@ -56,6 +57,7 @@ router.delete("/users/:id", deleteUser);
 // CRUD Specific Drone Operations
 router.get("/drones", listDrones);
 router.post("/drones", createDrone);
+router.get("/drones/:id", getDroneById); 
 router.patch("/drones/:id", updateDrone);
 router.delete("/drones/:id", deleteDrone);
 

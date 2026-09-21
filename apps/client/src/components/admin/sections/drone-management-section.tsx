@@ -86,6 +86,32 @@ export default function DroneManagementSection() {
 
   useEffect(() => {
     fetchDrones();
+
+    const eventSource = new EventSource("/api/data/stream?droneId=ALL");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed.type === "status_all") {
+          const { droneId, status } = parsed.data;
+
+          // Update reaktif state drones
+          setDrones((prevDrones) =>
+            prevDrones.map((drone) =>
+              drone.id === droneId
+                ? { ...drone, status: status }
+                : drone
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Gagal memparsing event SSE:", error);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const nextDroneInfo = useMemo(() => {
@@ -450,7 +476,7 @@ return sortedIds;
                         </span>
                       </td> */}
 
-                      {/* Nama Perangkat */}
+                      {/* Status Perangkat */}
                       <td className="px-3 py-2.5 text-center">
                         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isOnline ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-zinc-100 text-zinc-500 border border-zinc-200"}`}>
                           {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}{isOnline ? "Online" : "Offline"}

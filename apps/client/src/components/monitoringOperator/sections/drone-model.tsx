@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef, useEffect, Suspense } from 'react';
-import { useGLTF, Center, Environment, ContactShadows, OrbitControls } from '@react-three/drei';
+import { useRef, Suspense, useMemo } from 'react';
+import { useGLTF, Environment, ContactShadows, OrbitControls, Html } from '@react-three/drei';
 import { useFrame, Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Loader2 } from 'lucide-react';
 
 interface DroneModelProps {
   roll: number;
@@ -11,79 +12,101 @@ interface DroneModelProps {
   yaw: number;
 }
 
-// 1. Komponen Utama untuk Merender Objek 3D
+// Komponen Fallback untuk Loading 3D Model
+function CanvasLoader() {
+  return (
+    <Html center>
+      <div className="flex flex-col items-center gap-1.5 text-gray-400 dark:text-gray-500 text-xs">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span className="text-[9px] font-bold tracking-wider">Memuat Model...</span>
+      </div>
+    </Html>
+  );
+}
+
 function DroneModel({ roll, pitch, yaw }: DroneModelProps) {
-  // Pastikan path ke model .glb sudah benar
   const { scene } = useGLTF('/models/3d-models-drone.glb');
-  const droneRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
-  useEffect(() => {
-    if (scene) {
-      const box = new THREE.Box3().setFromObject(scene);
-      const size = box.getSize(new THREE.Vector3());
-      console.log("[DEBUG R3F] Dimensi asli model:", size);
-    }
-  }, [scene]);
+  const negativeYAxis = useMemo(() => {
+    return new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),    // Titik awal di tengah drone
+      new THREE.Vector3(0, -6, 0)    // Titik akhir memanjang 6 unit ke bawah
+    ]);
+  }, []);
 
-  // Animasi per frame yang disinkronisasi dengan delta time
   useFrame((_state, delta) => {
-    if (droneRef.current) {
-      const lerpFactor = 5 * delta; // Kecepatan smoothing/interpolasi
-
-      // MAPPING KOORDINAT (Sesuaikan minus/plus tergantung orientasi bawaan file .glb Anda)
-      // Umumnya: Pitch = X, Yaw = Y, Roll = Z
+    if (groupRef.current) {
+      const lerpFactor = 5 * delta; 
+      
       const targetX = pitch; 
-      const targetY = -yaw;   // Sumbu Y dibalik agar putaran kompas sinkron
-      const targetZ = -roll;  // Sumbu Z dibalik agar kemiringan sinkron
+      const targetY = -yaw;   
+      const targetZ = -roll;  
 
-      droneRef.current.rotation.x = THREE.MathUtils.lerp(droneRef.current.rotation.x, targetX, lerpFactor);
-      droneRef.current.rotation.y = THREE.MathUtils.lerp(droneRef.current.rotation.y, targetY, lerpFactor);
-      droneRef.current.rotation.z = THREE.MathUtils.lerp(droneRef.current.rotation.z, targetZ, lerpFactor);
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetX, lerpFactor);
+      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, targetY, lerpFactor);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetZ, lerpFactor);
     }
   });
 
   return (
-    <Center>
+    <group ref={groupRef}>
       <primitive 
         object={scene} 
-        ref={droneRef}
-        scale={7.5} 
+        scale={8.5} 
+        position={[0, -0.7, 0]} 
       />
-    </Center>
+
+      {/* Garis Sumbu (X=Merah, Y=Hijau, Z=Biru) */}
+      <axesHelper args={[6]} />
+
+      <line geometry={negativeYAxis}>
+        <lineBasicMaterial color="#00ff00" />
+      </line>
+      
+    </group>
   );
 }
 
 // Preload agar model langsung tersedia dari cache browser
-// useGLTF.preload('/models/3d-models-drone.glb');
+useGLTF.preload('/models/3d-models-drone.glb');
 
-// 2. Komponen Wrapper Canvas (Ini yang akan di-import ke Dashboard)
 export default function Drone3DViewer({ roll = 0, pitch = 0, yaw = 0 }: DroneModelProps) {
   return (
     <Canvas 
-      camera={{ position: [0, 2.5, 6], fov: 45 }} 
-      className="w-full h-full"
+      // X: -5 (Serong dari arah kiri depan)
+      // Y: 3.5 (Melihat sedikit dari atas garis horizontal)
+      // Z: 6.5 (Jarak kedalaman yang pas agar skala 7.5 memenuhi layar)
+      camera={{ position: [7, 3.5, 6.5], fov: 45 }} 
+      style={{ width: '100%', height: '100%', display: 'block' }}
+      className="touch-none"
     >
-      {/* Pencahayaan Lingkungan */}
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[10, 10, 10]} intensity={1} castShadow />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[10, 10, 10]} intensity={1.5} castShadow />
       <Environment preset="city" /> 
 
-      {/* Eksekusi Model dengan efek Loading/Suspense */}
-      <Suspense fallback={null}>
+      <Suspense fallback={<CanvasLoader />}>
         <DroneModel roll={roll} pitch={pitch} yaw={yaw} />
         
-        {/* Bayangan di bawah drone untuk kesan realistis */}
         <ContactShadows 
-          position={[0, -1.5, 0]} 
-          opacity={0.5} 
+          position={[0, -2.5, 0]} 
+          opacity={0.55} 
           scale={15} 
-          blur={2} 
-          far={4} 
+          blur={1.8} 
+          far={4.5} 
         />
       </Suspense>
 
-      {/* Mengizinkan pengguna memutar kamera, tapi mematikan zoom & pan agar UI tidak tergeser */}
-      <OrbitControls enableZoom={false} enablePan={false} />
+      <OrbitControls 
+        enablePan={false} 
+        enableZoom={true} 
+        minDistance={8} 
+        maxDistance={20} 
+        target={[0, 0, 0]} 
+        // Membatasi rotasi ke bawah dari bawah tanah (underground)
+        maxPolarAngle={Math.PI / 2 - 0.05}
+        makeDefault
+      />
     </Canvas>
   );
 }

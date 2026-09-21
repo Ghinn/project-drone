@@ -29,6 +29,41 @@ export const listDrones = asyncHandler(async (req, res) => {
   });
 });
 
+export const getDroneById = asyncHandler(async (req, res) => {
+  const droneId = req.params.id as string;
+
+  const drone = await prisma.drone.findUnique({
+    where: { id: droneId },
+    include: {
+      operator: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          emailVerified: true,
+        },
+      },
+    },
+  });
+
+  if (!drone) {
+    throw new AppError(404, "Data drone tidak ditemukan.");
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      id: drone.id,
+      name: drone.name,
+      status: drone.status,
+      isApproved: drone.isApproved,
+      operator: drone.operator,
+      linkFrequency: null,
+    },
+  });
+});
+
 export const updateDrone = asyncHandler(async (req, res) => {
   const droneId = req.params.id as string;
   const input = updateDroneSchema.parse(req.body);

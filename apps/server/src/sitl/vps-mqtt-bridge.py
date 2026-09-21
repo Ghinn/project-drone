@@ -3,19 +3,19 @@ import json
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
 
-# Konfigurasi MQTT Broker via WireGuard
-MQTT_BROKER = "10.0.0.1"
+# Konfigurasi MQTT Broker
+MQTT_BROKER = "127.0.0.1" 
 MQTT_PORT = 1883
 MQTT_USER = "mqtt-dreampalm"
-MQTT_PASS = "dreampalm"
+MQTT_PASS = "dreampalm"     
 
 # Identifier Drone
-DRONE_ID = "v1-001"
+DRONE_ID = "v1-001"         
 
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
-MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/status"
-# MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/action"
+MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/status"         
+# MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/action"  
 
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -23,7 +23,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     # Memublikasikan status "online" dengan flag retain=True
     client.publish(MQTT_TOPIC_STATUS, json.dumps({"status": "online"}), qos=1, retain=True)
 
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"SITL_Simulator_{DRONE_ID}")
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"VPS_Bridge_{DRONE_ID}")
 client.username_pw_set(MQTT_USER, MQTT_PASS)
 
 # IMPLEMENTASI LAST WILL AND TESTAMENT (LWT)
@@ -35,15 +35,10 @@ client.loop_start()
 
 # Struktur TelemetryState (GCS)
 telemetry_data = {
-    # Navigasi dan Posisi
     "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
     "altitude": 0.0, "latitude": 0.0, "longitude": 0.0,
     "groundSpeed": 0.0, "mode": "STABILIZE",
-    
-    # Kelistrikan
     "battery": 100.0, "voltage": 0.0, "current": 0.0,
-    
-    # Pre-flight System Check (Boolean)
     "sys_check": {
         "gyro": False, "accelerometer": False, "magnetometer": False,
         "absolute_pressure": False, "differential_pressure": False,
@@ -55,8 +50,6 @@ telemetry_data = {
         "rc_receiver": False, 
         "gyro_cal": False, "accel_cal": False, "mag_cal": False 
     },
-    
-    # RC Switch Status
     "rc": {
         "ch6": "OFF", "ch7": "OFF", "ch8": "OFF", "ch9": "OFF"
     }
@@ -80,24 +73,23 @@ def parse_rc_switch(pwm_value):
     elif 1300 <= pwm_value <= 1700: return "MODE_MID"
     else: return "MODE_HIGH"
 
-# Koneksi SITL
-print("Menunggu koneksi SITL Ardupilot...")
+print("Menunggu koneksi SITL Ardupilot dari luar (Port UDP 14550)...")
 
-master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
+# MODIFIKASI: Menggunakan 'udpin:0.0.0.0' agar VPS mendengarkan dari semua antarmuka jaringan
+master = mavutil.mavlink_connection('udpin:0.0.0.0:14550')
 
 master.wait_heartbeat()
-print("SITL Terhubung! Memulai streaming ke MQTT...")
+print("SITL Terhubung! Memulai streaming ke MQTT...") #[cite: 3]
 
-# Data MAVLink dengan frekuensi 5 detik
+# Data MAVLink dengan frekuensi 5 Hz
 master.mav.request_data_stream_send(
     master.target_system,
     master.target_component,
     mavutil.mavlink.MAV_DATA_STREAM_ALL,
-    5, # Frekuensi pembaruan dalam Hertz (Hz)
-    1  # 1 = Start Stream, 0 = Stop Stream
+    5, 
+    1  
 )
 
-# Loop Pembacaan MAVLink dan Publish MQTT
 last_pub_time = time.time()
 
 while True:
@@ -108,57 +100,48 @@ while True:
 
         msg_type = msg.get_type()
 
-        # Ekstraksi Navigasi dan Posisi
         if msg_type == 'ATTITUDE':
             telemetry_data['roll'] = msg.roll
             telemetry_data['pitch'] = msg.pitch
             telemetry_data['yaw'] = msg.yaw
-
+    
         elif msg_type == 'GLOBAL_POSITION_INT':
             telemetry_data['latitude'] = msg.lat / 1e7
             telemetry_data['longitude'] = msg.lon / 1e7
             telemetry_data['altitude'] = msg.relative_alt / 1000.0
-
+    
         elif msg_type == 'VFR_HUD':
             telemetry_data['groundSpeed'] = msg.groundspeed
-
+    
         elif msg_type == 'HEARTBEAT':
             telemetry_data['mode'] = mavutil.mode_string_v10(msg)
-
-        # Indikator Penerbangan dan Pre-Flight System Check
+    
         elif msg_type == 'SYS_STATUS':
-            # Baterai, Voltase, dan Arus
             if msg.battery_remaining != -1:
                 telemetry_data['battery'] = float(msg.battery_remaining)
-            telemetry_data['voltage'] = msg.voltage_battery / 1000.0  # konversi mV ke V
-            telemetry_data['current'] = msg.current_battery / 100.0   # konversi cA ke A
+            telemetry_data['voltage'] = msg.voltage_battery / 1000.0  
+            telemetry_data['current'] = msg.current_battery / 100.0   
 
-            # Bitwise Operation untuk System Check
             health_mask = msg.onboard_control_sensors_health
             for sensor, bit in SENSOR_BITS.items():
-                # Operasi AND (Masking) untuk mengecek apakah bit tertentu aktif
                 telemetry_data['sys_check'][sensor] = bool(health_mask & bit)
             
-            # Duplikasi status kalibrasi berdasarkan kesehatan sensor utama
             telemetry_data['sys_check']['gyro_cal'] = telemetry_data['sys_check']['gyro']
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']
             telemetry_data['sys_check']['mag_cal'] = telemetry_data['sys_check']['magnetometer']
-
-        # Ekstraksi RC Switch
+    
         elif msg_type == 'RC_CHANNELS':
             telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)
             telemetry_data['rc']['ch7'] = parse_rc_switch(msg.chan7_raw)
             telemetry_data['rc']['ch8'] = parse_rc_switch(msg.chan8_raw)
-            telemetry_data['rc']['ch9'] = parse_rc_switch(msg.chan9_raw)
+            telemetry_data['rc']['ch9'] = parse_rc_switch(msg.chan9_raw) 
 
-        # Publish ke MQTT Broker setiap 1 detik
         current_time = time.time()
         if current_time - last_pub_time >= 1.0:
             payload = json.dumps(telemetry_data)
             client.publish(MQTT_TOPIC_TELEMETRY, payload)
             
-            # Print ringkasan log di terminal agar mudah dipantau
-            print(f"[GCS Log] Volt: {telemetry_data['voltage']}V | "
+            print(f"[VPS Bridge] Volt: {telemetry_data['voltage']}V | "
                   f"Cur: {telemetry_data['current']}A | "
                   f"Mode: {telemetry_data['mode']} | "
                   f"CH6: {telemetry_data['rc']['ch6']}")

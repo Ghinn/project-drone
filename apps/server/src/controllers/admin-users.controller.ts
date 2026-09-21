@@ -77,8 +77,15 @@ export const listUsers = asyncHandler(async (req, res) => {
 });
 
 export const getUserById = asyncHandler(async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.params.id as string },
+  const { id } = req.params;
+  
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: id },
+        { firebaseUid: id },
+      ],
+    },
     select: {
       ...publicUserSelect,
       assignedDroneId: true,

@@ -7,6 +7,7 @@ import morgan from "morgan";
 import { env } from "./config/env.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
+import operatorRoutes from './routes/operator.route.js';
 import dataRoutes from "./routes/data.route.js"; 
 import { errorHandler, notFoundHandler } from "./lib/http.js";
 
@@ -55,6 +56,9 @@ app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Route Operator
+app.use("/api/operator", operatorRoutes);
 
 // Route Admin
 app.use("/api/admin", adminRoutes); 

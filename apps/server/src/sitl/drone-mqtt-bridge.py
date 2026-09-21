@@ -15,7 +15,6 @@ DRONE_ID = "v1-001"
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
 MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/status"
-# MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/action"
 
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -23,7 +22,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
     # Memublikasikan status "online" dengan flag retain=True
     client.publish(MQTT_TOPIC_STATUS, json.dumps({"status": "online"}), qos=1, retain=True)
 
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"SITL_Simulator_{DRONE_ID}")
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"Phase_Production_{DRONE_ID}")
 client.username_pw_set(MQTT_USER, MQTT_PASS)
 
 # IMPLEMENTASI LAST WILL AND TESTAMENT (LWT)
@@ -80,21 +79,35 @@ def parse_rc_switch(pwm_value):
     elif 1300 <= pwm_value <= 1700: return "MODE_MID"
     else: return "MODE_HIGH"
 
-# Koneksi SITL
-print("Menunggu koneksi SITL Ardupilot...")
+# Koneksi Flight Controller (Mission Planner)
+print("Menunggu koneksi ke Flight Controller via TELEM 2 (UART)...")
 
-master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
+# Sesuaikan dengan port fisik yang Anda gunakan di Raspberry Pi:
+# - Jika menggunakan kabel USB: '/dev/ttyACM0' atau '/dev/ttyUSB0'
+# - Jika menggunakan pin GPIO/UART (TELEM1/TELEM2): '/dev/serial0' atau '/dev/ttyAMA0'
+SERIAL_PORT = '/dev/ttyAMA0' 
+BAUD_RATE = 115200  # Sesuaikan baudrate port FC Anda (umumnya 57600, 115200, atau 921600)
 
-master.wait_heartbeat()
-print("SITL Terhubung! Memulai streaming ke MQTT...")
+master = mavutil.mavlink_connection(SERIAL_PORT, baud=BAUD_RATE)
+# master.wait_heartbeat()
+# print(f"Flight Controller terhubung di {SERIAL_PORT} (Baud: {BAUD_RATE})! Memulai streaming ke MQTT via WireGuard...")
 
-# Data MAVLink dengan frekuensi 5 detik
+print("Mencari sinyal Heartbeat dari Pixhawk...")
+while True:
+    msg = master.recv_match(type='HEARTBEAT', blocking=True, timeout=2.0)
+    if msg:
+        print(f"Flight Controller terhubung! System ID: {master.target_system}")
+        break
+    else:
+        print("Menunggu heartbeat Pixhawk... (Periksa kabel TX/RX atau baudrate)")
+
+# Meminta data stream MAVLink dengan frekuensi 5 Hz
 master.mav.request_data_stream_send(
     master.target_system,
     master.target_component,
     mavutil.mavlink.MAV_DATA_STREAM_ALL,
-    5, # Frekuensi pembaruan dalam Hertz (Hz)
-    1  # 1 = Start Stream, 0 = Stop Stream
+    5, 
+    1  
 )
 
 # Loop Pembacaan MAVLink dan Publish MQTT
@@ -127,23 +140,28 @@ while True:
 
         # Indikator Penerbangan dan Pre-Flight System Check
         elif msg_type == 'SYS_STATUS':
-            # Baterai, Voltase, dan Arus
             if msg.battery_remaining != -1:
                 telemetry_data['battery'] = float(msg.battery_remaining)
-            telemetry_data['voltage'] = msg.voltage_battery / 1000.0  # konversi mV ke V
-            telemetry_data['current'] = msg.current_battery / 100.0   # konversi cA ke A
+            telemetry_data['voltage'] = msg.voltage_battery / 1000.0  
+            telemetry_data['current'] = msg.current_battery / 100.0   
 
-            # Bitwise Operation untuk System Check
             health_mask = msg.onboard_control_sensors_health
             for sensor, bit in SENSOR_BITS.items():
-                # Operasi AND (Masking) untuk mengecek apakah bit tertentu aktif
                 telemetry_data['sys_check'][sensor] = bool(health_mask & bit)
             
-            # Duplikasi status kalibrasi berdasarkan kesehatan sensor utama
             telemetry_data['sys_check']['gyro_cal'] = telemetry_data['sys_check']['gyro']
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']
             telemetry_data['sys_check']['mag_cal'] = telemetry_data['sys_check']['magnetometer']
 
+        # Ekstraksi Kualitas Sinyal Radio
+        elif msg_type == 'RADIO_STATUS':
+            telemetry_data['radio'] = {
+                'rssi': msg.rssi,          # Sinyal lokal (0-254)
+                'remrssi': msg.remrssi,    # Sinyal remote
+                'noise': msg.noise,
+                'txbuf': msg.txbuf         # Buffer transmisi (%)
+            }
+            
         # Ekstraksi RC Switch
         elif msg_type == 'RC_CHANNELS':
             telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)
@@ -157,8 +175,7 @@ while True:
             payload = json.dumps(telemetry_data)
             client.publish(MQTT_TOPIC_TELEMETRY, payload)
             
-            # Print ringkasan log di terminal agar mudah dipantau
-            print(f"[GCS Log] Volt: {telemetry_data['voltage']}V | "
+            print(f"[Production Log] Volt: {telemetry_data['voltage']}V | "
                   f"Cur: {telemetry_data['current']}A | "
                   f"Mode: {telemetry_data['mode']} | "
                   f"CH6: {telemetry_data['rc']['ch6']}")

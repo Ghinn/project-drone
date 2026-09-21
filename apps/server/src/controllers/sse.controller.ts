@@ -3,8 +3,4 @@ import { addClient } from '../services/sse.service';
 
 export const streamTelemetrySSE = (req: Request, res: Response) => {
     addClient(req, res);
-
-    req.on('close', () => {
-        res.end();
-    });
 };

@@ -17,6 +17,6 @@ router.get('/histori', getDataLogs);
 router.get('/analisis', getDataStats);
 
 // Endpoint baru untuk dikonsumsi Next.js EventSource
-router.get('/stream', streamTelemetrySSE);
+router.get('/stream', requireSession, streamTelemetrySSE);
 
 export default router;

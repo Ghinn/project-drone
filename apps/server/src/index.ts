@@ -24,5 +24,13 @@ const shutdown = async (signal: string) => {
   }, 10_000).unref();
 };
 
+process.on('uncaughtException', (err) => {
+    console.error('[FATAL] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[FATAL] Unhandled Promise Rejection:', reason);
+});
+
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
