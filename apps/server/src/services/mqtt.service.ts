@@ -5,7 +5,6 @@ import { EventEmitter } from 'events';
 
 export const telemetryEmitter = new EventEmitter();
 
-// Map untuk menyimpan state banyak drone
 const activeDronesState = new Map<string, any>();
 
 export function initMqtt() {
@@ -28,13 +27,8 @@ export function initMqtt() {
             
             const droneId = parts[3]; 
             const topicType = parts[4]; 
-
-            if (!message || message.length === 0) {
-                console.warn(`[MQTT] Payload kosong dari drone ${droneId} (${topicType}), diabaikan.`);
-                return;
-            }
-
             let payload: any = {};
+
             try {
                 payload = JSON.parse(message.toString());
             } catch (err) {
@@ -42,41 +36,44 @@ export function initMqtt() {
                 return;
             }
 
-            // Topic_Status
             if (topicType === 'status') {
                 const statusStr = payload.status; 
-                
                 try {
                     await prisma.drone.upsert({
                         where: { id: droneId },
                         update: { status: statusStr },
                         create: { id: droneId as string, status: statusStr }
                     });
+
+                    try {
+                        telemetryEmitter.emit(`status_update_${droneId}`, { status: statusStr });
+                        telemetryEmitter.emit('status_update_all', { droneId: droneId, status: statusStr });
+                    } catch (emitError) {
+                        console.error(`[MQTT] Emitter Error pada Status ${droneId}:`, emitError);
+                    }
+
+                    console.log(`[Status] Drone ${droneId} terpantau: ${statusStr}`);
                 } catch (dbError) {
                     console.error(`[MQTT] Gagal mengupsert status drone ${droneId}:`, dbError);
                 }
+            }
 
-                // Emit SSE terlepas dari hasil operasi DB di atas
-                telemetryEmitter.emit(`status_update_${droneId}`, { status: statusStr });
-                telemetryEmitter.emit('status_update_all', { droneId, status: statusStr });
-                console.log(`[Status] Drone ${droneId} terpantau: ${statusStr}`);
-
-            } else if (topicType === 'telemetryState') {
-                // [FIX 4] Menggunakan else if — memastikan hanya satu blok yang dieksekusi
-                // per pesan, mencegah pemrosesan ganda jika topicType berubah di masa depan.
+            if (topicType === 'telemetryState') {
                 const currentState = activeDronesState.get(droneId) || {};
                 const updatedState = { ...currentState, ...payload, timestamp: new Date() };
-
-                // Simpan cache terbaru ke Memory (RAM)
+                
                 activeDronesState.set(droneId, updatedState);
-
-                // Emit ke SSE lebih dulu (prioritas real-time), lalu simpan ke DB
-                telemetryEmitter.emit(`telemetry_update_${droneId}`, updatedState);
+                
+                try {
+                    telemetryEmitter.emit(`telemetry_update_${droneId}`, updatedState);
+                } catch (emitError) {
+                    console.error(`[MQTT] Emitter Error pada Telemetri ${droneId}:`, emitError);
+                }
 
                 try {
                     await prisma.telemetryLog.create({
                         data: {
-                            droneId,
+                            droneId: droneId,
                             roll: updatedState.roll ?? 0,
                             pitch: updatedState.pitch ?? 0,
                             yaw: updatedState.yaw ?? 0,
@@ -96,9 +93,7 @@ export function initMqtt() {
                     console.error(`[MQTT] Gagal menyimpan log telemetri DB ${droneId}:`, dbError);
                 }
             }
-
         } catch (fatalError) {
-            // Menangkap error level teratas agar server tidak crash atau masuk loop-restart
             console.error('[MQTT] Unhandled fatal error saat memproses pesan:', fatalError);
         }
     });
@@ -110,7 +105,6 @@ export function initMqtt() {
     return client;
 }
 
-// Mengekspor fungsi untuk membaca state terbaru di RAM
 export const getTelemetryLogStateByDrone = (droneId: string) => {
     return activeDronesState.get(droneId) || null;
 };
