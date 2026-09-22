@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
-// 4 menu baru: dashboard | pantau-drone | log-prediksi | settings
-export type MonitoringOperatorTab = 'dashboard' | 'pantau-drone' | 'log-prediksi' | 'settings';
+// 5 menu: dashboard | telemetri | pantau-drone | log-prediksi | settings
+export type MonitoringOperatorTab = 'dashboard' | 'telemetri' | 'pantau-drone' | 'log-prediksi' | 'settings';
 
 export interface NavItem {
   id: MonitoringOperatorTab;

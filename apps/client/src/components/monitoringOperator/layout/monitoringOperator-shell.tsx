@@ -20,6 +20,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },
+    { id: 'telemetri', label: 'Telemetri', labelEn: 'Telemetry', icon: 'telemetry' },
     { id: 'pantau-drone', label: 'Pantau Drone', labelEn: 'Drone Monitor', icon: 'drone' },
     { id: 'log-prediksi', label: 'Log Prediksi', labelEn: 'Prediction Log', icon: 'listClock' },
     { id: 'settings', label: 'Pengaturan', labelEn: 'Settings', icon: 'settings' },

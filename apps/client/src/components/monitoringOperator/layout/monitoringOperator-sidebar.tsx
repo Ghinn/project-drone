@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useMonitoringOperator } from './monitoringOperator-context';
 import { DRONE_TOKENS } from './monitoringOperator-types';
 import Image from 'next/image';
-import { ClipboardClock, Drone, LayoutDashboard, Menu, Settings, X } from 'lucide-react';
+import { ClipboardClock, Drone, LayoutDashboard, Menu, Settings, X, SatelliteDish } from 'lucide-react';
 
 const T = DRONE_TOKENS;
 
@@ -11,6 +11,9 @@ const T = DRONE_TOKENS;
 const NAV_ICONS: Record<string, React.ReactNode> = {
   dashboard: (
     <LayoutDashboard size={16}/>
+  ),
+  telemetry: (
+    <SatelliteDish size={16}/>
   ),
   drone: (
     <Drone size={16}/>
