@@ -48,8 +48,10 @@ export type SseConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed
 type MonitoringOperatorContextValue = {
   activeTab: MonitoringOperatorTab;
   setActiveTab: (tab: MonitoringOperatorTab) => void;
+  isSidebarOpen: boolean;
+  setIsSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   collapsed: boolean;
-  setCollapsed: (collapsed: boolean) => void;
+  setCollapsed: (collapsed: boolean | ((prev: boolean) => boolean)) => void;
 
   telemetry: DroneTelemetry; 
   droneStatus: 'online' | 'offline' | 'unknown';
