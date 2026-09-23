@@ -1,14 +1,21 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAdminContext } from './admin-context';
 import { useAuth } from '@/providers/auth-provider';
+import { Menu, X, LogOut, ArrowLeft } from 'lucide-react';
+
+const THEME = {
+  green: '#6B8E23',
+  greenLight: '#8BAE3A',
+};
 
 export default function AdminSidebar() {
   const router = useRouter();
   const { signOutApp } = useAuth();
-  const { activeTab, setActiveTab, isSidebarOpen, setIsSidebarOpen, navItems } = useAdminContext();
+  const { activeTab, isSidebarOpen, setIsSidebarOpen, navItems } = useAdminContext();
 
   const handleLogout = async () => {
     if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
@@ -27,56 +34,135 @@ export default function AdminSidebar() {
       {/* MOBILE SIDEBAR BACKDROP */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* SIDEBAR NAVIGATION */}
-      <aside className={`fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 ${isSidebarOpen ? 'w-64 translate-x-0 border-r' : 'w-0 -translate-x-full md:w-0 md:border-none'} flex-shrink-0 dark:border-zinc-800 bg-white dark:bg-[#16161a] transition-all duration-300 ease-in-out flex flex-col overflow-hidden`}>
-        <div className="w-64 flex flex-col h-full overflow-hidden">
-          <div className="h-16 flex items-center justify-between px-6 border-b dark:border-zinc-800 shrink-0">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-[#84994F] text-white rounded flex items-center justify-center font-bold mr-3 shadow-md">DP</div>
-              <span className="font-bold text-gray-800 dark:text-white text-lg tracking-wide">DREAMPALM</span>
-            </div>
-            <button className="md:hidden p-1 rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800" onClick={() => setIsSidebarOpen(false)}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-
-          <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
-            {navItems.filter(item => item.id !== 'settings').map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => { if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-                  className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm rounded-md transition-all duration-200 text-left ${
-                    isActive ? 'bg-[#84994F] text-white font-semibold shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800/50 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span className={isActive ? 'text-white' : 'text-gray-400 dark:text-gray-500'}>
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+      <aside 
+        className={`
+          fixed inset-y-0 left-0 z-50 md:static md:translate-x-0
+          ${isSidebarOpen ? 'translate-x-0 shadow-2xl md:w-56' : '-translate-x-full md:translate-x-0 md:w-14'}
+          w-56 flex-shrink-0 bg-white dark:bg-[#0d0d0d] border-r border-gray-200 dark:border-[#1e1e1e]
+          transition-all duration-300 ease-in-out flex flex-col overflow-hidden
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 px-3.5 h-14 shrink-0 border-b border-gray-200 dark:border-[#1e1e1e]">
+          <Image
+            src="/assets/images/main-logomark.svg"
+            alt="DreamPalm Logo"
+            width={32}
+            height={32}
+            className="object-contain shrink-0"
+          />
           
-          <div className="p-4 pb-8 border-t dark:border-zinc-800 shrink-0">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 rounded-md transition-all duration-200 border border-transparent hover:border-red-100 dark:hover:border-red-950/30"
+          <div className={`flex justify-between items-center w-full ${!isSidebarOpen ? 'hidden md:hidden' : 'flex'}`}>
+            <div className="flex flex-col leading-tight">
+              <Image
+                src="/assets/images/main-logo-logotype.svg"
+                alt="DreamPalm Logo"
+                width={100}
+                height={20}
+                className="object-contain"
+              />
+              <span className="text-[10px] text-gray-400">Master Admin</span>
+            </div>
+
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden w-fit h-fit p-1 rounded-md transition-all hover:opacity-70 bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500"
+              title="Tutup Sidebar"
             >
-              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Keluar Akun
+              <X size={18} />
+            </button>
+
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="hidden md:flex w-fit h-fit p-1 rounded-md transition-all hover:opacity-70 bg-gray-100 dark:bg-[#1a1a1a] text-gray-400 dark:text-gray-500"
+              title="Perkecil Sidebar"
+            >
+              <X size={18} />
             </button>
           </div>
+        </div>
+
+        {/* Expand button di desktop version */}
+        {!isSidebarOpen && (
+          <div className="hidden md:flex justify-center pt-3 pb-1 shrink-0">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="flex justify-center items-center p-1 rounded-md transition-all hover:opacity-70 text-gray-400 dark:text-gray-500"
+              title="Perlebar Sidebar"
+            >
+              <Menu size={18} />
+            </button>
+          </div>
+        )}
+
+        <nav className="flex-1 py-4 flex flex-col gap-0.5 px-2 overflow-y-auto">
+          {navItems.filter(item => item.id !== 'settings').map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    setIsSidebarOpen(false);
+                  }
+                }}
+                title={!isSidebarOpen ? item.label : undefined}
+                className={`flex items-center gap-3 rounded-md px-2.5 py-2.5 w-full text-left transition-all duration-150 ${
+                  isActive
+                    ? 'bg-[#6B8E2326] dark:bg-[#1a1a1a] text-[#6B8E23] dark:text-[#6B8E23]'
+                    : 'text-[#6B8E23]/70 hover:bg-[#6B8E2326] hover:text-[#6B8E23]'
+                } ${!isSidebarOpen ? 'justify-center' : ''}`}
+                style={{
+                  borderLeft: isActive
+                    ? `2px solid ${THEME.greenLight}`
+                    : '2px solid transparent',
+                }}
+              >
+                <span
+                  className="shrink-0 transition-colors"
+                  style={{ color: isActive ? THEME.greenLight : 'inherit' }}
+                >
+                  {item.icon}
+                </span>
+                {isSidebarOpen && (
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                      {item.label}
+                    </span>
+                  </div>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+        
+        <div className="px-2 pb-3 pt-2 border-t border-gray-200 dark:border-[#1e1e1e] flex flex-col gap-1 shrink-0">
+          <button
+            onClick={() => router.push('/')}
+            className={`flex items-center gap-2 px-2.5 py-2 w-full rounded-md text-sm transition-all hover:bg-gray-50 dark:hover:bg-zinc-900 text-gray-400 dark:text-gray-500 ${!isSidebarOpen ? 'justify-center' : ''}`}
+            title={!isSidebarOpen ? 'Kembali ke Beranda' : undefined}
+          >
+            <ArrowLeft size={16} className="shrink-0" />
+            {isSidebarOpen && <span className="text-xs">Kembali ke Beranda</span>}
+          </button>
+
+          <button 
+            onClick={handleLogout}
+            title={!isSidebarOpen ? 'Keluar Akun' : undefined}
+            className={`flex items-center gap-2 px-2.5 py-2 w-full text-sm font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 rounded-md transition-all duration-150 ${!isSidebarOpen ? 'justify-center' : ''}`}
+          >
+            <LogOut size={16} className="shrink-0" />
+            {isSidebarOpen && (
+              <span className="text-xs truncate">Keluar Akun</span>
+            )}
+          </button>
         </div>
       </aside>
     </>
