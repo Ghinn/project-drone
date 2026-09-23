@@ -12,7 +12,8 @@ export interface NavItem {
 
 export interface AlertItem {
   id: number;
-  level: 'critical' | 'warning' | 'caution' | 'ok';
+  // level: 'critical' | 'warning' | 'caution' | 'ok';
+  level: 'healthy' | 'unhealthy';
   title: string;
   note: string;
   loc: string;
@@ -33,12 +34,14 @@ export interface PredictionLogEntry {
   classification: string; // BSR Parah / Sehat
   confidence: number;   // 94
   severity: 'ok' | 'caution' | 'warning' | 'critical';
+  healthStatus: 'healthy' | 'unhealthy';
   healthy: number;      // 12.4
   unhealthy: number;    // 87.6
   disease: string;
   recommendation: string;
   snapshotUrl: string;
   ndviUrl: string;
+  ndviValue?: number;
   // Telemetri drone saat snapshot diambil
   telemetry: {
     battery: number;
