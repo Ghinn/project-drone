@@ -22,23 +22,23 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const navItems: NavItem[] = [
     { 
-      id: 'overview', label: 'Overview', href: '/admin/overview',
+      id: 'overview', label: 'Dashboard', href: '/admin/overview',
       icon: <LayoutDashboard size={16} />
     },
     { 
-      id: 'users', label: 'User Management', href: '/admin/users',
+      id: 'users', label: 'Manajemen User', href: '/admin/users',
       icon: <Users size={16} />
     },
     { 
-      id: 'drones', label: 'Drone Management', href: '/admin/drones',
+      id: 'drones', label: 'Manajemen Drone', href: '/admin/drones',
       icon: <Drone size={16} />
     },
     { 
-      id: 'logs', label: 'System Logs', href: '/admin/logs',
+      id: 'logs', label: 'Log Sistem', href: '/admin/logs',
       icon: <ClipboardClock size={16} />
     },
     { 
-      id: 'settings', label: 'Settings', href: '/admin/settings',
+      id: 'settings', label: 'Pengaturan', href: '/admin/settings',
       icon: <Settings size={16} />
     },
   ];

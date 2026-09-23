@@ -20,7 +20,7 @@ export default function AppHeader() {
         </button>
 
         <div className="flex items-center gap-2 text-xs sm:text-sm truncate">
-          <span className="text-gray-400 dark:text-gray-500 font-medium shrink-0">DreamPalm</span>
+          <span className="text-gray-400 dark:text-gray-500 font-medium shrink-0">Admin</span>
           <span className="text-gray-300 dark:text-gray-600 shrink-0 font-normal">/</span>
           <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">
             {getPageTitle()}

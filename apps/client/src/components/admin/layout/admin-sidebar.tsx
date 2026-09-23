@@ -153,16 +153,16 @@ export default function AdminSidebar() {
             {isSidebarOpen && <span className="text-xs">Kembali ke Beranda</span>}
           </button>
 
-          <button 
+          {/* <button 
             onClick={handleLogout}
-            title={!isSidebarOpen ? 'Keluar Akun' : undefined}
-            className={`flex items-center gap-2 px-2.5 py-2 w-full text-sm font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 rounded-md transition-all duration-150 ${!isSidebarOpen ? 'justify-center' : ''}`}
+            title={!isSidebarOpen ? 'Keluar' : undefined}
+            className={`flex items-center gap-2.5 px-2.5 py-2 w-full text-sm font-medium text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 rounded-md transition-all duration-150 ${!isSidebarOpen ? 'justify-center' : ''}`}
           >
             <LogOut size={16} className="shrink-0" />
             {isSidebarOpen && (
-              <span className="text-xs truncate">Keluar Akun</span>
+              <span className="text-xs font-semibold truncate">Keluar</span>
             )}
-          </button>
+          </button> */}
         </div>
       </aside>
     </>
