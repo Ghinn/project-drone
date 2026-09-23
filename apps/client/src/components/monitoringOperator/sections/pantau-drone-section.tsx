@@ -337,16 +337,6 @@ export default function PantauDroneSection() {
                 <Wifi size={16} className="text-gray-500" />
                 <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">52.4 GHz</span>
               </div>
-
-              <div className="flex items-center gap-1.5 font-medium">
-                <ArrowDown size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">0.0 m/s</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{speedDisplay}</span>
-              </div>
             </div>
 
             {/* Snapshot Button */}

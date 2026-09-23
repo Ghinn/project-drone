@@ -42,6 +42,9 @@ export interface PredictionLogEntry {
   snapshotUrl: string;
   ndviUrl: string;
   ndviValue?: number;
+  freqLink?: number;
+  distance?: number;
+  elevationSpeed?: number;
   // Telemetri drone saat snapshot diambil
   telemetry: {
     battery: number;
