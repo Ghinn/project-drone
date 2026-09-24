@@ -117,3 +117,11 @@ export const addClient = async (req: Request, res: Response) => {
         if (!res.writableEnded) res.end();
     });
 };
+
+export const broadcastToDrone = (droneId: string, payload: object) => {
+    const targetClients = clients.filter(c => c.droneId === droneId);
+    
+    targetClients.forEach(client => {
+        safeWrite(client.res, payload);
+    });
+};

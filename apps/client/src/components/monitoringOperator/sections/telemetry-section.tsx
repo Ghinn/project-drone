@@ -7,6 +7,7 @@ import {
   RotateCw, 
   ClipboardCheck, 
   Cpu,
+  RefreshCw,
   Loader2,
   Users
 } from 'lucide-react';
@@ -62,57 +63,126 @@ export default function TelemetrySection() {
   const { droneOn, setDroneOn, telemetry, droneStatus } = useMonitoringOperator();
   const { user, status } = useAuth();
   const [droneDetail, setDroneDetail] = useState<DroneData | null>(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [activeDroneId, setActiveDroneId] = useState<string | null>(null);
+  const [isSendingCommand, setIsSendingCommand] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchOperatorAndDroneData = async () => {
-      if (status === 'loading') return;
-      if (!user?.uid) return;
-      
-      setIsLoading(true);
+
+      if (isMounted) setIsLoading(true);
+
       try {
-        const meRes = await fetch('/api/operator/me', {
+        const timestamp = new Date().getTime();
+
+        const meRes = await fetch(`/api/operator/me?_t=${timestamp}`, {
           method: 'GET',
           credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
         });
 
         if (!meRes.ok) throw new Error(`HTTP Error Me: ${meRes.status}`);
         const meJson = await meRes.json();
-        const meData = meJson.data;
 
-        const fetchedDroneId = meData?.assignedDroneId;
-
+        const fetchedDroneId = meJson.data?.assignedDroneId;
         if (!fetchedDroneId) {
+          console.warn('Operator belum memiliki drone yang di-assign.');
+          if (isMounted) setIsLoading(false);
           return;
         }
 
-        setActiveDroneId(fetchedDroneId);
+        if (isMounted) setActiveDroneId(fetchedDroneId);
 
-        const droneRes = await fetch('/api/operator/my-drone', {
+        const droneRes = await fetch(`/api/operator/my-drone?_t=${timestamp}`, {
           method: 'GET',
           credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
         });
 
         if (!droneRes.ok) throw new Error(`HTTP Error Drone: ${droneRes.status}`);
         const droneJson = await droneRes.json();
 
-        if (droneJson.data) {
+        if (droneJson.data && isMounted) {
           setDroneDetail(droneJson.data);
         }
       } catch (error) {
         console.error('Gagal memuat data operator/drone:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchOperatorAndDroneData();
-  }, [user?.uid, status]);
 
-  const connStatus = droneOn ? 'connected' : 'disconnected';
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSendCommand = async (targetTopic: 'system' | 'action', commandType: string) => {
+  if (!activeDroneId)
+    return;
+  
+  setIsSendingCommand(true);
+  try {
+    const res = await fetch('/api/operator/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        droneId: activeDroneId, 
+        targetTopic: targetTopic,
+        command: commandType
+      })
+    });
+    
+    const result = await res.json();
+    if (result.success && targetTopic === 'system') {
+       setDroneOn(false); 
+    }
+  } catch (err) {
+    console.error("HTTP Request gagal:", err);
+  } finally {
+    setIsSendingCommand(false);
+  }
+};
+
+  const connStatus = droneStatus === 'online' ? 'connected' : 'disconnected';
   const displayMode = telemetry.mode?.startsWith('Mode(') ? 'INITIALIZING' : (telemetry.mode || 'DISARMED');
+  const isLinkFreqReady = droneStatus === 'online';
+
+  const DEVICE_INFO = [
+    { label: 'Model Drone', value: isLoading ? '...' : (droneDetail?.name || 'Tidak Ditemukan') },
+    { label: 'ID Perangkat', value: isLoading ? '...' : (activeDroneId || 'Tidak Ditemukan') },
+    { 
+      label: 'Pengguna Terkait', 
+      value: isLoading ? '...' : (
+        droneDetail?.operator && droneDetail.operator.length > 0 ? (
+          <div className="flex items-center justify-end">
+            <button 
+              onClick={() => setIsUserModalOpen(true)} 
+              className="inline-flex items-center justify-center p-1.5 rounded-lg border border-[#E5E7EB] dark:border-[#2a2a2a] bg-white dark:bg-[#202024] text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition-colors shadow-sm"
+              title="Lihat Detail Pengguna"
+            >
+              <Users className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <span>Tidak Ditemukan</span>
+        )
+      ) 
+    },
+    { label: 'Frekuensi Link', value: isLoading || (droneOn && !isLinkFreqReady) ? '...' : (droneDetail?.linkFrequency || 'Tidak Ditemukan') },
+  ];
 
   const ATTITUDE = [
     { label: 'ROLL', value: toDeg(telemetry.roll) },
@@ -126,6 +196,15 @@ export default function TelemetrySection() {
     { key: 'rtl', label: 'RTL', status: telemetry.rc?.ch8 || 'OFF' },
     { key: 'spray', label: 'Spray', status: telemetry.rc?.ch9 === 'ON' ? 'ON' : 'ON' },
   ];
+
+  const TELEMETRY = [
+    { label: 'Mode Terbang', value: displayMode},
+    { label: 'Baterai', value: `${(telemetry.battery || 0).toFixed(0)}%`},
+    { label: 'Tegangan', value: `${(telemetry.voltage || 0).toFixed(2)} V`},
+    { label: 'Arus', value: `${(telemetry.current || 0).toFixed(2)} A`},
+    { label: 'Ketinggian',  value: `${(telemetry.altitude || 0).toFixed(1)} m`},
+    { label: 'Kecepatan', value: `${(telemetry.groundSpeed || 0).toFixed(1)} m/s`},
+  ]; 
 
   return (
     <div className="space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
@@ -144,6 +223,7 @@ export default function TelemetrySection() {
             </div>
           </div>
 
+          {/* Status Perangkat */}
           <div className="flex items-center gap-3">
             <span className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg ${
               connStatus === 'connected'
@@ -151,15 +231,20 @@ export default function TelemetrySection() {
                 : 'bg-[#FCE8E6] text-[#C84030] dark:bg-[#2e1513] dark:text-[#f87171]'
             }`}>
               <span className={`w-2 h-2 rounded-full ${connStatus === 'connected' ? 'bg-[#5D7E2A] dark:bg-[#84cc16] animate-pulse' : 'bg-[#C84030]'}`} />
-              {connStatus === 'connected' ? 'TERHUBUNG' : 'OFFLINE'}
+              {connStatus === 'connected' ? 'ONLINE' : 'OFFLINE'}
             </span>
 
+            {/* Restart WiFi (System) */}
             <button 
-              onClick={() => setDroneOn(!droneOn)}
+              onClick={() => handleSendCommand('system', 'reboot_os')}
+              disabled={isSendingCommand}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-[#5F802A] hover:bg-[#506D23] active:scale-95 transition-all shadow-xs cursor-pointer"
             >
-              <RotateCw size={13} />
-              <span>Reconnect</span>
+              <RefreshCw 
+              size={13}
+              className={`w-3.5 h-3.5 ${isSendingCommand ? 'animate-spin' : ''}`} 
+              />
+              {isSendingCommand ? 'Loading...' : 'Reconnect'}
             </button>
           </div>
         </div>
@@ -204,33 +289,19 @@ export default function TelemetrySection() {
                 </span>
 
                 <div className="text-xs">
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <span className="text-gray-500 dark:text-gray-400">Model Drone</span>
-                    <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                      {isLoading ? '...' : (droneDetail?.name || 'DreamPalm')}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <span className="text-gray-500 dark:text-gray-400">ID Perangkat</span>
-                    <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                      {isLoading ? '...' : (activeDroneId || 'V1-001')}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <span className="text-gray-500 dark:text-gray-400">Versi Firmware</span>
-                    <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                      v4.2.1
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between py-3 border-b">
-                    <span className="text-gray-500 dark:text-gray-400">Frekuensi Link</span>
-                    <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                      {droneDetail?.linkFrequency || '5.8 GHz'}
-                    </span>
-                  </div>
+                  {DEVICE_INFO.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between py-3 border-b"
+                    >
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {item.label}
+                      </span>
+                      <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -282,14 +353,14 @@ export default function TelemetrySection() {
                 <div className="flex items-center justify-between py-3 border-b">
                   <span className="text-gray-500 dark:text-gray-400">Baterai</span>
                   <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                    {telemetry.battery ? `${telemetry.battery.toFixed(0)}%` : '85%'}
+                    {telemetry.battery ? `${telemetry.battery.toFixed(0)}%` : '... %'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between py-3 border-b">
                   <span className="text-gray-500 dark:text-gray-400">Tegangan</span>
                   <span className="font-bold text-gray-900 dark:text-gray-100 font-mono">
-                    {telemetry.voltage ? `${telemetry.voltage.toFixed(1)} V` : '11.4 V'}
+                    {telemetry.voltage ? `${telemetry.voltage.toFixed(1)} V` : '0.00 V'}
                   </span>
                 </div>
 
@@ -356,6 +427,33 @@ export default function TelemetrySection() {
           })}
         </div>
       </div>
+
+      {/* --- MODAL PENGGUNA TERKAIT --- */}
+      {isUserModalOpen && droneDetail?.operator && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-[#111] border border-[#E5E7EB] dark:border-[#2a2a2a] w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-[#191919] dark:text-white">Pengguna Terkait</h2>
+              </div>
+              <button onClick={() => setIsUserModalOpen(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-3 mb-2">
+              {droneDetail.operator.map((op) => (
+                <div key={op.id} className="bg-gray-50/50 dark:bg-[#1a1a1a] border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-xl p-5 flex flex-col items-center text-center gap-1 shadow-sm">
+                  <div className="w-12 h-12 bg-green-900/10 text-green-600 rounded-full flex items-center justify-center mb-2">
+                    <Users className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-[#191919] dark:text-white text-base">{op.name || "Tanpa Nama"}</h3>
+                  {op.email && <p className="text-xs text-gray-500 dark:text-gray-400">{op.email}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

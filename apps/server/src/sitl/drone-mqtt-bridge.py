@@ -1,8 +1,11 @@
-import os
+import subprocess
+# import os
 import time
 import json
 import threading
 import uuid
+import cv2
+import requests
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
 from gpiozero import PWMOutputDevice
@@ -12,6 +15,10 @@ MQTT_BROKER = "10.0.0.1"
 MQTT_PORT = 1883
 MQTT_USER = "mqtt-dreampalm"
 MQTT_PASS = "dreampalm"
+
+# BACKEND API URL
+BACKEND_API_BASE_URL = "http://192.168.100.124:4000/api/data/snapshot/upload"
+# BACKEND_API_BASE_URL = "http://api.dreampalm.id:4000/api/data/snapshot/upload"
 
 # Identifier Drone
 DRONE_ID = "v1-001"
@@ -42,6 +49,41 @@ def trigger_camera_task():
     else:
         print("[ACTION] Gagal trigger: camera_trigger tidak terinisialisasi.")
 
+def capture_and_upload_task():
+    print("[ACTION] Mengambil snapshot OpenCV dari /dev/video6...")
+    # Buka kamera virtual 2
+    # cap = cv2.VideoCapture('/dev/video6', cv2.CAP_V4L2)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    cap = cv2.VideoCapture('/dev/video6')
+
+    time.sleep(0.5)
+    
+    # Baca 1 frame
+    ret, frame = cap.read()
+    cap.release()
+    
+    if ret:
+        print("[ACTION] Snapshot berhasil diambil. Memproses unggahan ke server...")
+        # Konversi array piksel ke format file .jpg
+        success, buffer = cv2.imencode('.jpg', frame)
+        if success:
+            try:
+                # Siapkan payload multipart/form-data
+                files = {
+                    'image': ('snapshot.jpg', buffer.tobytes(), 'image/jpeg')
+                }
+                data = {
+                    'droneId': DRONE_ID
+                }
+                # Tembak ke endpoint backend
+                response = requests.post(BACKEND_API_BASE_URL, files=files, data=data, timeout=10)
+                print(f"[ACTION] Upload selesai. Server merespons dengan kode: {response.status_code}")
+            except Exception as e:
+                print(f"[ACTION] Gagal mengunggah snapshot ke server: {e}")
+    else:
+        print("[ACTION] Gagal membaca frame dari /dev/video6.")
+
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Terhubung ke broker (Kode: {reason_code})")
@@ -64,14 +106,18 @@ def on_message(client, userdata, msg):
             if command == "reboot_os":
                 # print("[SYSTEM] Restart WiFi...")
                 print("[SYSTEM] Reboot OS...")
-                os.system("sudo reboot")
+                # os.system("sudo reboot")
+                subprocess.run(["sudo", "reboot"], check=False)
                 # os.system("sudo ip link set wlan0 down && sudo ip link set wlan0 up")
         
         # Logika Command ACTION (Camera)
         elif topic == MQTT_TOPIC_ACTION:
             if command == "take_picture":
-                print("[ACTION] Trigger camera mengambil gambar...")
+                print("[ACTION] Trigger kamera diaktifkan...")
+                # Trigger fisik MAPIR via PWM (simpan ke SD Card)
                 threading.Thread(target=trigger_camera_task, daemon=True).start()
+                # Trigger virtual OpenCV (upload ke backend AI)
+                threading.Thread(target=capture_and_upload_task, daemon=True).start()
                 
     except Exception as e:
         print(f"[MQTT] Error memproses payload: {e}")

@@ -45,7 +45,7 @@ async def start_webrtc():
         pc = RTCPeerConnection()
         
         player = MediaPlayer(
-            '/dev/video0', 
+            '/dev/video5', 
             format='v4l2', 
             options={'video_size': '1280x720', 'framerate': '30'}
         )
@@ -82,7 +82,7 @@ async def on_sdp_message(data):
     
     # Menangkap Trigger/Permintaan dari UI React
     if msg_type == 'request-offer':
-        print("[WebRTC] Operator membuka halaman Pantau. Memulai Streaming...")
+        print("[WebRTC] Operator membuka section Pantau Drone. Memulai Streaming...")
         await start_webrtc()
 
     # Menangkap Jawaban SDP dari UI React

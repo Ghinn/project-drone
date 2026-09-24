@@ -11,6 +11,31 @@ export default function MonitoringOperatorShell({ children }: { children: React.
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [spray] = useState(62);
   const [droneOn, setDroneOn] = useState(true);
+  const [droneId, setDroneId] = useState<string | undefined>(undefined);
+
+  // Fetch ID Drone
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMyDroneInfo = async () => {
+      try {
+        const res = await fetch('/api/operator/my-drone');
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data?.id && isMounted) {
+            setDroneId(result.data.id);
+            console.log(`[Operator] Assigned Drone ID berhasil dimuat: ${result.data.id}`);
+          }
+        } else {
+          console.warn("[Operator] Gagal memuat data /operator/my-drone");
+        }
+      } catch (err) {
+        console.error("[Operator] Error fetching /operator/my-drone.", err);
+      }
+    };
+    
+    fetchMyDroneInfo();
+    return () => { isMounted = false; };
+  }, []);
 
   // Close sidebar di mobile
   useEffect(() => {
@@ -23,7 +48,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
   // Panggil Custom Hook SSE
-  const { telemetry, droneStatus } = useTelemetrySSE(API_URL, 'v1-001');
+  const { telemetry, droneStatus, latestSnapshot } = useTelemetrySSE(API_URL, droneId);
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },
@@ -62,6 +87,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
         setCollapsed,
         telemetry,
         droneStatus,
+        latestSnapshot,
         spray,
         droneOn,
         setDroneOn,

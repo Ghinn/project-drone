@@ -58,11 +58,11 @@ function DroneModel({ roll, pitch, yaw }: DroneModelProps) {
       />
 
       {/* Garis Sumbu (X=Merah, Y=Hijau, Z=Biru) */}
-      <axesHelper args={[6]} />
+      {/* <axesHelper args={[6]} />
 
       <line geometry={negativeYAxis}>
         <lineBasicMaterial color="#00ff00" />
-      </line>
+      </line> */}
       
     </group>
   );

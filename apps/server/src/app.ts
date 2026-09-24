@@ -69,6 +69,7 @@ app.use("/api", authRoutes);
 
 // Route Operator
 app.use("/api/drone/telemetryState", dataRoutes);
+app.use('/api/data', dataRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

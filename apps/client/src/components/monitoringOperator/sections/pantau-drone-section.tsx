@@ -35,11 +35,6 @@ const DroneMap = dynamic(() => import('./drone-map'), {
   ),
 });
 
-// Dummy asset paths
-const SEHAT_IMG = '/assets/operator/dummy/sehat.png';
-const TIDAK_SEHAT_IMG = '/assets/operator/dummy/Tidak sehat.png';
-
-
 type PredictionResult = {
   label: string;
   healthy: number;
@@ -108,12 +103,45 @@ const CIKABAYAN_POSITIONS = [
 type SnapshotCondition = 'idle' | 'sehat' | 'tidak_sehat';
 
 export default function PantauDroneSection() {
-  const { droneOn, telemetry } = useMonitoringOperator();
+  const { droneOn, telemetry, latestSnapshot } = useMonitoringOperator();
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   const [droneId, setDroneId] = useState<string | null>(null);
+  const [timeStr, setTimeStr] = useState<string>('15.22');
+  const [posIdx, setPosIdx] = useState(0);
+
+  const [snapshotCondition, setSnapshotCondition] = useState<SnapshotCondition>('idle');
+  const [currentSnapshotImg, setCurrentSnapshotImg] = useState<string | null>(null);
+  const [snapshotPos, setSnapshotPos] = useState<{ latStr: string; lngStr: string; altStr: string } | null>(null);
+  const [ndviValue, setNdviValue] = useState<number>(0);
+  const [snapshotFlash, setSnapshotFlash] = useState(false);
+
+
+
+  // State Flow Controls
+  const [isWaitingSnapshot, setIsWaitingSnapshot] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showNozzleModal, setShowNozzleModal] = useState(false);
+  const [isSprayingActive, setIsSprayingActive] = useState(false);
+  const lastProcessedImgRef = useRef<string | null>(null);
+
+  // Timer
+  const aiProcessTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const popupShowTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const popupHideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // telemetri
+  const [batteryLevel, setBatteryLevel] = useState(84);
+  const [droneSpeed, setDroneSpeed] = useState(0.0);
+  const [altitude, setAltitude] = useState(25.3);
+
+  // semprot pestisida countdown
+  const TOTAL_SPRAY_SECONDS = 60;
+  const [sprayCountdown, setSprayCountdown] = useState(0);
+  const [sprayVolume, setSprayVolume] = useState(0.0);
+  const [tankRemaining, setTankRemaining] = useState(98);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,18 +153,17 @@ export default function PantauDroneSection() {
           const result = await res.json();
           if (result.data && result.data.id && isMounted) {
             setDroneId(result.data.id);
-            console.log(`[Operator] Assigned Drone ID: ${result.data.id}`);
+            console.log(`[Operator] Assigned Drone ID berhasil dimuat: ${result.data.id}`);
           }
         } else {
-          console.warn("[Operator] Gagal memuat data operator/drone.");
+          console.warn("[Operator] Gagal memuat data /operator/my-drone");
         }
       } catch (err) {
-        console.error("[Operator] Error fetching my-drone:", err);
+        console.error("[Operator] Error fetching /operator/my-drone", err);
       }
     };
 
     fetchMyDroneInfo();
-
     return () => {
       isMounted = false;
     };
@@ -231,44 +258,91 @@ export default function PantauDroneSection() {
     };
   }, [droneOn, droneId]);
 
-
-  const [timeStr, setTimeStr] = useState<string>('15.22');
-  const [snapshotFlash, setSnapshotFlash] = useState(false);
-  const [posIdx, setPosIdx] = useState(0);
-  const [snapshotCondition, setSnapshotCondition] = useState<SnapshotCondition>('idle');
-  const [currentSnapshotImg, setCurrentSnapshotImg] = useState<string | null>(null);
-  const [snapshotPos, setSnapshotPos] = useState<{ latStr: string; lngStr: string; altStr: string } | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showNozzleModal, setShowNozzleModal] = useState(false);
-  const [isSprayingActive, setIsSprayingActive] = useState(false);
-
-  // Timer
-  const aiProcessTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const popupShowTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const popupHideTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // telemetri
-  const [batteryLevel, setBatteryLevel] = useState(84);
-  const [droneSpeed, setDroneSpeed] = useState(0.0);
-  const [altitude, setAltitude] = useState(25.3);
-
-  // semprot pestisida countdown
-  const TOTAL_SPRAY_SECONDS = 60;
-  const [sprayCountdown, setSprayCountdown] = useState(0);
-  const [sprayVolume, setSprayVolume] = useState(0.0);
-  const [tankRemaining, setTankRemaining] = useState(98);
-
-  // Referensi penerapan di pantau-drone-section.tsx
-  const videoSrc = useRef<HTMLVideoElement>(null);
-
+  // Handler Gambar yang Masuk dari WebRTC/SSE
   useEffect(() => {
-    return () => {
-      if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
-      if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
-      if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
-    };
-  }, []);
+    if (isWaitingSnapshot && latestSnapshot && latestSnapshot.imageUrl) {
 
+      if (latestSnapshot.imageUrl === lastProcessedImgRef.current) {
+        return; 
+      }
+
+      console.log("Gambar berhasil diterima via SSE:", latestSnapshot.imageUrl);
+      
+      setIsWaitingSnapshot(false);
+      setIsAnalyzing(true);
+      
+      // Render gambar resolusi tinggi ke canvas
+      setCurrentSnapshotImg(latestSnapshot.imageUrl);
+      setSnapshotFlash(true);
+      setTimeout(() => setSnapshotFlash(false), 300);
+
+      // Simulasi Proses AI 3 Detik
+      if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
+      
+      aiProcessTimerRef.current = setTimeout(() => {
+        // Contoh Output AI
+        const isHealthy = Math.random() > 0.5; 
+        const mockNdvi = isHealthy ? 0.28 : 0.18;
+
+        setNdviValue(mockNdvi);
+        setSnapshotCondition(isHealthy ? 'sehat' : 'tidak_sehat');
+        setIsAnalyzing(false);
+
+        // Logika kemunculan Popup Nozzle
+        if (!isHealthy) {
+          popupShowTimerRef.current = setTimeout(() => {
+            setShowNozzleModal(true);
+
+            popupHideTimerRef.current = setTimeout(() => {
+              setShowNozzleModal(false);
+              setIsSprayingActive(true);
+            }, 10000);
+          }, 5000);
+        } else {
+          setShowNozzleModal(false);
+          setIsSprayingActive(false);
+        }
+      }, 3000);
+    }
+  }, [latestSnapshot, isWaitingSnapshot]);
+
+  // Handle Snapshot
+  const handleSnapshot = () => {
+    if (!droneOn || isAnalyzing) return;
+
+    if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
+    if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
+    if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
+
+    setIsWaitingSnapshot(true);
+    setCurrentSnapshotImg(null);
+    setSnapshotCondition('idle');
+    setNdviValue(0);
+    setShowNozzleModal(false);
+    setIsSprayingActive(false);
+
+    try {
+      fetch('/api/operator/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          droneId: droneId,
+          targetTopic: 'action',
+          command: 'take_picture'
+        })
+      }).catch(err => console.error("[Command] Gagal eksekusi trigger API", err));
+    } catch (error) {
+      console.error("[Command] Terjadi kesalahan trigger:", error);
+    }
+
+    setSnapshotPos({
+      latStr: `${Math.abs(currentPos.lat).toFixed(6)}°S`,
+      lngStr: `${Math.abs(currentPos.lng).toFixed(6)}°E`,
+      altStr: altDisplay,
+    });
+  };
+
+  // Basic Timers & Dummy Data
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -341,72 +415,6 @@ export default function PantauDroneSection() {
 
     return () => clearInterval(sprayTimer);
   }, [isSprayingActive, droneId]);
-
-  // Handle Snapshot
-  const handleSnapshot = () => {
-    if (!droneOn || isAnalyzing) return;
-
-    if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
-    if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
-    if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
-
-    setSnapshotFlash(true);
-    setTimeout(() => setSnapshotFlash(false), 300);
-
-    try {
-      fetch('/api/operator/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          droneId: droneId,
-          targetTopic: 'action',
-          command: 'take_picture'
-        })
-      }).catch(err => console.error("[Command] Gagal eksekusi trigger API", err));
-    } catch (error) {
-      console.error("[Command] Terjadi kesalahan trigger:", error);
-    }
-
-    // Target kondisi berikutnya
-    const nextCond: SnapshotCondition =
-      snapshotCondition === 'idle' || snapshotCondition === 'tidak_sehat'
-        ? 'sehat'
-        : 'tidak_sehat';
-
-    const nextImg = nextCond === 'sehat' ? SEHAT_IMG : TIDAK_SEHAT_IMG;
-    setCurrentSnapshotImg(nextImg);
-    setSnapshotPos({
-      latStr: `${Math.abs(currentPos.lat).toFixed(6)}°S`,
-      lngStr: `${Math.abs(currentPos.lng).toFixed(6)}°E`,
-      altStr: altDisplay,
-    });
-
-    // Mulai proses AI
-    setIsAnalyzing(true);
-    setShowNozzleModal(false);
-    setIsSprayingActive(false);
-
-    aiProcessTimerRef.current = setTimeout(() => {
-      setIsAnalyzing(false);
-      setSnapshotCondition(nextCond);
-
-      if (nextCond === 'tidak_sehat') {
-        // Tunggu 5 detik setelah hasil prediksi muncul, lalu buka popup
-        popupShowTimerRef.current = setTimeout(() => {
-          setShowNozzleModal(true);
-
-          // Tutup popup lalu nyalakan semprot pestisida
-          popupHideTimerRef.current = setTimeout(() => {
-            setShowNozzleModal(false);
-            setIsSprayingActive(true);
-          }, 10000);
-        }, 5000);
-      } else {
-        setShowNozzleModal(false);
-        setIsSprayingActive(false);
-      }
-    }, 3000);
-  };
 
   const currentPos = (telemetry.latitude !== 0 && telemetry.longitude !== 0)
     ? { lat: telemetry.latitude, lng: telemetry.longitude }
@@ -496,15 +504,21 @@ export default function PantauDroneSection() {
             {/* Snapshot Button */}
             <button
               onClick={handleSnapshot}
-              disabled={!droneOn || isAnalyzing || !droneId}
+              disabled={!droneOn || isAnalyzing || isWaitingSnapshot || !droneId}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all shadow-xs ml-auto ${
-                isAnalyzing || !droneId
+                isAnalyzing || isWaitingSnapshot || !droneId
                   ? 'bg-amber-600 opacity-90 cursor-wait'
                   : 'bg-[#5F802A] hover:bg-[#506D23] active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
-              <Camera size={15} className={isAnalyzing ? 'animate-spin' : ''} />
-              <span>{isAnalyzing ? 'Memproses AI (3s)...' : 'Ambil Snapshot'}</span>
+              <Camera size={15} className={(isAnalyzing || isWaitingSnapshot) ? 'animate-spin' : ''} />
+              <span>
+                {isWaitingSnapshot 
+                  ? 'Menangkap Gambar...' 
+                  : isAnalyzing 
+                    ? 'Memproses AI (3s)...' 
+                    : 'Ambil Snapshot'}
+              </span>
             </button>
           </div>
 
@@ -657,15 +671,13 @@ export default function PantauDroneSection() {
               INDEKS NDVI
             </span>
             <div className={`text-5xl sm:text-6xl font-extrabold tracking-tight my-2 font-mono ${
-              isAnalyzing
-                ? 'text-gray-300 dark:text-gray-700 animate-pulse'
-                : snapshotCondition === 'idle'
+              isAnalyzing || snapshotCondition === 'idle'
                 ? 'text-gray-300 dark:text-gray-700'
                 : snapshotCondition === 'sehat'
                 ? 'text-[#4D7C0F]'
                 : 'text-[#E59819]'
             }`}>
-              {isAnalyzing ? '...' : snapshotCondition === 'idle' ? '0.00' : snapshotCondition === 'sehat' ? '0.28' : '0.18'}
+              {isAnalyzing || snapshotCondition === 'idle' ? '0.00' : ndviValue.toFixed(2)}
             </div>
 
             <div className="w-full max-w-md mt-2">
@@ -676,9 +688,7 @@ export default function PantauDroneSection() {
                     width:
                       isAnalyzing || snapshotCondition === 'idle'
                         ? '0%'
-                        : snapshotCondition === 'sehat'
-                        ? '28%'
-                        : '18%',
+                        : `${ndviValue * 100}%`,
                     background:
                       isAnalyzing || snapshotCondition === 'idle'
                         ? 'transparent'

@@ -55,6 +55,7 @@ type MonitoringOperatorContextValue = {
 
   telemetry: DroneTelemetry; 
   droneStatus: 'online' | 'offline' | 'unknown';
+  latestSnapshot: any;
   spray: number;
   droneOn: boolean;
   setDroneOn: (on: boolean) => void;
@@ -81,6 +82,7 @@ const SSE_MAX_CONSECUTIVE_ERRORS = 3;
 // Custom Hook untuk menangkap SSE
 export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
   const [telemetry, setTelemetry] = useState<DroneTelemetry>(defaultTelemetry);
+  const [latestSnapshot, setLatestSnapshot] = useState<any>(null);
   const [droneStatus, setDroneStatus] = useState<'online' | 'offline' | 'unknown'>('unknown');
 
   const [connectionStatus, setConnectionStatus] = useState<SseConnectionStatus>('connecting');
@@ -115,6 +117,8 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
           setTelemetry(parsed.data);
         } else if (parsed.type === 'status') {
           setDroneStatus(parsed.data.status);
+        } else if (parsed.type === 'snapshot:new') {
+          setLatestSnapshot(parsed.data);
         }
       } catch (error) {
         console.error('[SSE] Gagal memparsing data:', error);
@@ -153,5 +157,5 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
     };
   }, [apiUrl, droneId]);
 
-  return { telemetry, droneStatus, connectionStatus };
+  return { telemetry, droneStatus, connectionStatus, latestSnapshot };
 };
