@@ -3,27 +3,22 @@ import { getCookieHeader, forwardResponse } from '@/lib/bff';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export const dynamic = 'force-dynamic';
-
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
     const cookieHeader = await getCookieHeader(request);
+    const body = await request.json(); 
 
-    const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
-
-    const endpoint = `${API_URL}/api/operator/my-drone${queryString ? `?${queryString}` : ''}`;
-    
-    const backendRes = await fetch(endpoint, {
-      method: 'GET',
+    const backendRes = await fetch(`${API_URL}/api/operator/command`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
+      body: JSON.stringify(body),
       cache: 'no-store',
     });
 
     const data = await backendRes.json();
     return forwardResponse(backendRes, data);
   } catch (error) {
-    console.error('BFF GET /operator/my-drone Error:', error);
+    console.error('BFF POST /operator/command Error:', error);
     return NextResponse.json(
       { error: 'Terjadi kesalahan pada server.', data: null },
       { status: 500 }

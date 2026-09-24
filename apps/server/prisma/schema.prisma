@@ -24,6 +24,11 @@ enum ApprovalStatus {
   REJECTED
 }
 
+enum SysCommand {
+  take_picture
+  reboot_os
+}
+
 model Drone {
   id            String   @id
   name          String?
@@ -38,6 +43,9 @@ model Drone {
   
   // Relasi 1:M ke log telemetri
   telemetryLogs TelemetryLog[]
+  predictionAIs PredictionAI[]
+  sprays        Spray[]
+  sysLogs       SysLog[]
 }
 
 model User {
@@ -61,6 +69,7 @@ model User {
   updatedAt     DateTime       @updatedAt
 
   verificationTokens VerificationToken[]
+  sysLogs            SysLog[]
 
   @@index([role, status])
   @@index([emailVerified])
@@ -103,4 +112,58 @@ model TelemetryLog {
   rc          Json?
 
   @@index([droneId, timestamp(sort: Desc)])
+}
+
+model PredictionAI {
+  id              String   @id @default(cuid())
+  snapshotPict    String   // URL atau path gambar
+  classification  String   // "sehat" atau "tidak sehat"
+  band            Float
+  ndvi            Float
+  diseaseSeverity Float    // Persentase (misal: 87.5)
+  altitudeAI      Float
+  latitudeAI      Float
+  longitudeAI     Float
+  timestamp       DateTime @default(now())
+
+  // Identifier Drone (Best Practice: agar tahu drone mana yang mengambil)
+  droneId         String
+  drone           Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+
+  @@index([droneId, timestamp(sort: Desc)])
+}
+
+model Spray {
+  id              String   @id @default(cuid())
+  durationSpray   Float    // Detik
+  volumeSpray     Float    // ml atau liter
+  capacityTank    Float    // Persentase (0 - 100)
+  remainingTank   Float    // Persentase (0 - 100)
+  timestamp       DateTime @default(now())
+
+  // Identifier Drone
+  droneId         String
+  drone           Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+
+  @@index([droneId, timestamp(sort: Desc)])
+}
+
+model SysLog {
+  id              String     @id @default(cuid())
+  
+  // Relasi User
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            Role
+
+  // Relasi Drone
+  assignedDroneId String
+  assignedDrone   Drone      @relation(fields: [assignedDroneId], references: [id], onDelete: Cascade)
+
+  // Command dienkapsulasi menggunakan Enum
+  command         SysCommand 
+  timestamp       DateTime   @default(now())
+
+  @@index([userId])
+  @@index([assignedDroneId, timestamp(sort: Desc)])
 }

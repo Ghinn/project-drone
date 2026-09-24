@@ -129,7 +129,15 @@ while True:
             telemetry_data['sys_check']['gyro_cal'] = telemetry_data['sys_check']['gyro']
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']
             telemetry_data['sys_check']['mag_cal'] = telemetry_data['sys_check']['magnetometer']
-    
+
+        elif msg_type == 'RADIO_STATUS':
+            telemetry_data['radio'] = {
+                'rssi': msg.rssi,          # Sinyal lokal (0-254)
+                'remrssi': msg.remrssi,    # Sinyal remote
+                'noise': msg.noise,
+                'txbuf': msg.txbuf         # Buffer transmisi (%)
+            }
+               
         elif msg_type == 'RC_CHANNELS':
             telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)
             telemetry_data['rc']['ch7'] = parse_rc_switch(msg.chan7_raw)

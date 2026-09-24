@@ -4,6 +4,9 @@ CREATE TYPE "Role" AS ENUM ('GUEST', 'FARMER', 'OPERATOR', 'ADMIN');
 -- CreateEnum
 CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
+-- CreateEnum
+CREATE TYPE "SysCommand" AS ENUM ('take_picture', 'reboot_os');
+
 -- CreateTable
 CREATE TABLE "Drone" (
     "id" TEXT NOT NULL,
@@ -69,6 +72,48 @@ CREATE TABLE "TelemetryLog" (
     CONSTRAINT "TelemetryLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PredictionAI" (
+    "id" TEXT NOT NULL,
+    "snapshotPict" TEXT NOT NULL,
+    "classification" TEXT NOT NULL,
+    "band" DOUBLE PRECISION NOT NULL,
+    "ndvi" DOUBLE PRECISION NOT NULL,
+    "diseaseSeverity" DOUBLE PRECISION NOT NULL,
+    "altitudeAI" DOUBLE PRECISION NOT NULL,
+    "latitudeAI" DOUBLE PRECISION NOT NULL,
+    "longitudeAI" DOUBLE PRECISION NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "droneId" TEXT NOT NULL,
+
+    CONSTRAINT "PredictionAI_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Spray" (
+    "id" TEXT NOT NULL,
+    "durationSpray" DOUBLE PRECISION NOT NULL,
+    "volumeSpray" DOUBLE PRECISION NOT NULL,
+    "capacityTank" DOUBLE PRECISION NOT NULL,
+    "remainingTank" DOUBLE PRECISION NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "droneId" TEXT NOT NULL,
+
+    CONSTRAINT "Spray_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SysLog" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" "Role" NOT NULL,
+    "assignedDroneId" TEXT NOT NULL,
+    "command" "SysCommand" NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SysLog_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Drone_macAddress_key" ON "Drone"("macAddress");
 
@@ -96,6 +141,18 @@ CREATE INDEX "VerificationToken_userId_idx" ON "VerificationToken"("userId");
 -- CreateIndex
 CREATE INDEX "TelemetryLog_droneId_timestamp_idx" ON "TelemetryLog"("droneId", "timestamp" DESC);
 
+-- CreateIndex
+CREATE INDEX "PredictionAI_droneId_timestamp_idx" ON "PredictionAI"("droneId", "timestamp" DESC);
+
+-- CreateIndex
+CREATE INDEX "Spray_droneId_timestamp_idx" ON "Spray"("droneId", "timestamp" DESC);
+
+-- CreateIndex
+CREATE INDEX "SysLog_userId_idx" ON "SysLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "SysLog_assignedDroneId_timestamp_idx" ON "SysLog"("assignedDroneId", "timestamp" DESC);
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_assignedDroneId_fkey" FOREIGN KEY ("assignedDroneId") REFERENCES "Drone"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -104,3 +161,15 @@ ALTER TABLE "VerificationToken" ADD CONSTRAINT "VerificationToken_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "TelemetryLog" ADD CONSTRAINT "TelemetryLog_droneId_fkey" FOREIGN KEY ("droneId") REFERENCES "Drone"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PredictionAI" ADD CONSTRAINT "PredictionAI_droneId_fkey" FOREIGN KEY ("droneId") REFERENCES "Drone"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Spray" ADD CONSTRAINT "Spray_droneId_fkey" FOREIGN KEY ("droneId") REFERENCES "Drone"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SysLog" ADD CONSTRAINT "SysLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SysLog" ADD CONSTRAINT "SysLog_assignedDroneId_fkey" FOREIGN KEY ("assignedDroneId") REFERENCES "Drone"("id") ON DELETE CASCADE ON UPDATE CASCADE;

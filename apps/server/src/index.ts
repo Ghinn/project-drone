@@ -1,12 +1,17 @@
 import 'dotenv/config';
+import http from 'http';
 import { app } from './app.js';
 import { initMqtt } from './services/mqtt.service.js';
+import { initWebRTCSignaling } from './services/webrtc-signaling.service.js';
 
 const port = Number(process.env.PORT ?? 4000);
 
 initMqtt();
 
-const server = app.listen(port, () => {
+const httpServer = http.createServer(app);
+initWebRTCSignaling(httpServer);
+
+const server = httpServer.listen(port, () => {
   console.log(`DreamPalm Backend running on http://localhost:${port}`);
 });
 

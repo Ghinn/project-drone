@@ -17,6 +17,9 @@ export function forwardResponse(backendRes: Response, data: unknown): NextRespon
   }
 
   const response = NextResponse.json(data, { status: backendRes.status });
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+  const SESSION_COOKIE = process.env.SESSION_COOKIE_NAME ?? '__session';
 
   const setCookies: string[] =
     backendRes.headers.getSetCookie?.() ??

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { io, Socket } from 'socket.io-client';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 import { 
@@ -31,7 +32,6 @@ const DroneMap = dynamic(() => import('./drone-map'), {
 });
 
 // Dummy asset paths
-const LIVE_VIDEO = '/assets/operator/dummy/live-drone.mp4';
 const SEHAT_IMG = '/assets/operator/dummy/sehat.png';
 const TIDAK_SEHAT_IMG = '/assets/operator/dummy/Tidak sehat.png';
 
@@ -105,6 +105,129 @@ type SnapshotCondition = 'idle' | 'sehat' | 'tidak_sehat';
 
 export default function PantauDroneSection() {
   const { droneOn, telemetry } = useMonitoringOperator();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  const [droneId, setDroneId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMyDroneInfo = async () => {
+      try {
+        const res = await fetch('/api/operator/my-drone');
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data && result.data.id && isMounted) {
+            setDroneId(result.data.id);
+            console.log(`[Operator] Assigned Drone ID: ${result.data.id}`);
+          }
+        } else {
+          console.warn("[Operator] Gagal memuat data operator/drone.");
+        }
+      } catch (err) {
+        console.error("[Operator] Error fetching my-drone:", err);
+      }
+    };
+
+    fetchMyDroneInfo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+  
+  // Inisialisasi WebRTC
+  useEffect(() => {
+    if (!droneOn || !droneId) return;
+
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://localhost:4000';
+    const socket = io(BACKEND_URL, { path: '/webrtc-signaling/' });
+    socketRef.current = socket;
+
+    const pc = new RTCPeerConnection({ 
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] 
+    });
+    pcRef.current = pc;
+
+    let isRemoteSet = false;
+    let pendingCandidates: any[] = [];
+
+    pc.ontrack = (event) => {
+      console.log("[WebRTC] Stream video diterima dari Drone");
+      if (videoRef.current && event.streams[0]) {
+        videoRef.current.srcObject = event.streams[0];
+        videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
+      }
+    };
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('ice-candidate', { droneId, candidate: event.candidate });
+      }
+    };
+
+    socket.emit('join-room', { droneId, role: 'operator' });
+
+    setTimeout(() => {
+      socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } });
+    }, 500);
+
+    socket.on('sdp-message', async (sdpData) => {
+      if (sdpData && sdpData.type === 'offer') {
+        try {
+          console.log("[WebRTC] Menerima SDP Offer dari Drone. Membuat Answer...");
+          
+          await pc.setRemoteDescription(new RTCSessionDescription(sdpData));
+          isRemoteSet = true;
+          
+          // Proses semua antrean ICE yang terlanjur datang lebih dulu
+          pendingCandidates.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)));
+          pendingCandidates = [];
+
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          
+          socket.emit('sdp-message', { 
+            droneId, 
+            sdp: {
+              type: pc.localDescription?.type, 
+              sdp: pc.localDescription?.sdp 
+            }
+          });
+          console.log("[WebRTC] SDP Answer berhasil dikirim ke Drone.");
+        } catch (error) {
+          console.error("[WebRTC] Gagal memproses SDP Offer:", error);
+        }
+      }
+    });
+
+    socket.on('ice-candidate', async (candidateData) => {
+      try {
+        if (candidateData) {
+          const candidateStr = typeof candidateData === 'string' ? candidateData : candidateData.candidate;
+          if (candidateStr) {
+            if (isRemoteSet) {
+              await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+            } else {
+              pendingCandidates.push(candidateData);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[WebRTC] Gagal menambahkan ICE candidate', e);
+      }
+    });
+
+    return () => {
+      pc.close();
+      socket.disconnect();
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
+  }, [droneOn, droneId]);
+
+
   const [timeStr, setTimeStr] = useState<string>('15.22');
   const [snapshotFlash, setSnapshotFlash] = useState(false);
   const [posIdx, setPosIdx] = useState(0);
@@ -129,6 +252,9 @@ export default function PantauDroneSection() {
   const [spraySeconds, setSpraySeconds] = useState(0);
   const [sprayVolume, setSprayVolume] = useState(0.0);
   const [tankRemaining, setTankRemaining] = useState(98);
+
+  // Referensi penerapan di pantau-drone-section.tsx
+  const videoSrc = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     return () => {
@@ -171,6 +297,22 @@ export default function PantauDroneSection() {
         setSpraySeconds(prevSec => {
           if (prevSec >= 60) {
             clearInterval(sprayTimer);
+
+            if (droneId) {
+              fetch('/api/operator/spray', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  droneId: droneId,
+                  durationSpray: 60, // Durasi dalam detik
+                  volumeSpray: 100.0, // Volume akhir
+                  capacityTank: 100.0,
+                  remainingTank: 90.0 // Sisa akhir
+                })
+              }).then(res => console.log("Data /spray tersimpan di DB"))
+                .catch(err => console.error("Gagal simpan data /spray di DB", err));
+            }
+
             return 60;
           }
           const nextSec = prevSec + 1;
@@ -188,9 +330,9 @@ export default function PantauDroneSection() {
     }
 
     return () => clearInterval(sprayTimer);
-  }, [isSprayingActive]);
+  }, [isSprayingActive, droneId]);
 
-  // Handle Snapshot, Kondisinya: Sehat > Tidak Sehat > Sehat lagi
+  // Handle Snapshot
   const handleSnapshot = () => {
     if (!droneOn || isAnalyzing) return;
 
@@ -200,6 +342,20 @@ export default function PantauDroneSection() {
 
     setSnapshotFlash(true);
     setTimeout(() => setSnapshotFlash(false), 300);
+
+    try {
+      fetch('/api/operator/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          droneId: droneId,
+          targetTopic: 'action',
+          command: 'take_picture'
+        })
+      }).catch(err => console.error("[Command] Gagal eksekusi trigger API", err));
+    } catch (error) {
+      console.error("[Command] Terjadi kesalahan trigger:", error);
+    }
 
     // Target kondisi berikutnya
     const nextCond: SnapshotCondition =
@@ -286,7 +442,7 @@ export default function PantauDroneSection() {
           <div className="relative w-full aspect-[16/9] sm:aspect-[16/8.5] bg-black overflow-hidden flex items-center justify-center">
             {droneOn ? (
               <video
-                src={LIVE_VIDEO}
+                ref={videoRef}
                 autoPlay
                 loop
                 muted
@@ -340,9 +496,9 @@ export default function PantauDroneSection() {
             {/* Snapshot Button */}
             <button
               onClick={handleSnapshot}
-              disabled={!droneOn || isAnalyzing}
+              disabled={!droneOn || isAnalyzing || !droneId}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all shadow-xs ml-auto ${
-                isAnalyzing
+                isAnalyzing || !droneId
                   ? 'bg-amber-600 opacity-90 cursor-wait'
                   : 'bg-[#5F802A] hover:bg-[#506D23] active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
               }`}

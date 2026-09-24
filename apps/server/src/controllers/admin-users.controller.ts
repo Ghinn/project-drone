@@ -78,12 +78,14 @@ export const listUsers = asyncHandler(async (req, res) => {
 
 export const getUserById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  const userId = Array.isArray(id) ? id[0] : (id as string);
   
   const user = await prisma.user.findFirst({
     where: {
       OR: [
-        { id: id },
-        { firebaseUid: id },
+        { id: userId },
+        { firebaseUid: userId },
       ],
     },
     select: {

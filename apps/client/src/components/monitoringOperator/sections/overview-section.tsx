@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, X, Loader2 } from 'lucide-react';
+import { Users, X, Loader2, RefreshCw } from 'lucide-react';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 import Drone3DViewer from '../sections/drone-model'; 
@@ -66,62 +66,104 @@ const toDeg = (radians: number) => {
 
 
 function DeviceDroneSection() {
-  const { droneOn, setDroneOn, telemetry, droneStatus } = useMonitoringOperator();
+  const { setDroneOn, telemetry, droneStatus } = useMonitoringOperator();
   const { user, status } = useAuth();
   const [droneDetail, setDroneDetail] = useState<DroneData | null>(null);
   
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [activeDroneId, setActiveDroneId] = useState<string | null>(null);
+  const [isSendingCommand, setIsSendingCommand] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchOperatorAndDroneData = async () => {
-      if (status === 'loading') return;
-      if (!user?.uid) return;
-      
-      setIsLoading(true);
+
+      if (isMounted) setIsLoading(true);
+
       try {
-        const meRes = await fetch('/api/operator/me', {
-        method: 'GET',
-        credentials: 'include',
-      });
+        const timestamp = new Date().getTime();
 
-      if (!meRes.ok) throw new Error(`HTTP Error Me: ${meRes.status}`);
-      const meJson = await meRes.json();
-      const meData = meJson.data;
+        const meRes = await fetch(`/api/operator/me?_t=${timestamp}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
 
-      const fetchedDroneId = meData?.assignedDroneId;
+        if (!meRes.ok) throw new Error(`HTTP Error Me: ${meRes.status}`);
+        const meJson = await meRes.json();
 
-      if (!fetchedDroneId) {
-        console.warn('Operator ini belum memiliki drone yang di-assign.');
-        return;
+        const fetchedDroneId = meJson.data?.assignedDroneId;
+        if (!fetchedDroneId) {
+          console.warn('Operator belum memiliki drone yang di-assign.');
+          if (isMounted) setIsLoading(false);
+          return;
+        }
+
+        if (isMounted) setActiveDroneId(fetchedDroneId);
+
+        const droneRes = await fetch(`/api/operator/my-drone?_t=${timestamp}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
+
+        if (!droneRes.ok) throw new Error(`HTTP Error Drone: ${droneRes.status}`);
+        const droneJson = await droneRes.json();
+
+        if (droneJson.data && isMounted) {
+          setDroneDetail(droneJson.data);
+        }
+      } catch (error) {
+        console.error('Gagal memuat data operator/drone:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-
-      setActiveDroneId(fetchedDroneId);
-
-      const droneRes = await fetch('/api/operator/my-drone', {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!droneRes.ok) throw new Error(`HTTP Error Drone: ${droneRes.status}`);
-      const droneJson = await droneRes.json();
-
-      if (droneJson.data) {
-        setDroneDetail(droneJson.data);
-      }
-    } catch (error) {
-      console.error('Gagal memuat data operator/drone:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
     fetchOperatorAndDroneData();
-  }, [user?.uid, status]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSendCommand = async (targetTopic: 'system' | 'action', commandType: string) => {
+  if (!activeDroneId)
+    return;
+  
+  setIsSendingCommand(true);
+  try {
+    const res = await fetch('/api/operator/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        droneId: activeDroneId, 
+        targetTopic: targetTopic,
+        command: commandType
+      })
+    });
+    
+    const result = await res.json();
+    if (result.success && targetTopic === 'system') {
+       setDroneOn(false); 
+    }
+  } catch (err) {
+    console.error("HTTP Request gagal:", err);
+  } finally {
+    setIsSendingCommand(false);
+  }
+};
 
   const battColor = telemetry.battery > 50 ? T.green : telemetry.battery > 20 ? T.amber : T.red;
-  const connStatus = droneOn ? 'connected' : 'disconnected';
+  const connStatus = droneStatus === 'online' ? 'connected' : 'disconnected';
   const displayMode = telemetry.mode?.startsWith('Mode(') ? 'INITIALIZING' : (telemetry.mode || 'UNKNOWN');
 
   // Helper untuk field yang menunggu REST API
@@ -218,14 +260,24 @@ function DeviceDroneSection() {
               <p className="text-[11px] text-gray-400">Drone Device Status & Details</p>
             </div>
           </div>
+
+          {/* Status Perangkat */}
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
               style={connStatus === 'connected' ? { background: `${T.green}20`, color: T.green, border: `1px solid ${T.green}44` } : { background: `${T.red}18`, color: T.red, border: `1px solid ${T.red}33` }}>
               <span className={`w-1.5 h-1.5 rounded-full bg-current ${connStatus === 'connected' ? 'animate-pulse' : ''}`} />
               {connStatus === 'connected' ? 'ONLINE' : 'OFFLINE'}
             </span>
-            <button onClick={() => setDroneOn(!droneOn)} className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95" style={{ background: `linear-gradient(135deg, ${T.green}, ${T.greenLight})` }}>
-              🔄 Reconnect
+
+            {/* Restart WiFi (System) */}
+            <button 
+              onClick={() => handleSendCommand('system', 'reboot_os')} 
+              disabled={isSendingCommand}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all hover:opacity-90 active:scale-95'}`} 
+              style={{ background: `linear-gradient(135deg, ${T.green}, ${T.greenLight})` }}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSendingCommand ? 'animate-spin' : ''}`} />
+              {isSendingCommand ? 'Loading...' : 'Reconnect'}
             </button>
           </div>
         </div>
@@ -238,7 +290,7 @@ function DeviceDroneSection() {
               <div className="flex-1 rounded-xl border border-gray-100 dark:border-[#2a2a2a] bg-gray-50/50 dark:bg-[#0a0a0a] relative overflow-hidden flex flex-col min-h-[220px]">
                 <div className="absolute top-4 left-4 z-10 pointer-events-none">
                   <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">Orientasi 3D Model</h4>
-                  <p className="text-[10px] text-gray-500">Live Telemetry Viewer</p>
+                  <p className="text-[10px] text-gray-500">Live Viewer</p>
                 </div>
                 <div className="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing">
                   <Drone3DViewer roll={telemetry.roll} pitch={telemetry.pitch} yaw={telemetry.yaw} />

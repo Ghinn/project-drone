@@ -6,7 +6,8 @@ import {
     getHistoriData, 
     getAnalisisData,
     getLiveCameraData,
-    getSettingsData
+    getSettingsData,
+    sendDroneCommand
 } from '../controllers/monitoringOperator.controller';
 
 import { requireSession, requireOperator } from '../middleware/auth.middleware';
@@ -22,5 +23,6 @@ router.get('/live-camera', getLiveCameraData);
 router.get('/ai-prediction-log', getAnalisisData);
 router.get('/history', getHistoriData);
 router.get('/settings', getSettingsData);
+router.post('/command', sendDroneCommand);
 
 export default router;

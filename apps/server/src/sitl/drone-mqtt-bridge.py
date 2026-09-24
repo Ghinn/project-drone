@@ -1,7 +1,11 @@
+import os
 import time
 import json
+import threading
+import uuid
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
+from gpiozero import PWMOutputDevice
 
 # Konfigurasi MQTT Broker via WireGuard
 MQTT_BROKER = "10.0.0.1"
@@ -14,22 +18,75 @@ DRONE_ID = "v1-001"
 
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
-MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/status"
+MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/command/status"
+MQTT_TOPIC_SYSTEM = f"dreampalm/drone/uid/{DRONE_ID}/command/system"
+MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/command/action"
+
+try:
+    # Pin 18, frekuensi 50Hz (standar RC)
+    camera_trigger = PWMOutputDevice(18, frequency=50)
+    # Set ke posisi idle / 1000µs (5% duty cycle dari 20ms)
+    camera_trigger.value = 0.05
+    print("[Camera] GPIO 18 berhasil diinisialisasi.")
+except Exception as e:
+    print(f"[Camera] Gagal menginisialisasi GPIO 18: {e}")
+    camera_trigger = None
+
+def trigger_camera_task():
+    if camera_trigger:
+        print("[ACTION] Mengirim PWM Trigger 2000us ke Mapir Survey3...")
+        camera_trigger.value = 0.10  # 10% duty cycle = 2000µs (Trigger)
+        time.sleep(0.5)         # Tahan 0.5 detik
+        camera_trigger.value = 0.05  # Kembalikan ke idle (1000µs)
+        print("[ACTION] Trigger camera selesai.")
+    else:
+        print("[ACTION] Gagal trigger: camera_trigger tidak terinisialisasi.")
 
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Terhubung ke broker (Kode: {reason_code})")
+
+    client.subscribe(MQTT_TOPIC_SYSTEM)
+    client.subscribe(MQTT_TOPIC_ACTION)
+
     # Memublikasikan status "online" dengan flag retain=True
     client.publish(MQTT_TOPIC_STATUS, json.dumps({"status": "online"}), qos=1, retain=True)
 
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"Phase_Production_{DRONE_ID}")
+def on_message(client, userdata, msg):
+    topic = msg.topic
+    
+    try:
+        payload = json.loads(msg.payload.decode('utf-8'))
+        command = payload.get("command")
+        
+        # Logika Command SYSTEM (Restart WiFi)
+        if topic == MQTT_TOPIC_SYSTEM:
+            if command == "reboot_os":
+                # print("[SYSTEM] Restart WiFi...")
+                print("[SYSTEM] Reboot OS...")
+                os.system("sudo reboot")
+                # os.system("sudo ip link set wlan0 down && sudo ip link set wlan0 up")
+        
+        # Logika Command ACTION (Camera)
+        elif topic == MQTT_TOPIC_ACTION:
+            if command == "take_picture":
+                print("[ACTION] Trigger camera mengambil gambar...")
+                threading.Thread(target=trigger_camera_task, daemon=True).start()
+                
+    except Exception as e:
+        print(f"[MQTT] Error memproses payload: {e}")
+
+client_id_uniq = f"Phase_Production_{DRONE_ID}_{uuid.uuid4().hex[:6]}"
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id_uniq)
 client.username_pw_set(MQTT_USER, MQTT_PASS)
 
 # IMPLEMENTASI LAST WILL AND TESTAMENT (LWT)
 client.will_set(MQTT_TOPIC_STATUS, payload=json.dumps({"status": "offline"}), qos=1, retain=True)
 
 client.on_connect = on_connect
-client.connect(MQTT_BROKER, MQTT_PORT, keepalive=120)
+client.on_message = on_message
+
+client.connect(MQTT_BROKER, MQTT_PORT, keepalive=15)
 client.loop_start()
 
 # Struktur TelemetryState (GCS)

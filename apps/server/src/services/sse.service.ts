@@ -1,5 +1,6 @@
 import { Response, Request } from 'express';
 import { telemetryEmitter, getTelemetryLogStateByDrone } from './mqtt.service';
+import { prisma } from '../lib/prisma';
 
 interface SseClient {
     res: Response;
@@ -38,7 +39,7 @@ const setCorsHeaders = (req: Request, res: Response): void => {
 };
 
 // Fungsi untuk menerima request dan menyambungkan aliran data
-export const addClient = (req: Request, res: Response) => {
+export const addClient = async (req: Request, res: Response) => {
     const userRole = req.currentUser?.role || req.firebaseToken?.role;
     const assignedDrone = req.currentUser?.assignedDroneId || (req.firebaseToken as any)?.assignedDrone;
 
@@ -79,6 +80,18 @@ export const addClient = (req: Request, res: Response) => {
     const initialState = getTelemetryLogStateByDrone(targetDroneId);
     if (initialState) {
         safeWrite(res, { type: 'telemetry', data: initialState });
+    }
+
+    try {
+        const droneDb = await prisma.drone.findUnique({
+            where: { id: targetDroneId },
+            select: { status: true }
+        });
+        if (droneDb && droneDb.status) {
+            safeWrite(res, { type: 'status', data: { status: droneDb.status } });
+        }
+    } catch (err) {
+        console.error('[SSE] Gagal mengambil status awal dari DB:', err);
     }
 
     const clientObj = { res, droneId: targetDroneId };

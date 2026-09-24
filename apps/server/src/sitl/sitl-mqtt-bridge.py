@@ -14,14 +14,43 @@ DRONE_ID = "v1-001"
 
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
-MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/status"
-# MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/action"
+MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/command/status"
+MQTT_TOPIC_SYSTEM = f"dreampalm/drone/uid/{DRONE_ID}/command/system"
+MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/command/action"
 
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Terhubung ke broker (Kode: {reason_code})")
+
+    client.subscribe(MQTT_TOPIC_SYSTEM)
+    client.subscribe(MQTT_TOPIC_ACTION)
+
     # Memublikasikan status "online" dengan flag retain=True
     client.publish(MQTT_TOPIC_STATUS, json.dumps({"status": "online"}), qos=1, retain=True)
+
+def on_message(client, userdata, msg):
+    topic = msg.topic
+    
+    try:
+        payload = json.loads(msg.payload.decode('utf-8'))
+        command = payload.get("command")
+        
+        # Logika Command SYSTEM (Restart WiFi)
+        if topic == MQTT_TOPIC_SYSTEM:
+            if command == "reboot_os":
+                # print("[SYSTEM] Restart WiFi...")
+                print("[SYSTEM] Reboot OS...")
+                os.system("sudo reboot")
+                # os.system("sudo ip link set wlan0 down && sudo ip link set wlan0 up")
+        
+        # Logika Command ACTION (Camera)
+        elif topic == MQTT_TOPIC_ACTION:
+            if command == "take_picture":
+                print("[ACTION] Trigger Kamera mengambil gambar...")
+                # os.system("libcamera-still -o /home/pi/images/latest.jpg")
+                
+    except Exception as e:
+        print(f"[MQTT] Error memproses payload: {e}")
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"SITL_Simulator_{DRONE_ID}")
 client.username_pw_set(MQTT_USER, MQTT_PASS)
@@ -30,7 +59,9 @@ client.username_pw_set(MQTT_USER, MQTT_PASS)
 client.will_set(MQTT_TOPIC_STATUS, payload=json.dumps({"status": "offline"}), qos=1, retain=True)
 
 client.on_connect = on_connect
-client.connect(MQTT_BROKER, MQTT_PORT, keepalive=120)
+client.on_message = on_message
+
+client.connect(MQTT_BROKER, MQTT_PORT, keepalive=15)
 client.loop_start()
 
 # Struktur TelemetryState (GCS)
@@ -144,6 +175,15 @@ while True:
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']
             telemetry_data['sys_check']['mag_cal'] = telemetry_data['sys_check']['magnetometer']
 
+        # Ekstraksi Kualitas Sinyal Radio
+        elif msg_type == 'RADIO_STATUS':
+            telemetry_data['radio'] = {
+                'rssi': msg.rssi,          # Sinyal lokal (0-254)
+                'remrssi': msg.remrssi,    # Sinyal remote
+                'noise': msg.noise,
+                'txbuf': msg.txbuf         # Buffer transmisi (%)
+            }
+            
         # Ekstraksi RC Switch
         elif msg_type == 'RC_CHANNELS':
             telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)

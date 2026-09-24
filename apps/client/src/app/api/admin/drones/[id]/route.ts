@@ -13,7 +13,7 @@ export async function GET(
 
     
     const backendRes = await fetch(`${API_URL}/api/admin/drones/${id}`, {
-      method: "PATCH",
+      method: "GET",
       headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
       cache: 'no-store',
     });
@@ -39,7 +39,7 @@ export async function PATCH(
     const cookieHeader = await getCookieHeader(request);
 
     const backendRes = await fetch(`${API_URL}/api/admin/drones/${id}`, {
-      method: "DELETE",
+      method: "PATCH",
       headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
       body: JSON.stringify(body),
     });
