@@ -188,7 +188,7 @@ export default function DroneMap({
 
   return (
     <div
-      className="relative w-full rounded-xl overflow-hidden bg-white dark:bg-[#111] border border-gray-200 dark:border-[#222] flex flex-col justify-between select-none shadow-xs"
+      className="relative w-full overflow-hidden dark:bg-[#111] border border-gray-200 dark:border-[#222] flex flex-col justify-between select-none shadow-xs"
       style={{ height: typeof height === 'number' ? `${height}px` : height, minHeight: '190px' }}
     >
       {/* Leaflet CSS */}
@@ -197,40 +197,18 @@ export default function DroneMap({
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         crossOrigin=""
       />
-      <div className='flex justify-between items-center px-2'>
+      <div className='flex justify-between items-center px-2 py-0.5'>
         <div className="px-2.5 py-1">
           <h3 className="text-[11px] font-bold tracking-wider text-gray-700 dark:text-gray-300 uppercase">GPS MAP</h3>
-        </div>
-
-        <div className="px-2.5 py-1 text-[10px] font-semibold text-[#5D7E2A]">
-          📍 Cikabayan IPB
         </div>
       </div>
 
       {/* Map Container */}
       <div
         id={containerId}
-        className="w-full h-full z-0"
+        className="w-full flex-1 z-0"
         style={{ minHeight: '150px' }}
       />
-
-      {/* Bagian Lat Lng Alt */}
-      <div className="absolute bottom-2.5 left-0 right-0 z-[400] px-3 pointer-events-none">
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
-            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">LAT</span>
-            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{formattedLat}</span>
-          </div>
-          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
-            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">LNG</span>
-            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{formattedLng}</span>
-          </div>
-          <div className="bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-xs py-1 px-1.5 sm:px-2 rounded-md shadow-xs border border-gray-200/90 dark:border-[#333] flex items-center justify-center">
-            <span className="text-[9px] sm:text-[10px] font-medium text-gray-400 mr-1">ALT</span>
-            <span className="text-[9px] sm:text-[10px] font-bold text-[#5D7E2A] font-mono truncate">{altDisplay}</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

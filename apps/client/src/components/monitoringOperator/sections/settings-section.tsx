@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
+import { Check, Eye, Info, Lock, LockKeyhole, SendHorizonal, User2, Users } from 'lucide-react';
 
 const T = DRONE_TOKENS;
 
@@ -19,7 +20,19 @@ export default function SettingsSection() {
   const [name, setName] = useState('Dio Wirawan');
   const [email, setEmail] = useState('dio@dreampalm.com');
   const [phone, setPhone] = useState('+62 812 3456 7890');
-  const [org, setOrg] = useState('DREAMPALM Research Team');
+  const [droneId, setDroneId] = useState('v1-001');
+  const [linkedUsers, setLinkedUsers] = useState([
+    {
+      id: 1,
+      name: "Dio Aranda",
+      role: 'OPERATOR'
+    },
+    {
+      id: 2,
+      name: "Fauzan Aziz",
+      role: 'OPERATOR'
+    }
+  ]);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -33,45 +46,49 @@ export default function SettingsSection() {
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const inputCls = "w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0f0f0f] text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 transition-all";
+  const inputCls = "w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-100 dark:bg-[#0f0f0f] text-sm text-gray-400 dark:text-gray-100 outline-none focus:ring-2 transition-all";
+  const inputClsPw = "w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0f0f0f] text-sm text-gray-400 dark:text-gray-100 outline-none focus:ring-2 transition-all";
   const focusStyle = { '--tw-ring-color': `${T.green}55` } as React.CSSProperties;
 
+  const revealPw = (type: string) => {
+    const input = document.getElementById(type) as HTMLInputElement;
+    if (input) {
+      input.type = input.type === "password" ? "text" : "password";
+    }
+  };
+  
   return (
     <div className="space-y-6">
 
       {/* Page Header */}
       <div>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Settings</h1>
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">Pengaturan</h1>
         <p className="text-xs text-gray-500 mt-0.5">Pengaturan Akun · Kelola profil dan preferensi akun operator Anda</p>
       </div>
 
       {/* Account Info Card */}
       <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style={{ background: T.green }}>
-            👤
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold bg-[#F36B42]/10`}>
+            <Users size={16} className='text-[#F36B42]'/>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Informasi Akun</h3>
-            <p className="text-xs text-gray-400">Account Information · Data profil operator terdaftar di sistem DreamPalm</p>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Informasi Akun</h3>
+            <p className="text-xs text-gray-400">Data profil operator terdaftar di sistem DreamPalm</p>
           </div>
         </div>
 
         <div className="p-6 space-y-4">
           {/* Avatar */}
           <div className="flex items-center gap-4 mb-2">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg" style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-lg bg-linear-to-br from-[#84994F] to-[#C1D343]">
               {name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{name}</p>
-              <p className="text-xs text-gray-400">{org}</p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.violet}20`, color: T.violet }}>
+                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#84994F18] text-[#C1D343] tracking-wide`}>
                   OPERATOR
-                </span>
-                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${T.green}20`, color: T.green }}>
-                  DREAMPALM
                 </span>
               </div>
             </div>
@@ -79,60 +96,98 @@ export default function SettingsSection() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nama Lengkap / Full Name</label>
-              <input value={name} onChange={e => setName(e.target.value)} className={inputCls} style={focusStyle} />
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nama Lengkap</label>
+              <input disabled value={name} onChange={e => setName(e.target.value)} className={inputCls} style={focusStyle} />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">Email</label>
-              <input value={email} onChange={e => setEmail(e.target.value)} type="email" className={inputCls} style={focusStyle} />
+              <input disabled value={email} onChange={e => setEmail(e.target.value)} type="email" className={inputCls} style={focusStyle} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Nomor Telepon / Phone</label>
-              <input value={phone} onChange={e => setPhone(e.target.value)} className={inputCls} style={focusStyle} />
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Drone ID</label>
+              <div className='relative'>
+                <input disabled value={droneId} onChange={e => setDroneId(e.target.value)} className={`pl-8 ${inputCls}`} style={focusStyle} />
+                <SendHorizonal size={16} className='absolute left-2 top-1/2 mt-0.5 -translate-y-1/2 text-gray-300 -rotate-90'/>
+                <div className="absolute right-2 bottom-2 flex items-center gap-2 px-2 py-1 text-[10px] text-gray-400 bg-gray-200 dark:bg-gray-900 rounded-md">
+                  <Lock size={16}/>
+                  <span>ADMIN</span>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Organisasi / Tim / Organization</label>
-              <input value={org} onChange={e => setOrg(e.target.value)} className={inputCls} style={focusStyle} />
+              <div className='flex items-center justify-between w-full'>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Pengguna Terkait</label>
+                <div className="flex items-center gap-2 p-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-900 mb-1.5 rounded-md">
+                  <Lock size={16}/>
+                  <span>ADMIN</span>
+                </div>
+              </div>
+              <div className={inputCls}>
+                {linkedUsers.map(user => (
+                  <div key={user.id} className="flex items-center gap-3 py-1">
+                    <span className='rounded-full bg-[#84994F] text-white p-1 font-semibold text-[6px]'>OP</span>
+                    <div className='flex items-center justify-between w-full'>
+                      <span className='text-sm'>{user.name}</span>
+                      <span className='text-xs capitalize bg-gray-200 dark:bg-gray-900 text-gray-400 px-2 py-1 rounded-md'>{user.role}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+          <div className='flex items-center gap-1 text-sm text-gray-300'><Info size={12}/> Drone ID dan Pengguna Terkait dikelola langsung oleh Admin DreamPalm. Hubungi admin untuk perubahan data.</div>
         </div>
       </div>
 
       {/* Change Password Card */}
       <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: T.violet }}>
-            🔒
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm text-[#C8553D] bg-[#C8553D1A]">
+            <LockKeyhole size={16}/>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Ubah Kata Sandi</h3>
-            <p className="text-xs text-gray-400">Change Password · Pastikan kata sandi baru minimal 8 karakter</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Keamanan Akun</h3>
+            <p className="text-xs text-gray-400">Ubah kata sandi akun operator Anda</p>
           </div>
         </div>
 
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Saat Ini / Current Password</label>
-            <input value={currentPw} onChange={e => setCurrentPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
+            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Saat Ini</label>
+            <div className="relative">
+              <input id="currentPassword" value={currentPw} onChange={e => setCurrentPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
+              <Eye size={16} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500' onClick={e => revealPw('currentPassword')}/>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Baru / New Password</label>
-              <input value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Kata Sandi Baru</label>
+              <div className="relative">
+                <input id="password" value={newPw} onChange={e => setNewPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
+                <Eye size={16} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500' onClick={e => revealPw('password')}/>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">Konfirmasi Kata Sandi Baru</label>
-              <input value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
-              {confirmPw && newPw !== confirmPw && (
-                <p className="text-[10px] mt-1" style={{ color: T.red }}>Kata sandi tidak cocok</p>
-              )}
+              <div className='relative'>
+                <input id="confirmPassword" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} type="password" placeholder="••••••••" className={inputCls} style={focusStyle} />
+                {confirmPw && newPw !== confirmPw && (
+                  <p className="absolute text-[10px] mt-1" style={{ color: T.red }}>Kata sandi tidak cocok</p>
+                )}
+                <Eye size={16} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500' onClick={e => revealPw('confirmPassword')}/>
+              </div>
             </div>
           </div>
+          <button
+          onClick={handleSave}
+          className="px-8 py-3 w-full sm:w-auto rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95 bg-[#6B8E23] dark:bg-[#495630]">
+          Simpan Perubahan
+        </button>
         </div>
       </div>
 
       {/* Notifications Card */}
-      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
+      {/* <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: T.amber }}>
             🔔
@@ -167,10 +222,10 @@ export default function SettingsSection() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Drone Terdaftar Card (BARU) */}
-      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
+      {/* <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm" style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}>
             🚁
@@ -213,10 +268,10 @@ export default function SettingsSection() {
             * Untuk menambah atau menghapus drone, hubungi Admin DreamPalm. Satu drone dapat dikelola lebih dari satu operator.
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Role Info */}
-      <div className="rounded-xl p-5 border border-dashed border-gray-200 dark:border-[#2a2a2a]">
+      {/* <div className="rounded-xl p-5 border border-dashed border-gray-200 dark:border-[#2a2a2a]">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Info Akses & Peran / Access & Role Info</p>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -233,22 +288,17 @@ export default function SettingsSection() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Save Button */}
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-start gap-3">
         {saved && (
-          <span className="text-xs font-semibold" style={{ color: T.green }}>
-            ✓ Perubahan berhasil disimpan!
-          </span>
+          <div className='fixed bottom-4 right-4 bg-white p-4 rounded-xl shadow-lg border border-gray-100'>
+            <span className={`text-xs font-semibold flex items-center gap-3 text-[${T.green}]`}>
+              <Check size={16}/> Perubahan berhasil disimpan!
+            </span>
+          </div>
         )}
-        <button
-          onClick={handleSave}
-          className="px-8 py-3 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
-          style={{ background: `linear-gradient(135deg, ${T.green}, ${T.violet})` }}
-        >
-          Simpan Perubahan
-        </button>
       </div>
     </div>
   );

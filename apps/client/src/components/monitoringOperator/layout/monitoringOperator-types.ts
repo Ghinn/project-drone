@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
-// 4 menu baru: dashboard | pantau-drone | log-prediksi | settings
-export type MonitoringOperatorTab = 'dashboard' | 'pantau-drone' | 'log-prediksi' | 'settings';
+// 5 menu: dashboard | telemetri | pantau-drone | log-prediksi | settings
+export type MonitoringOperatorTab = 'dashboard' | 'telemetri' | 'pantau-drone' | 'log-prediksi' | 'settings';
 
 export interface NavItem {
   id: MonitoringOperatorTab;
@@ -12,7 +12,8 @@ export interface NavItem {
 
 export interface AlertItem {
   id: number;
-  level: 'critical' | 'warning' | 'caution' | 'ok';
+  // level: 'critical' | 'warning' | 'caution' | 'ok';
+  level: 'healthy' | 'unhealthy';
   title: string;
   note: string;
   loc: string;
@@ -33,12 +34,17 @@ export interface PredictionLogEntry {
   classification: string; // BSR Parah / Sehat
   confidence: number;   // 94
   severity: 'ok' | 'caution' | 'warning' | 'critical';
+  healthStatus: 'healthy' | 'unhealthy';
   healthy: number;      // 12.4
   unhealthy: number;    // 87.6
   disease: string;
   recommendation: string;
   snapshotUrl: string;
   ndviUrl: string;
+  ndviValue?: number;
+  freqLink?: number;
+  distance?: number;
+  elevationSpeed?: number;
   // Telemetri drone saat snapshot diambil
   telemetry: {
     battery: number;

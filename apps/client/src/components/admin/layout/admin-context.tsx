@@ -10,7 +10,7 @@ type AdminContextValue = {
   activeTab: AdminTab;
   setActiveTab: (tab: AdminTab) => void;
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (isOpen: boolean) => void;
+  setIsSidebarOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => void;
   navItems: NavItem[];
   getPageTitle: () => string;
 };

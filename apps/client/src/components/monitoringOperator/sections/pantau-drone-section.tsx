@@ -15,7 +15,11 @@ import {
   CheckCircle,
   X,
   Radio,
-  Dot
+  Dot,
+  ArrowUpDown,
+  ArrowUp,
+  MoveHorizontal,
+  ArrowRight
 } from 'lucide-react';
 import { MapWaypoint } from './drone-map';
 
@@ -248,8 +252,9 @@ export default function PantauDroneSection() {
   const [droneSpeed, setDroneSpeed] = useState(0.0);
   const [altitude, setAltitude] = useState(25.3);
 
-  // semprot pestisida
-  const [spraySeconds, setSpraySeconds] = useState(0);
+  // semprot pestisida countdown
+  const TOTAL_SPRAY_SECONDS = 60;
+  const [sprayCountdown, setSprayCountdown] = useState(0);
   const [sprayVolume, setSprayVolume] = useState(0.0);
   const [tankRemaining, setTankRemaining] = useState(98);
 
@@ -293,9 +298,13 @@ export default function PantauDroneSection() {
     let sprayTimer: NodeJS.Timeout;
 
     if (isSprayingActive) {
+      setSprayCountdown(TOTAL_SPRAY_SECONDS);
+      setSprayVolume(0.0);
+      setTankRemaining(98);
+
       sprayTimer = setInterval(() => {
-        setSpraySeconds(prevSec => {
-          if (prevSec >= 60) {
+        setSprayCountdown(prevSec => {
+          if (prevSec <= 1) {
             clearInterval(sprayTimer);
 
             if (droneId) {
@@ -315,16 +324,17 @@ export default function PantauDroneSection() {
 
             return 60;
           }
-          const nextSec = prevSec + 1;
-          const nextVol = Math.min(100.0, Number(((nextSec / 60) * 100).toFixed(1)));
+          const nextSec = prevSec - 1;
+          const elapsed = TOTAL_SPRAY_SECONDS - nextSec;
+          const nextVol = Math.min(100.0, Number(((elapsed / TOTAL_SPRAY_SECONDS) * 100).toFixed(1)));
           setSprayVolume(nextVol);
-          const nextTank = Math.max(90, Math.round(98 - (nextSec / 60) * 8));
+          const nextTank = Math.max(90, Math.round(98 - (elapsed / TOTAL_SPRAY_SECONDS) * 8));
           setTankRemaining(nextTank);
           return nextSec;
         });
       }, 1000);
     } else {
-      setSpraySeconds(0);
+      setSprayCountdown(0);
       setSprayVolume(0.0);
       setTankRemaining(98);
     }
@@ -481,16 +491,6 @@ export default function PantauDroneSection() {
                 <Wifi size={16} className="text-gray-500" />
                 <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">52.4 GHz</span>
               </div>
-
-              <div className="flex items-center gap-1.5 font-medium">
-                <ArrowDown size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">0.0 m/s</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{speedDisplay}</span>
-              </div>
             </div>
 
             {/* Snapshot Button */}
@@ -510,9 +510,9 @@ export default function PantauDroneSection() {
 
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-4">
+        <div className="lg:col-span-4 flex flex-col gap-0 bg-white">
           
-          <div className="h-52.5 w-full">
+          <div className="h-[250px] w-full">
             <DroneMap
               mode="live"
               dronePosition={currentPos}
@@ -523,41 +523,62 @@ export default function PantauDroneSection() {
             />
           </div>
 
-          <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-3.5 flex flex-col justify-between flex-1 min-h-[170px] shadow-xs">
-            <div className='flex items-center justify-between px-2'>
-              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">Proximity Radar</p>
-              <p className='text-[10px] font-semibold text-[#3A6A3A] uppercase tracking-wide mb-2 flex items-center gap-1'><span className="w-2 h-2 rounded-full bg-[#A7D82E]" /> 50m Range</p>
+          <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-4 flex flex-col justify-between flex-1 min-h-[170px] shadow-xs">
+            <div className="flex items-center justify-between px-1 mb-2">
+              <h3 className="text-[10px] font-bold tracking-wider text-gray-700 dark:text-gray-300 uppercase font-mono">
+                INFORMASI PENERBANGAN
+              </h3>
             </div>
-            <div className="relative rounded-lg overflow-hidden flex items-center justify-center w-full flex-1 min-h-31.25" style={{ background: '#0F172A' }}>
-              {[60, 45, 30, 15].map((r, i) => (
-                <div
-                  key={i}
-                  className="absolute rounded-full border"
-                  style={{
-                    width: r * 2,
-                    height: r * 2,
-                    borderColor: `${T.green}${i === 0 ? '18' : i === 1 ? '26' : i === 2 ? '40' : '70'}`,
-                  }}
-                />
-              ))}
-              <div
-                className="absolute top-1/2 left-1/2 origin-left h-0.5 w-15 animate-[spin_4s_linear_infinite]"
-                style={{
-                  background: `linear-gradient(to right, transparent, ${T.green}90)`,
-                  transformOrigin: '0 50%',
-                }}
-              />
-              <div className="absolute w-3 h-3 rounded-full border-2 border-white" style={{ background: T.green }} />
-              <div className="absolute w-2 h-2 rounded-full animate-ping" style={{ background: T.red, top: '30%', left: '60%' }} />
-              <span className="absolute top-1 text-[9px] font-mono text-gray-500">N</span>
-              <span className="absolute bottom-1 text-[9px] font-mono text-gray-500">S</span>
-              <span className="absolute left-1 text-[9px] font-mono text-gray-500">W</span>
-              <span className="absolute right-1 text-[9px] font-mono text-gray-500">E</span>
+              <hr/>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-2 flex-1 items-center px-1">
+              {/* Ketinggian */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUpDown size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
+                  <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
+                    {droneOn ? (telemetry.altitude ? telemetry.altitude.toFixed(1) : altitude.toFixed(1)) : '0.0'}{' '}
+                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Ketinggian</span>
+              </div>
+
+              {/* Kecepatan Naik */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1.5">
+                  <ArrowUp size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
+                  <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
+                    0.0{' '}
+                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Kecepatan Naik</span>
+              </div>
+
+              {/* Jarak dari Home */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1.5">
+                  <MoveHorizontal size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
+                  <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
+                    0.0{' '}
+                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Jarak dari Home</span>
+              </div>
+
+              {/* Kecepatan Jelajah */}
+              <div className="flex flex-col items-center">
+                <div className="flex items-center gap-1.5">
+                  <ArrowRight size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
+                  <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
+                    {droneOn ? (telemetry.groundSpeed ? telemetry.groundSpeed.toFixed(1) : droneSpeed.toFixed(1)) : '0.0'}{' '}
+                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
+                  </span>
+                </div>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Kecepatan Jelajah</span>
+              </div>
             </div>
-            {/* <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.green }} />Drone</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: T.red }} />Deteksi</span>
-            </div> */}
           </div>
 
         </div>
@@ -724,7 +745,7 @@ export default function PantauDroneSection() {
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Monitor Penyemprotan Pestisida</h3>
           {isSprayingActive && (
-            spraySeconds >= 60 ? (
+            sprayCountdown === 0 ? (
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-[#EAF5D6] text-[#6A9A1E] dark:bg-[#1f2d12] dark:text-[#a3e635] flex items-center gap-1">
                 PENYEMPROTAN SELESAI
               </span>
@@ -744,10 +765,10 @@ export default function PantauDroneSection() {
               DURASI
             </span>
             <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
-              {formatDuration(spraySeconds)}
+              {formatDuration(sprayCountdown)}
             </div>
             <span className="text-[11px] font-mono text-gray-400 mt-0.5">
-              01:00
+              mm:ss
             </span>
           </div>
 
@@ -767,10 +788,10 @@ export default function PantauDroneSection() {
           {/* Volume & Sisa Tangki */}
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              VOLUME (ML)
+              SISA VOLUME (ML)
             </span>
             <div className="text-xs font-bold text-gray-700 dark:text-gray-300 font-mono mt-0.5">
-              {Math.round(sprayVolume)} ml
+              {isSprayingActive ? Math.max(0, Math.round(100 - sprayVolume)) : 0} ml
             </div>
 
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3">

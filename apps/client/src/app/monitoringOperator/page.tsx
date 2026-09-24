@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import MonitoringOperatorShell from '@/components/monitoringOperator/layout/monitoringOperator-shell';
 import { useMonitoringOperator } from '@/components/monitoringOperator/layout/monitoringOperator-context';
 
-// Import 4 sections baru
+// Import 5 sections
 import DashboardSection from '@/components/monitoringOperator/sections/overview-section';
+import TelemetrySection from '@/components/monitoringOperator/sections/telemetry-section';
 import PantauDroneSection from '@/components/monitoringOperator/sections/pantau-drone-section';
 import LogPrediksiSection from '@/components/monitoringOperator/sections/log-prediksi-section';
 import SettingsSection from '@/components/monitoringOperator/sections/settings-section';
@@ -15,6 +16,8 @@ function OperatorContentRouter() {
   const { activeTab } = useMonitoringOperator();
 
   switch (activeTab) {
+    case 'telemetri':
+      return <TelemetrySection />;
     case 'pantau-drone':
       return <PantauDroneSection />;
     case 'log-prediksi':

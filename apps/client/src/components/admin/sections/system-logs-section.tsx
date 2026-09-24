@@ -34,7 +34,7 @@ const INITIAL_LOGS: LogEntry[] = [
     actor: 'Rangga Dirgantara (Teknisi)', 
     category: 'Operator', 
     action: 'Drone-01 lepas landas (Take-off)', 
-    status: 'admin',
+    status: 'info',
     metadata: { droneId: 'Drone-01', coordinates: '-1.244, 116.895', details: 'Baterai: 100%, Status GPS: 3D Lock, Satelit: 14' }
   },
   { 
