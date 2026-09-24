@@ -426,11 +426,11 @@ export default function PantauDroneSection() {
   };
 
   return (
-    <div className="space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
+    <div className="w-full space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        <div className="lg:col-span-8 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
+        <div className="lg:col-span-8 w-full min-w-0 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
           
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
@@ -510,7 +510,7 @@ export default function PantauDroneSection() {
 
         </div>
 
-        <div className="lg:col-span-4 flex flex-col gap-0 bg-white">
+        <div className="lg:col-span-4 w-full min-w-0 flex flex-col gap-0 bg-white dark:bg-[#111] ">
           
           <div className="h-[250px] w-full">
             <DroneMap
@@ -586,7 +586,7 @@ export default function PantauDroneSection() {
 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
+        <div className="w-full min-w-0 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
             <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Snapshot</h3>
             <span className="text-xs font-mono text-gray-400 font-medium">
@@ -623,7 +623,7 @@ export default function PantauDroneSection() {
           </div>
         </div>
 
-        <div className={`rounded-xl border shadow-xs p-5 flex flex-col justify-between transition-colors duration-300 ${
+        <div className={`w-full min-w-0 rounded-xl border shadow-xs p-5 flex flex-col justify-between transition-colors duration-300 ${
           !isAnalyzing && snapshotCondition === 'tidak_sehat'
             ? 'bg-[#FDF3F0] dark:bg-[#1E1412] border-[#FCE2DB] dark:border-[#38201a]'
             : 'bg-white dark:bg-[#111] border-gray-100 dark:border-[#222]'
