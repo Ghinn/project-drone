@@ -9,116 +9,56 @@ import {
   Camera, 
   Battery, 
   Wifi, 
-  ArrowDown, 
-  CheckCircle2, 
   AlertTriangle,
   CheckCircle,
-  X,
   Radio,
-  Dot,
   ArrowUpDown,
   ArrowUp,
   MoveHorizontal,
   ArrowRight
 } from 'lucide-react';
-import { MapWaypoint } from './drone-map';
+import DroneMap, { MapWaypoint } from './drone-map';
 
 const T = DRONE_TOKENS;
 
-// Leaflet map harus dynamic import (tidak SSR) karena butuh window
-const DroneMap = dynamic(() => import('./drone-map'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full rounded-xl bg-gray-100 dark:bg-[#111] flex items-center justify-center min-h-[210px]">
-      <span className="text-xs text-gray-400">Memuat peta GPS Leaflet...</span>
-    </div>
-  ),
-});
-
-type PredictionResult = {
-  label: string;
-  healthy: number;
-  unhealthy: number;
-  disease: string;
-  confidence: number;
-  severity: 'ok' | 'caution' | 'warning' | 'critical';
-  recommendation: string;
-} | null;
-
-const MOCK_RESULT: PredictionResult = {
-  label: 'Terdeteksi Penyakit Ganoderma (BSR)',
-  healthy: 12.4,
-  unhealthy: 87.6,
-  disease: 'Busuk Pangkal Batang (BSR) — Ganoderma boninense',
-  confidence: 94.2,
-  severity: 'critical',
-  recommendation: 'Segera lakukan penyemprotan fungisida pada area Blok A-12, Baris 8. Isolasi pohon dan tandai koordinat GPS untuk inspeksi lanjutan.',
+// Helper untuk calculateDistance
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371e3; // Radius bumi dalam meter
+  const toRad = (val: number) => (val * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
-
-const SEVERITY_STYLE = {
-  ok:       { bg: `${T.green}20`, text: T.green,  border: `${T.green}44`,  label: 'SEHAT',      labelEn: 'HEALTHY'  },
-  caution:  { bg: `${T.amber}20`, text: T.amber,  border: `${T.amber}44`,  label: 'PERHATIAN',  labelEn: 'CAUTION'  },
-  warning:  { bg: `${T.orange}20`,text: T.orange, border: `${T.orange}44`, label: 'WASPADA',    labelEn: 'WARNING'  },
-  critical: { bg: `${T.red}18`,   text: T.red,    border: `${T.red}44`,    label: 'KRITIS',     labelEn: 'CRITICAL' },
-};
-
-// Mock waypoints riwayat drone
-const MOCK_WAYPOINTS: MapWaypoint[] = [
-  { lat: 3.3556, lng: 114.5977, id: 'REC-033', label: 'Sehat',      status: 'ok',       time: '14:19:05' },
-  { lat: 3.3561, lng: 114.5983, id: 'REC-034', label: 'Sehat',      status: 'ok',       time: '14:22:38' },
-  { lat: 3.3566, lng: 114.5990, id: 'REC-035', label: 'BSR Ringan', status: 'caution',  time: '14:25:11' },
-  { lat: 3.3572, lng: 114.5997, id: 'REC-036', label: 'BSR Sedang', status: 'warning',  time: '14:28:05' },
-  { lat: 3.3578, lng: 114.6004, id: 'REC-037', label: 'BSR Parah',  status: 'critical', time: '14:32:17' },
-];
-
-// Mock records untuk mode riwayat kamera
-const RECORD_HISTORY = [
-  { id: 'REC-037', time: '14:32:17', gps: '3°21\'14.2"N 114°35\'48.9"E', cls: 'BSR Parah',  conf: 94, sev: 'critical' as const, wpIndex: 4 },
-  { id: 'REC-036', time: '14:28:05', gps: '3°21\'12.1"N 114°35\'47.3"E', cls: 'BSR Ringan', conf: 55, sev: 'caution'  as const, wpIndex: 2 },
-  { id: 'REC-035', time: '14:25:11', gps: '3°21\'10.8"N 114°35\'46.0"E', cls: 'Sehat',      conf: 99, sev: 'ok'       as const, wpIndex: 1 },
-  { id: 'REC-034', time: '14:22:38', gps: '3°21\'09.4"N 114°35\'44.7"E', cls: 'Sehat',      conf: 97, sev: 'ok'       as const, wpIndex: 0 },
-  { id: 'REC-033', time: '14:19:05', gps: '3°21\'08.1"N 114°35\'43.2"E', cls: 'BSR Sedang', conf: 71, sev: 'warning'  as const, wpIndex: 3 },
-];
-
-// Mock posisi live drone (simulasi bergerak)
-const LIVE_POSITIONS = [
-  { lat: 3.3556, lng: 114.5977 },
-  { lat: 3.3561, lng: 114.5983 },
-  { lat: 3.3566, lng: 114.5990 },
-  { lat: 3.3572, lng: 114.5997 },
-  { lat: 3.3578, lng: 114.6004 },
-];
-// Koordinat Kebun Percobaan
-const CIKABAYAN_POSITIONS = [
-  { lat: -6.5491118, lng: 106.7160657 },
-  { lat: -6.5489800, lng: 106.7162400 },
-  { lat: -6.5488200, lng: 106.7164100 },
-  { lat: -6.5487100, lng: 106.7165800 },
-  { lat: -6.5489200, lng: 106.7167100 },
-  { lat: -6.5491800, lng: 106.7165600 },
-  { lat: -6.5493400, lng: 106.7163300 },
-  { lat: -6.5492100, lng: 106.7161100 },
-];
 
 type SnapshotCondition = 'idle' | 'sehat' | 'tidak_sehat';
 
 export default function PantauDroneSection() {
   const { droneOn, telemetry, latestSnapshot } = useMonitoringOperator();
+  
+  // Refs untuk WebRTC dan Video
   const videoRef = useRef<HTMLVideoElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
   const [droneId, setDroneId] = useState<string | null>(null);
   const [timeStr, setTimeStr] = useState<string>('15.22');
-  const [posIdx, setPosIdx] = useState(0);
+
+  // State Switching dan Hover Delay Canvas 
+  const [mainView, setMainView] = useState<'camera' | 'map'>('camera');
+  const [swapHoverTarget, setSwapHoverTarget] = useState<'main' | 'mini' | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [snapshotCondition, setSnapshotCondition] = useState<SnapshotCondition>('idle');
   const [currentSnapshotImg, setCurrentSnapshotImg] = useState<string | null>(null);
+  const [operatorPos, setOperatorPos] = useState<{lat: number, lng: number} | null>(null);
   const [snapshotPos, setSnapshotPos] = useState<{ latStr: string; lngStr: string; altStr: string } | null>(null);
   const [ndviValue, setNdviValue] = useState<number>(0);
   const [snapshotFlash, setSnapshotFlash] = useState(false);
-
-
 
   // State Flow Controls
   const [isWaitingSnapshot, setIsWaitingSnapshot] = useState(false);
@@ -127,17 +67,12 @@ export default function PantauDroneSection() {
   const [isSprayingActive, setIsSprayingActive] = useState(false);
   const lastProcessedImgRef = useRef<string | null>(null);
 
-  // Timer
+  // Timer AI dan Popup
   const aiProcessTimerRef = useRef<NodeJS.Timeout | null>(null);
   const popupShowTimerRef = useRef<NodeJS.Timeout | null>(null);
   const popupHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // telemetri
-  const [batteryLevel, setBatteryLevel] = useState(84);
-  const [droneSpeed, setDroneSpeed] = useState(0.0);
-  const [altitude, setAltitude] = useState(25.3);
-
-  // semprot pestisida countdown
+  // Monitor Spray
   const TOTAL_SPRAY_SECONDS = 60;
   const [sprayCountdown, setSprayCountdown] = useState(0);
   const [sprayVolume, setSprayVolume] = useState(0.0);
@@ -145,7 +80,6 @@ export default function PantauDroneSection() {
 
   useEffect(() => {
     let isMounted = true;
-
     const fetchMyDroneInfo = async () => {
       try {
         const res = await fetch('/api/operator/my-drone');
@@ -162,11 +96,8 @@ export default function PantauDroneSection() {
         console.error("[Operator] Error fetching /operator/my-drone", err);
       }
     };
-
     fetchMyDroneInfo();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
   
   // Inisialisasi WebRTC
@@ -187,50 +118,34 @@ export default function PantauDroneSection() {
 
     pc.ontrack = (event) => {
       console.log("[WebRTC] Stream video diterima dari Drone");
-      if (videoRef.current && event.streams[0]) {
-        videoRef.current.srcObject = event.streams[0];
-        videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
+      if (event.streams[0]) {
+        mediaStreamRef.current = event.streams[0]; // Simpan referensi stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = event.streams[0];
+          videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
+        }
       }
     };
 
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit('ice-candidate', { droneId, candidate: event.candidate });
-      }
+      if (event.candidate) socket.emit('ice-candidate', { droneId, candidate: event.candidate });
     };
 
     socket.emit('join-room', { droneId, role: 'operator' });
-
-    setTimeout(() => {
-      socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } });
-    }, 500);
+    setTimeout(() => socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } }), 500);
 
     socket.on('sdp-message', async (sdpData) => {
       if (sdpData && sdpData.type === 'offer') {
         try {
-          console.log("[WebRTC] Menerima SDP Offer dari Drone. Membuat Answer...");
-          
           await pc.setRemoteDescription(new RTCSessionDescription(sdpData));
           isRemoteSet = true;
-          
-          // Proses semua antrean ICE yang terlanjur datang lebih dulu
           pendingCandidates.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)));
           pendingCandidates = [];
 
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
-          
-          socket.emit('sdp-message', { 
-            droneId, 
-            sdp: {
-              type: pc.localDescription?.type, 
-              sdp: pc.localDescription?.sdp 
-            }
-          });
-          console.log("[WebRTC] SDP Answer berhasil dikirim ke Drone.");
-        } catch (error) {
-          console.error("[WebRTC] Gagal memproses SDP Offer:", error);
-        }
+          socket.emit('sdp-message', { droneId, sdp: { type: pc.localDescription?.type, sdp: pc.localDescription?.sdp } });
+        } catch (error) { console.error("[WebRTC] Gagal memproses SDP Offer:", error); }
       }
     });
 
@@ -239,16 +154,11 @@ export default function PantauDroneSection() {
         if (candidateData) {
           const candidateStr = typeof candidateData === 'string' ? candidateData : candidateData.candidate;
           if (candidateStr) {
-            if (isRemoteSet) {
-              await pc.addIceCandidate(new RTCIceCandidate(candidateData));
-            } else {
-              pendingCandidates.push(candidateData);
-            }
+            if (isRemoteSet) await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+            else pendingCandidates.push(candidateData);
           }
         }
-      } catch (e) {
-        console.error('[WebRTC] Gagal menambahkan ICE candidate', e);
-      }
+      } catch (e) { console.error('[WebRTC] Gagal menambahkan ICE candidate', e); }
     });
 
     return () => {
@@ -258,20 +168,25 @@ export default function PantauDroneSection() {
     };
   }, [droneOn, droneId]);
 
+  // Hook Stream: Selalu pasang ulang stream saat komponen Video ter-remount pasca-Swap
+  useEffect(() => {
+    if (videoRef.current && mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+      videoRef.current.play().catch(e => console.error("[WebRTC Reattach] Gagal memutar video:", e));
+    }
+  }, [mainView]); // Triggers every time views are swapped
+
   // Handler Gambar yang Masuk dari WebRTC/SSE
   useEffect(() => {
     if (isWaitingSnapshot && latestSnapshot && latestSnapshot.imageUrl) {
 
       if (latestSnapshot.imageUrl === lastProcessedImgRef.current) {
         return; 
-      }
+      } 
 
-      console.log("Gambar berhasil diterima via SSE:", latestSnapshot.imageUrl);
-      
       setIsWaitingSnapshot(false);
       setIsAnalyzing(true);
       
-      // Render gambar resolusi tinggi ke canvas
       setCurrentSnapshotImg(latestSnapshot.imageUrl);
       setSnapshotFlash(true);
       setTimeout(() => setSnapshotFlash(false), 300);
@@ -280,7 +195,6 @@ export default function PantauDroneSection() {
       if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
       
       aiProcessTimerRef.current = setTimeout(() => {
-        // Contoh Output AI
         const isHealthy = Math.random() > 0.5; 
         const mockNdvi = isHealthy ? 0.28 : 0.18;
 
@@ -288,11 +202,9 @@ export default function PantauDroneSection() {
         setSnapshotCondition(isHealthy ? 'sehat' : 'tidak_sehat');
         setIsAnalyzing(false);
 
-        // Logika kemunculan Popup Nozzle
         if (!isHealthy) {
           popupShowTimerRef.current = setTimeout(() => {
             setShowNozzleModal(true);
-
             popupHideTimerRef.current = setTimeout(() => {
               setShowNozzleModal(false);
               setIsSprayingActive(true);
@@ -305,68 +217,7 @@ export default function PantauDroneSection() {
       }, 3000);
     }
   }, [latestSnapshot, isWaitingSnapshot]);
-
-  // Handle Snapshot
-  const handleSnapshot = () => {
-    if (!droneOn || isAnalyzing) return;
-
-    if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
-    if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
-    if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
-
-    setIsWaitingSnapshot(true);
-    setCurrentSnapshotImg(null);
-    setSnapshotCondition('idle');
-    setNdviValue(0);
-    setShowNozzleModal(false);
-    setIsSprayingActive(false);
-
-    try {
-      fetch('/api/operator/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          droneId: droneId,
-          targetTopic: 'action',
-          command: 'take_picture'
-        })
-      }).catch(err => console.error("[Command] Gagal eksekusi trigger API", err));
-    } catch (error) {
-      console.error("[Command] Terjadi kesalahan trigger:", error);
-    }
-
-    setSnapshotPos({
-      latStr: `${Math.abs(currentPos.lat).toFixed(6)}°S`,
-      lngStr: `${Math.abs(currentPos.lng).toFixed(6)}°E`,
-      altStr: altDisplay,
-    });
-  };
-
-  // Basic Timers & Dummy Data
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const mins = String(now.getMinutes()).padStart(2, '0');
-      setTimeStr(`${hours}.${mins}`);
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Pergerakan GPS Drone
-  useEffect(() => {
-    if (!droneOn) return;
-    const interval = setInterval(() => {
-      setPosIdx(prev => (prev + 1) % CIKABAYAN_POSITIONS.length);
-      setBatteryLevel(prev => (prev > 20 ? Number((prev - 0.01).toFixed(1)) : prev));
-      setAltitude(prev => Number((25.0 + Math.sin(Date.now() / 6000) * 0.3).toFixed(1)));
-      setDroneSpeed(prev => (Math.random() > 0.6 ? Number((1.2 + Math.random() * 0.5).toFixed(1)) : 1.4));
-    }, 9000);
-    return () => clearInterval(interval);
-  }, [droneOn]);
-
+  
   // Monitor Penyemprotan Pestisida
   useEffect(() => {
     let sprayTimer: NodeJS.Timeout;
@@ -416,16 +267,102 @@ export default function PantauDroneSection() {
     return () => clearInterval(sprayTimer);
   }, [isSprayingActive, droneId]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setOperatorPos({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => console.warn("[GPS] Gagal mendapatkan lokasi perangkat:", error.message),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+  }, []);
+
+  const isValidTelemetryState = droneOn && telemetry.latitude !== 0 && telemetry.longitude !== 0;
   const currentPos = (telemetry.latitude !== 0 && telemetry.longitude !== 0)
-    ? { lat: telemetry.latitude, lng: telemetry.longitude }
-    : CIKABAYAN_POSITIONS[posIdx];
+    ? { 
+        lat: telemetry.latitude, 
+        lng: telemetry.longitude, 
+        yaw: telemetry.yaw ?? 0
+      }
+    : { 
+        lat: -6.5890586,
+        lng: 106.8055139, 
+        yaw: 0
+      };
 
-  const currentLatStr = `${Math.abs(currentPos.lat).toFixed(6)}°S`;
-  const currentLngStr = `${Math.abs(currentPos.lng).toFixed(6)}°E`;
+  const currentLatStr = isValidTelemetryState ? `${Math.abs(currentPos.lat).toFixed(6)}°S` : '0.000000°S';
+  const currentLngStr = isValidTelemetryState ? `${Math.abs(currentPos.lng).toFixed(6)}°E` : '0.000000°E';
 
-  const battDisplay = telemetry.battery ? telemetry.battery.toFixed(0) : Math.round(batteryLevel).toString();
-  const altDisplay = telemetry.altitude ? `${telemetry.altitude.toFixed(1)} m` : `${altitude} m`;
-  const speedDisplay = telemetry.groundSpeed ? `${telemetry.groundSpeed.toFixed(1)} m/s` : `${droneSpeed} m/s`;
+  const distanceToDevice = operatorPos 
+    ? calculateDistance(currentPos.lat, currentPos.lng, operatorPos.lat, operatorPos.lng) 
+    : 0;
+
+  const renderMapCanvas = () => (
+    <DroneMap
+      mode="live"
+      dronePosition={currentPos}
+      operatorPosition={operatorPos || currentPos}
+      latDisplay={currentLatStr}
+      lngDisplay={currentLngStr}
+      altDisplay={droneOn ? `${(telemetry.altitude ?? 0).toFixed(2)} m` : '0.00 m'}
+      height="100%"
+    />
+  );
+
+  // Handle Snapshot
+  const handleSnapshot = () => {
+    if (!droneOn || isAnalyzing) return;
+
+    if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
+    if (popupShowTimerRef.current) clearTimeout(popupShowTimerRef.current);
+    if (popupHideTimerRef.current) clearTimeout(popupHideTimerRef.current);
+
+    setIsWaitingSnapshot(true);
+    setCurrentSnapshotImg(null);
+    setSnapshotCondition('idle');
+    setNdviValue(0);
+    setShowNozzleModal(false);
+    setIsSprayingActive(false);
+
+    try {
+      fetch('/api/operator/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          droneId: droneId,
+          targetTopic: 'action',
+          command: 'take_picture'
+        })
+      }).catch(err => console.error("[Command] Gagal eksekusi trigger API", err));
+    } catch (error) {
+      console.error("[Command] Terjadi kesalahan trigger:", error);
+    }
+
+    setSnapshotPos({
+      latStr: currentLatStr,
+      lngStr: currentLngStr,
+      altStr: droneOn ? `${(telemetry.altitude ?? 0).toFixed(2)} m` : '0.00 m',
+    });
+  };
+
+  // Basic Timers
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      setTimeStr(`${hours}.${mins}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -433,14 +370,65 @@ export default function PantauDroneSection() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const handleMouseInteraction = (target: 'main' | 'mini') => {
+    setSwapHoverTarget(null);
+    
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    
+    idleTimerRef.current = setTimeout(() => {
+      setSwapHoverTarget(target);
+    }, 3000); 
+  };
+
+  const handleMouseLeave = () => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    setSwapHoverTarget(null);
+  };
+
+  const toggleView = () => {
+    setMainView(prev => prev === 'camera' ? 'map' : 'camera');
+    setSwapHoverTarget(null);
+  };
+
+  // Helper untuk Me-render Kanvas
+  const renderVideoCanvas = () => (
+    <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center pointer-events-none">
+      {droneOn ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover pointer-events-auto"
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center text-gray-500 gap-2">
+          <Radio size={32} className="animate-pulse opacity-50" />
+          <span className="text-xs">Kamera Offline</span>
+        </div>
+      )}
+      <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#84CC16]" />
+      <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#84CC16]" />
+      <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#84CC16]" />
+      <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#84CC16]" />
+
+      <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded text-[11px] font-mono text-[#86EFAC] z-50">
+        {currentLatStr} {currentLngStr} · ALT {droneOn ? (telemetry.altitude ?? 0).toFixed(2) : '0.00'} m
+      </div>
+
+      {snapshotFlash && <div className="absolute inset-0 bg-white/80 transition-opacity duration-200 z-[60]" />}
+    </div>
+  );
+
   return (
     <div className="w-full space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
+        {/* AREA LAYOUT KIRI */}
         <div className="lg:col-span-8 w-full min-w-0 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
           
-          {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16] animate-pulse" />
@@ -448,51 +436,35 @@ export default function PantauDroneSection() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-gray-400 font-medium">{timeStr}</span>
-              <span className="px-2.5 py-0.5 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-[11px] rounded tracking-wide">
-                LIVE
-              </span>
-              <span className="px-2.5 py-0.5 bg-[#D8EFEB] text-[#23816F] font-bold text-[11px] rounded tracking-wide">
-                LOITER
-              </span>
+              <span className="px-2.5 py-0.5 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-[11px] rounded tracking-wide">LIVE</span>
+              <span className="px-2.5 py-0.5 bg-[#D8EFEB] text-[#23816F] font-bold text-[11px] rounded tracking-wide">LOITER</span>
             </div>
           </div>
 
-          <div className="relative w-full aspect-[16/9] sm:aspect-[16/8.5] bg-black overflow-hidden flex items-center justify-center">
-            {droneOn ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-gray-500 gap-2">
-                <Radio size={32} className="animate-pulse opacity-50" />
-                <span className="text-xs">Kamera Offline · Aktifkan Drone</span>
-              </div>
-            )}
+          <div 
+            className="relative w-full aspect-[16/9] sm:aspect-[16/8.5] bg-black overflow-hidden"
+            onMouseEnter={() => handleMouseInteraction('main')}
+            onMouseMove={() => handleMouseInteraction('main')}
+            onMouseLeave={handleMouseLeave}
+          >
+            {mainView === 'camera' ? renderVideoCanvas() : renderMapCanvas()}
 
-            <div className="absolute top-3 left-3 w-5 h-5 border-t-2 border-l-2 border-[#84CC16]" />
-            <div className="absolute top-3 right-3 w-5 h-5 border-t-2 border-r-2 border-[#84CC16]" />
-            <div className="absolute bottom-3 left-3 w-5 h-5 border-b-2 border-l-2 border-[#84CC16]" />
-            <div className="absolute bottom-3 right-3 w-5 h-5 border-b-2 border-r-2 border-[#84CC16]" />
-
-            <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded text-[11px] font-mono text-[#86EFAC]">
-              {currentLatStr} {currentLngStr} · ALT {altDisplay}
+            {/* Overlay: Swap Kiri */}
+            <div 
+              className={`absolute inset-0 z-[100] cursor-pointer bg-black/20 flex items-center justify-center transition-all duration-300 ${swapHoverTarget === 'main' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+              onClick={toggleView}
+            >
+               <span className="bg-black/70 dark:bg-black/90 dark:text-white text-white font-medium text-xs px-4 py-2 rounded backdrop-blur-md shadow-xl flex items-center gap-2 border border-gray-200">
+                 Tap to swap views
+               </span>
             </div>
-
-            {snapshotFlash && (
-              <div className="absolute inset-0 bg-white/80 transition-opacity duration-200 pointer-events-none" />
-            )}
           </div>
 
           <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111]">
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-1.5 font-medium">
                 <Battery size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{battDisplay}%</span>
+                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">{droneOn ? (telemetry.battery ?? 0).toFixed(0) : '0'}%</span>
               </div>
               
               <div className="flex items-center gap-1.5 font-medium">
@@ -501,7 +473,6 @@ export default function PantauDroneSection() {
               </div>
             </div>
 
-            {/* Snapshot Button */}
             <button
               onClick={handleSnapshot}
               disabled={!droneOn || isAnalyzing || isWaitingSnapshot || !droneId}
@@ -513,28 +484,32 @@ export default function PantauDroneSection() {
             >
               <Camera size={15} className={(isAnalyzing || isWaitingSnapshot) ? 'animate-spin' : ''} />
               <span>
-                {isWaitingSnapshot 
-                  ? 'Menangkap Gambar...' 
-                  : isAnalyzing 
-                    ? 'Memproses AI (3s)...' 
-                    : 'Ambil Snapshot'}
+                {isWaitingSnapshot ? 'Menangkap Gambar...' : isAnalyzing ? 'Memproses AI (3s)...' : 'Ambil Snapshot'}
               </span>
             </button>
           </div>
-
         </div>
 
-        <div className="lg:col-span-4 w-full min-w-0 flex flex-col gap-0 bg-white dark:bg-[#111] ">
+        <div className="lg:col-span-4 w-full min-w-0 flex flex-col gap-4 bg-white dark:bg-[#111] ">
           
-          <div className="h-[250px] w-full">
-            <DroneMap
-              mode="live"
-              dronePosition={currentPos}
-              latDisplay={`${currentPos.lat.toFixed(4)}°`}
-              lngDisplay={`${currentPos.lng.toFixed(4)}°`}
-              altDisplay={altDisplay}
-              height="100%"
-            />
+          {/* AREA LAYOUT KANAN */}
+          <div 
+            className="h-[250px] w-full relative overflow-hidden rounded-xl border border-gray-100 dark:border-[#222] shadow-xs bg-white dark:bg-[#111]"
+            onMouseEnter={() => handleMouseInteraction('mini')}
+            onMouseMove={() => handleMouseInteraction('mini')}
+            onMouseLeave={handleMouseLeave}
+          >
+            {mainView === 'map' ? renderVideoCanvas() : renderMapCanvas()}
+
+            {/* Overlay: Swap Kanan */}
+            <div 
+              className={`absolute inset-0 z-[100] cursor-pointer bg-black/20 flex items-center justify-center transition-all duration-300 ${swapHoverTarget === 'mini' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+              onClick={toggleView}
+            >
+               <span className="bg-white/90 dark:bg-black/70 text-gray-800 dark:text-white font-medium text-xs px-3 px-4 py-2 rounded backdrop-blur-md shadow-xl flex items-center gap-2 dark-border border-gray-200">
+                 Tap to swap views
+               </span>
+            </div>
           </div>
 
           <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#222] p-4 flex flex-col justify-between flex-1 min-h-[170px] shadow-xs">
@@ -543,14 +518,14 @@ export default function PantauDroneSection() {
                 INFORMASI PENERBANGAN
               </h3>
             </div>
-              <hr/>
+            <hr/>
             <div className="grid grid-cols-2 gap-y-4 gap-x-2 flex-1 items-center px-1">
               {/* Ketinggian */}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1.5">
                   <ArrowUpDown size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {droneOn ? (telemetry.altitude ? telemetry.altitude.toFixed(1) : altitude.toFixed(1)) : '0.0'}{' '}
+                    {droneOn ? (telemetry.altitude ?? 0).toFixed(2) : '0.00'}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
                   </span>
                 </div>
@@ -562,7 +537,7 @@ export default function PantauDroneSection() {
                 <div className="flex items-center gap-1.5">
                   <ArrowUp size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    0.0{' '}
+                    {droneOn ? (telemetry.climbRate ?? 0).toFixed(2) : '0.00'}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
                   </span>
                 </div>
@@ -574,7 +549,7 @@ export default function PantauDroneSection() {
                 <div className="flex items-center gap-1.5">
                   <MoveHorizontal size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    0.0{' '}
+                    {droneOn ? distanceToDevice.toFixed(1) : '0.0'}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
                   </span>
                 </div>
@@ -586,7 +561,7 @@ export default function PantauDroneSection() {
                 <div className="flex items-center gap-1.5">
                   <ArrowRight size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {droneOn ? (telemetry.groundSpeed ? telemetry.groundSpeed.toFixed(1) : droneSpeed.toFixed(1)) : '0.0'}{' '}
+                    {droneOn ? (telemetry.groundSpeed ?? 0).toFixed(1) : '0.0'}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
                   </span>
                 </div>
@@ -599,6 +574,7 @@ export default function PantauDroneSection() {
       </div>
 
 
+      {/* AREA SNAPSHOT */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="w-full min-w-0 bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs overflow-hidden flex flex-col justify-between">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
@@ -637,6 +613,7 @@ export default function PantauDroneSection() {
           </div>
         </div>
 
+        {/* AI Monitor */}
         <div className={`w-full min-w-0 rounded-xl border shadow-xs p-5 flex flex-col justify-between transition-colors duration-300 ${
           !isAnalyzing && snapshotCondition === 'tidak_sehat'
             ? 'bg-[#FDF3F0] dark:bg-[#1E1412] border-[#FCE2DB] dark:border-[#38201a]'
@@ -709,7 +686,7 @@ export default function PantauDroneSection() {
             </div>
           </div>
 
-          {/* loading AI ceritanya */}
+          {/* loading AI dummy */}
           {isAnalyzing ? (
             <div className="bg-amber-50 dark:bg-[#20180a] border border-amber-200 dark:border-[#423214] rounded-xl p-3.5 text-center mt-2 animate-pulse">
               <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
@@ -749,6 +726,7 @@ export default function PantauDroneSection() {
       </div>
 
 
+      {/* SPRAY MONITOR */}
       <div className={`bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs p-5 transition-opacity duration-300 ${
         isSprayingActive ? 'opacity-100' : 'opacity-40 pointer-events-none'
       }`}>
@@ -769,7 +747,6 @@ export default function PantauDroneSection() {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-gray-100 dark:divide-[#222] gap-y-4 md:gap-y-0">
           
-          {/* Durasi */}
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
               DURASI
@@ -782,7 +759,6 @@ export default function PantauDroneSection() {
             </span>
           </div>
 
-          {/* Volume Keluar */}
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
               VOLUME KELUAR
@@ -795,7 +771,6 @@ export default function PantauDroneSection() {
             </span>
           </div>
 
-          {/* Volume & Sisa Tangki */}
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
               SISA VOLUME (ML)
@@ -812,7 +787,6 @@ export default function PantauDroneSection() {
             </div>
           </div>
 
-          {/* Tangki Graphic */}
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               TANGKI

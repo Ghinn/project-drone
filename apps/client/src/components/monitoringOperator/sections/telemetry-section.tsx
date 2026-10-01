@@ -26,7 +26,6 @@ interface DroneData {
   id: string;
   name: string | null;
   operator: Operator[] | null;
-  linkFrequency?: string;
 }
 
 const T = DRONE_TOKENS;
@@ -181,8 +180,23 @@ export default function TelemetrySection() {
         )
       ) 
     },
-    { label: 'Frekuensi Link', value: isLoading || (droneOn && !isLinkFreqReady) ? '...' : (droneDetail?.linkFrequency || 'Tidak Ditemukan') },
-  ];
+    { 
+    label: 'Kualitas Sinyal', 
+    value: isLoading || (droneOn && !telemetry?.radio) ? '...' : (
+      telemetry?.radio?.rssi !== undefined 
+        ? (
+            <span className={`font-mono tracking-wide ${
+                telemetry.radio.rssi > 150 ? 'text-[#5D7E2A] dark:text-[#84cc16]' : 
+                telemetry.radio.rssi > 90 ? 'text-amber-600 dark:text-amber-500' : 
+                'text-[#C84030] dark:text-red-500'
+              }`}>
+                {Math.round((telemetry.radio.rssi / 254) * 100)}% 
+              </span>
+          ) 
+        : 'Tidak Ada Sinyal'
+    ) 
+  },
+];
 
   const ATTITUDE = [
     { label: 'ROLL', value: toDeg(telemetry.roll) },
@@ -191,10 +205,10 @@ export default function TelemetrySection() {
   ];
 
   const RC_SWITCHES = [
-    { key: 'loiter', label: 'Loiter', status: telemetry.rc?.ch6 || 'OFF' },
-    { key: 'auto', label: 'Auto', status: telemetry.rc?.ch7 || 'OFF' },
-    { key: 'rtl', label: 'RTL', status: telemetry.rc?.ch8 || 'OFF' },
-    { key: 'spray', label: 'Spray', status: telemetry.rc?.ch9 === 'ON' ? 'ON' : 'ON' },
+    { key: 'loiter', label: 'Loiter', status: (telemetry.rc?.ch6 === 'MODE_HIGH' || telemetry.rc?.ch6 === 'ON') ? 'ON' : 'OFF' },
+    { key: 'auto', label: 'Auto', status: (telemetry.rc?.ch7 === 'MODE_HIGH' || telemetry.rc?.ch7 === 'ON') ? 'ON' : 'OFF' },
+    { key: 'rtl', label: 'RTL', status: (telemetry.rc?.ch8 === 'MODE_HIGH' || telemetry.rc?.ch8 === 'ON') ? 'ON' : 'OFF' },
+    { key: 'spray', label: 'Spray', status: (telemetry.rc?.ch9 === 'MODE_HIGH' || telemetry.rc?.ch9 === 'ON') ? 'ON' : 'OFF' },
   ];
 
   const TELEMETRY = [

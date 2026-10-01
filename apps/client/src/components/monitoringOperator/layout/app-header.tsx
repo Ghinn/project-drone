@@ -4,11 +4,41 @@ import { useMonitoringOperator } from './monitoringOperator-context';
 import { DRONE_TOKENS } from './monitoringOperator-types';
 import HeaderThemeControls from './header-theme-controls';
 import UserProfileDropdown from './user-profile-dropdown';
+import { LocaleToggle } from '@/components/locale-toggle'; 
 
 const T = DRONE_TOKENS;
 
 export default function AppHeader() {
-  const { setIsSidebarOpen, getPageTitle } = useMonitoringOperator();
+  const { setIsSidebarOpen, getPageTitle, telemetry } = useMonitoringOperator();
+
+  const flightMode = telemetry?.flightMode || 'standby';
+
+  // Helper untuk menentukan gaya Badge berdasarkan status Pixhawk
+  const getFlightStateBadge = (mode: string) => {
+    switch (mode) {
+      case 'in-flight':
+        // Sedang terbang (Sensor ketinggian berubah, landed = false)
+        return { 
+          bg: `${T.red}18`, text: T.red, border: `1px solid ${T.red}33`, 
+          label: 'IN-FLIGHT', pulse: true 
+        };
+      case 'armed':
+        // Motor berputar (spin when armed), siap lepas landas
+        return { 
+          bg: '#F59E0B18', text: '#F59E0B', border: '1px solid #F59E0B33', 
+          label: 'ARMED', pulse: true 
+        };
+      case 'standby':
+      default:
+        // Disarmed, motor mati, sensor aktif
+        return { 
+          bg: '#9CA3AF18', text: '#9CA3AF', border: '1px solid #9CA3AF33', 
+          label: 'STANDBY', pulse: false 
+        };
+    }
+  };
+
+  const badgeStyle = getFlightStateBadge(flightMode);
 
   return (
     <header className="flex items-center justify-between px-4 sm:px-6 h-14 shrink-0 bg-white dark:bg-[#0d0d0d] border-b border-gray-200 dark:border-[#1e1e1e] transition-colors">
@@ -32,28 +62,23 @@ export default function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Drone Connection Status */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#2a2a2a]">
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse"
-            style={{ background: T.greenLight }}
-          />
-          <span>Drone Aktif</span>
-          <span className="text-gray-300 dark:text-gray-600">·</span>
-          <span className="font-mono" style={{ color: T.greenLight }}>Misi #037</span>
-        </div>
-
-        {/* LIVE badge */}
+        {/* Flight State Badge */}
         <div
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold"
-          style={{ background: `${T.red}18`, color: T.red, border: `1px solid ${T.red}33` }}
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#2a2a2a] transition-all duration-300"
+          style={{ background: badgeStyle.bg, color: badgeStyle.text, border: badgeStyle.border }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-          LIVE
+          <span className={`w-1.5 h-1.5 rounded-full bg-current ${badgeStyle.pulse ? 'animate-pulse' : ''}`} />
+          {badgeStyle.label}
         </div>
 
+        {/* Toggle Bahasa */}
+        <LocaleToggle />
+
+        {/* Toggle Dark/Light Mode */}
         <div className="hidden md:block">
           <HeaderThemeControls />
+
+        {/* User Profile Dropdown */}
         </div>
         <UserProfileDropdown />
       </div>

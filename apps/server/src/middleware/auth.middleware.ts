@@ -15,7 +15,7 @@ export async function requireSession(req: Request, res: Response, next: NextFunc
   }
 
   try {
-    const decoded = await firebaseAuth.verifySessionCookie(sessionCookie, true);
+    const decoded = await firebaseAuth.verifySessionCookie(sessionCookie, false);  // true untuk phase production
 
     const user = await findUserByFirebaseIdentity({
       uid: decoded.uid!,

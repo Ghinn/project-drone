@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import { useAdminContext } from './admin-context';
 import HeaderThemeControls from './header-theme-controls';
 import UserProfileDropdown from './user-profile-dropdown';
+import { LocaleToggle } from '@/components/locale-toggle'; 
 
 export default function AppHeader() {
   const { setIsSidebarOpen, getPageTitle } = useAdminContext();
@@ -29,8 +30,14 @@ export default function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Toggle Bahasa */}
+          <LocaleToggle />
+          
+        {/* Toggle Dark/Light Mode */}
         <div className="hidden md:block">
           <HeaderThemeControls />
+
+        {/* User Profile Dropdown */}
         </div>
         <UserProfileDropdown />
       </div>

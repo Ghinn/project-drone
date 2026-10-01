@@ -459,7 +459,7 @@ export function LoginModal() {
               </div>
             </form>
 
-            <div className="relative mt-6">
+            {/* <div className="relative mt-6">
               <div className="absolute inset-0 flex items-center" aria-hidden="true">
                 <div className="w-full border-t border-gray-200" />
               </div>
@@ -468,9 +468,9 @@ export function LoginModal() {
                   {t('divider')}
                 </span>
               </div>
-            </div>
+            </div> */}
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            {/* <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D1D5DB] bg-white px-4 py-3 text-[14px] font-semibold text-[#191919] transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={isLoading}
@@ -497,7 +497,8 @@ export function LoginModal() {
                 </svg>
                 {t('actions.apple')}
               </button>
-            </div>
+            </div> */}
+            
           </div>
         ) : null}
 

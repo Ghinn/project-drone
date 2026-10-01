@@ -1,16 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { User, Settings, LogOut, ChevronDown, Globe, Sun, Moon } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { type AppLocale } from "@/i18n/config";
 import { useAuth } from "@/providers/auth-provider";
+import { DRONE_TOKENS } from "./admin-types";
+
+// Helper Functions
+function getInitials(source: string | null | undefined, fallback: string): string {
+  if (!source) return fallback;
+  const normalized = source.includes('@') ? source.split('@')[0]! : source;
+  const parts = normalized.split(/[\s._-]+/).filter(Boolean);
+  if (parts.length === 0) return fallback;
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('') || fallback;
+}
+
+function formatDisplayName(displayName: string | null | undefined, email: string | null | undefined, fallback: string): string {
+  if (displayName) return displayName;
+  if (email) {
+    const namePart = email.split('@')[0];
+    // Mengubah format email (misal: john.doe@email.com -> John Doe)
+    return namePart.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return fallback;
+}
 
 export default function UserProfileDropdown() {
   const router = useRouter();
-  const { signOutApp } = useAuth();
+  const { user, role, signOutApp } = useAuth();
   const locale = useLocale() as AppLocale;
   const { theme, setTheme, resolvedTheme } = useTheme();
 
@@ -22,6 +42,29 @@ export default function UserProfileDropdown() {
   useEffect(() => setMounted(true), []);
 
   const isDarkMode = mounted && (theme === 'dark' || resolvedTheme === 'dark');
+
+  // Logika GET Account Profile
+    const displayName = user?.displayName;
+    const email = user?.email;
+    const photoURL = user?.photoURL;
+  
+    const resolvedDisplayName = useMemo(
+      () => formatDisplayName(displayName, email, 'Administrator'),
+      [displayName, email]
+    );
+    
+    const resolvedEmail = email ?? 'Tidak ada email';
+    
+    const initials = useMemo(
+      () => getInitials(displayName ?? email, 'OP'),
+      [displayName, email]
+    );
+  
+    const roleLabel = useMemo(() => {
+      if (role === 'FARMER') return 'Petani';
+      if (role === 'OPERATOR') return 'Operator';
+      return 'Administrator'; // Default Administrator
+    }, [role]);
 
   const handleLocaleChange = async (nextLocale: AppLocale) => {
     if (nextLocale === locale || pendingLocale !== null) {
@@ -85,24 +128,49 @@ export default function UserProfileDropdown() {
 
   return (
     <div ref={dropdownRef} className="relative md:border-l border-gray-200 dark:border-zinc-800 md:pl-3">
-      <button type="button" onClick={() => setIsOpen((prev) => !prev)} className="flex items-center gap-2 sm:gap-3 cursor-pointer outline-none rounded-xl p-1 sm:p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#84994F] text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-xs shrink-0">OP</div>
-        <div className="hidden sm:flex flex-col text-left">
-          <span className="text-sm font-semibold text-gray-800 dark:text-zinc-100 leading-none">Halo Admin</span>
-          <span className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">Master Admin</span>
+      <button
+        type="button"
+        onClick={() => setIsOpen(prev => !prev)}
+        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer outline-none rounded-xl p-1 sm:p-1.5 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
+      >
+        {photoURL ? (
+          <img
+            src={photoURL}
+            alt={resolvedDisplayName}
+            className="w-8 h-8 rounded-full object-cover shrink-0 shadow-xs"
+          />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 text-white shadow-xs"
+            style={{ background: DRONE_TOKENS.green }}
+          >
+            {initials}
+          </div>
+        )}
+        
+        <div className="hidden md:block text-left">
+          <p className="text-xs font-semibold leading-tight text-gray-900 dark:text-gray-100 truncate max-w-[120px]">
+            {resolvedDisplayName}
+          </p>
+          <p className="text-[10px] leading-tight text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-[120px]">
+            {roleLabel}
+          </p>
         </div>
-        <ChevronDown className={`hidden sm:block w-4 h-4 text-gray-400 dark:text-zinc-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`hidden sm:block w-3.5 h-3.5 text-gray-400 dark:text-zinc-500 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-64 z-50 rounded-xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-[#16161a] shadow-xl shadow-black/10 dark:shadow-black/30 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-zinc-800">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
-              Master Admin
+              {resolvedEmail}
             </p>
-
             <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
-              Superuser
+              {roleLabel}
             </p>
           </div>
 
@@ -123,7 +191,7 @@ export default function UserProfileDropdown() {
             </button>
           </div>
 
-          {/* Toggle tema untuk mobiel */}
+          {/* Toggle tema untuk mobile */}
           <div className="border-t border-gray-200 dark:border-zinc-800 p-1.5 md:hidden">
             <div className="flex items-center justify-between px-3 py-2">
               <div className="flex items-center gap-3">

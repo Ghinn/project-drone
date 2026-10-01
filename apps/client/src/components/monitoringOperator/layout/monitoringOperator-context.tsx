@@ -3,33 +3,17 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type {
   MonitoringOperatorTab,
-  NavItem
+  NavItem,
+  TelemetryData
 } from './monitoringOperator-types';
 
-export interface DroneTelemetry {
-  roll: number; pitch: number; yaw: number;
-  altitude: number; latitude: number; longitude: number;
-  groundSpeed: number; mode: string;
-  battery: number; voltage: number; current: number;
+export type SseConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed';
 
-  sys_check: {
-    gyro: boolean; accelerometer: boolean; magnetometer: boolean;
-    absolute_pressure: boolean; differential_pressure: boolean;
-    gps: boolean; optical_flow: boolean; vision_position: boolean;
-    laser_position: boolean; external_ground_truth: boolean;
-    angular_rate_control: boolean; attitude_stabilization: boolean;
-    yaw_position: boolean; z_position_control: boolean;
-    xy_position_control: boolean; motor_outputs: boolean;
-    rc_receiver: boolean; gyro_cal: boolean; accel_cal: boolean; mag_cal: boolean;
-  };
-  rc: {
-    ch6: string; ch7: string; ch8: string; ch9: string;
-  };
-}
-
-export const defaultTelemetry: DroneTelemetry = {
+export const defaultTelemetry: TelemetryData = {
   roll: 0, pitch: 0, yaw: 0, altitude: 0, latitude: 0, longitude: 0,
-  groundSpeed: 0, mode: 'DISARMED', battery: 0, voltage: 0, current: 0,
+  groundSpeed: 0, climbRate: 0, distanceToHome: 0, mode: 'DISARMED', 
+  flightMode: 'standby',
+  battery: 0, voltage: 0, current: 0,
   sys_check: {
     gyro: false, accelerometer: false, magnetometer: false,
     absolute_pressure: false, differential_pressure: false,
@@ -40,10 +24,11 @@ export const defaultTelemetry: DroneTelemetry = {
     xy_position_control: false, motor_outputs: false,
     rc_receiver: false, gyro_cal: false, accel_cal: false, mag_cal: false
   },
-  rc: { ch6: 'OFF', ch7: 'OFF', ch8: 'OFF', ch9: 'OFF' }
+  rc: { ch6: 'OFF', ch7: 'OFF', ch8: 'OFF', ch9: 'OFF' },
+  radio: { rssi: 0, remrssi: 0, noise: 0, txbuf: 0 } 
 };
 
-export type SseConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed';
+
 
 type MonitoringOperatorContextValue = {
   activeTab: MonitoringOperatorTab;
@@ -53,7 +38,8 @@ type MonitoringOperatorContextValue = {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean | ((prev: boolean) => boolean)) => void;
 
-  telemetry: DroneTelemetry; 
+  telemetry: TelemetryData;
+  flightMode: string;
   droneStatus: 'online' | 'offline' | 'unknown';
   latestSnapshot: any;
   spray: number;
@@ -81,7 +67,7 @@ const SSE_MAX_CONSECUTIVE_ERRORS = 3;
 
 // Custom Hook untuk menangkap SSE
 export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
-  const [telemetry, setTelemetry] = useState<DroneTelemetry>(defaultTelemetry);
+  const [telemetry, setTelemetry] = useState<TelemetryData>(defaultTelemetry);
   const [latestSnapshot, setLatestSnapshot] = useState<any>(null);
   const [droneStatus, setDroneStatus] = useState<'online' | 'offline' | 'unknown'>('unknown');
 
@@ -114,7 +100,10 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
         const parsed = JSON.parse(event.data);
         
         if (parsed.type === 'telemetry') {
-          setTelemetry(parsed.data);
+          setTelemetry((prev) => ({
+             ...defaultTelemetry,
+             ...parsed.data
+          }));
         } else if (parsed.type === 'status') {
           setDroneStatus(parsed.data.status);
         } else if (parsed.type === 'snapshot:new') {
@@ -157,5 +146,5 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
     };
   }, [apiUrl, droneId]);
 
-  return { telemetry, droneStatus, connectionStatus, latestSnapshot };
+  return { telemetry, flightMode: telemetry.flightMode, droneStatus, connectionStatus, latestSnapshot };
 };

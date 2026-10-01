@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import { requireSession } from '../middleware/auth.middleware';
-import { getMyProfile, getMyDrone, savePredictionSnapshot, saveSprayLog } from '../controllers/operator.controller';
+import { 
+  getMyProfile, 
+  getMyDrone, 
+  savePredictionSnapshot, 
+  saveSprayLog 
+} from '../controllers/operator.controller';
 import { sendDroneCommand } from '../controllers/monitoringOperator.controller';
 
 const router = Router();
 
+// Semua rute di bawah wajib melewati pengecekan sesi (Auth)
 router.use(requireSession);
 
 router.get('/me', getMyProfile);

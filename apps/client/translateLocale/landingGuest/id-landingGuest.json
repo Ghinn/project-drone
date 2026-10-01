@@ -61,7 +61,7 @@
         "spray": { "label": "Spot Spraying", "note": "Penyemprotan Tepat Sasaran" },
         "protocol": { "label": "WebRTC & MQTT", "note": "Telemetri Real-Time" },
         "ai": { "label": "AI Multispectral CNN", "note": "Deteksi Kesehatan Tanaman" },
-        "camera": { "label": "Live Snapshot", "note": "Pemicuan Foto Instan via Web" }
+        "camera": { "label": "Live Snapshot", "note": "Pengambilan Instan yang Dipicu oleh Web" }
       }
     },
     "research": {

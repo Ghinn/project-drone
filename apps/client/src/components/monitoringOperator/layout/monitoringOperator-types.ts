@@ -22,6 +22,59 @@ export interface AlertItem {
   time: string;
 }
 
+export interface TelemetryData {
+  roll: number;
+  pitch: number;
+  yaw: number;
+  altitude: number;
+  latitude: number;
+  longitude: number;
+  groundSpeed: number;
+  climbRate: number;
+  distanceToHome: number;
+  mode: string;
+  flightMode: string;
+  battery: number;
+  voltage: number;
+  current: number;
+  sys_check?: SysCheckData;
+  rc?: {
+    ch6: string;
+    ch7: string;
+    ch8: string;
+    ch9: string;
+  };
+  radio?: {
+    rssi: number;
+    remrssi: number;
+    noise: number;
+    txbuf: number;
+  };
+}
+
+export interface SysCheckData {
+  gyro: boolean;
+  accelerometer: boolean;
+  magnetometer: boolean;
+  absolute_pressure: boolean;
+  differential_pressure: boolean;
+  gps: boolean;
+  optical_flow: boolean;
+  vision_position: boolean;
+  laser_position: boolean;
+  external_ground_truth: boolean;
+  angular_rate_control: boolean;
+  attitude_stabilization: boolean;
+  yaw_position: boolean;
+  z_position_control: boolean;
+  xy_position_control: boolean;
+  motor_outputs: boolean;
+  rc_receiver: boolean;
+  gyro_cal: boolean;
+  accel_cal: boolean;
+  mag_cal: boolean;
+}
+
 // Tipe data log prediksi (record satu sesi prediksi)
 export interface PredictionLogEntry {
   id: string;           // LOG-001, LOG-002 dst

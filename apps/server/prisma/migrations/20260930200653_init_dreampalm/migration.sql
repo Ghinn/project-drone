@@ -12,7 +12,6 @@ CREATE TABLE "Drone" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "macAddress" TEXT,
-    "linkFrequency" TEXT,
     "status" TEXT NOT NULL DEFAULT 'offline',
     "isApproved" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -62,12 +61,16 @@ CREATE TABLE "TelemetryLog" (
     "latitude" DOUBLE PRECISION NOT NULL,
     "longitude" DOUBLE PRECISION NOT NULL,
     "groundSpeed" DOUBLE PRECISION NOT NULL,
+    "climbRate" DOUBLE PRECISION NOT NULL,
+    "distanceToHome" DOUBLE PRECISION NOT NULL,
     "mode" TEXT NOT NULL,
+    "flightMode" TEXT NOT NULL DEFAULT 'standby',
     "battery" DOUBLE PRECISION NOT NULL,
     "voltage" DOUBLE PRECISION,
     "current" DOUBLE PRECISION,
     "sys_check" JSONB,
     "rc" JSONB,
+    "radio" JSONB,
 
     CONSTRAINT "TelemetryLog_pkey" PRIMARY KEY ("id")
 );

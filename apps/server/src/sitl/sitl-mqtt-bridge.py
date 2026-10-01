@@ -1,5 +1,6 @@
 import time
 import json
+import math
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
 
@@ -17,6 +18,20 @@ MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
 MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/command/status"
 MQTT_TOPIC_SYSTEM = f"dreampalm/drone/uid/{DRONE_ID}/command/system"
 MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/command/action"
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    R = 6371000  # Radius bumi dalam meter
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2.0) ** 2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2.0) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c
 
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -64,12 +79,19 @@ client.on_message = on_message
 client.connect(MQTT_BROKER, MQTT_PORT, keepalive=15)
 client.loop_start()
 
+drone_is_armed = False
+drone_is_flying = False
+
+home_lat = None
+home_lon = None
+
 # Struktur TelemetryState (GCS)
 telemetry_data = {
     # Navigasi dan Posisi
-    "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
-    "altitude": 0.0, "latitude": 0.0, "longitude": 0.0,
-    "groundSpeed": 0.0, "mode": "STABILIZE",
+        "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
+        "altitude": 0.0, "latitude": 0.0, "longitude": 0.0,
+        "groundSpeed": 0.0, "climbRate": 0.0, "distanceToHome": 0.0, "mode": "STABILIZE",
+        "flightMode": "standby",
     
     # Kelistrikan
     "battery": 100.0, "voltage": 0.0, "current": 0.0,
@@ -90,6 +112,14 @@ telemetry_data = {
     # RC Switch Status
     "rc": {
         "ch6": "OFF", "ch7": "OFF", "ch8": "OFF", "ch9": "OFF"
+    },
+
+    # Kualitas Sinyal
+    "radio": {
+        "rssi": 0, 
+        "remrssi": 0, 
+        "noise": 0, 
+        "txbuf": 0
     }
 }
 
@@ -145,16 +175,38 @@ while True:
             telemetry_data['pitch'] = msg.pitch
             telemetry_data['yaw'] = msg.yaw
 
+        # Ekstraksi Home Position
+        elif msg_type == 'HOME_POSITION':
+            home_lat = msg.latitude / 1e7
+            home_lon = msg.longitude / 1e7
+
+        # Ekstraksi Current Position
         elif msg_type == 'GLOBAL_POSITION_INT':
-            telemetry_data['latitude'] = msg.lat / 1e7
-            telemetry_data['longitude'] = msg.lon / 1e7
+            current_lat = msg.lat / 1e7
+            current_lon = msg.lon / 1e7
+            
+            telemetry_data['latitude'] = current_lat
+            telemetry_data['longitude'] = current_lon
             telemetry_data['altitude'] = msg.relative_alt / 1000.0
+            
+            # Fallback: Jika HOME_POSITION belum didapat, jadikan koordinat valid pertama sebagai Home
+            if home_lat is None and current_lat != 0.0:
+                home_lat = current_lat
+                home_lon = current_lon
+                print(f"[GPS] Home Point di-set ke: {home_lat}, {home_lon}")
+
+            # Hitung distanceToHome
+            if home_lat is not None and home_lon is not None:
+                dist = calculate_distance(home_lat, home_lon, current_lat, current_lon)
+                telemetry_data['distanceToHome'] = round(dist, 2)
 
         elif msg_type == 'VFR_HUD':
-            telemetry_data['groundSpeed'] = msg.groundspeed
+            telemetry_data['groundSpeed'] = round(msg.groundspeed, 2)
+            telemetry_data['climbRate'] = round(msg.climb, 2)
 
         elif msg_type == 'HEARTBEAT':
-            telemetry_data['mode'] = mavutil.mode_string_v10(msg)
+                    telemetry_data['mode'] = mavutil.mode_string_v10(msg)
+                    drone_is_armed = bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
 
         # Indikator Penerbangan dan Pre-Flight System Check
         elif msg_type == 'SYS_STATUS':
@@ -175,6 +227,14 @@ while True:
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']
             telemetry_data['sys_check']['mag_cal'] = telemetry_data['sys_check']['magnetometer']
 
+        # CEK IN-FLIGHT STATE DARI EXTENDED_SYS_STATE
+        elif msg_type == 'EXTENDED_SYS_STATE':
+            # 1 = MAV_LANDED_STATE_ON_GROUND, 2 = MAV_LANDED_STATE_IN_AIR
+            if msg.landed_state == 2:
+                drone_is_flying = True
+            elif msg.landed_state == 1:
+                drone_is_flying = False
+
         # Ekstraksi Kualitas Sinyal Radio
         elif msg_type == 'RADIO_STATUS':
             telemetry_data['radio'] = {
@@ -194,13 +254,24 @@ while True:
         # Publish ke MQTT Broker setiap 1 detik
         current_time = time.time()
         if current_time - last_pub_time >= 1.0:
+            if not drone_is_armed:
+                telemetry_data['flightMode'] = "standby"
+            else:
+                if drone_is_flying or telemetry_data['altitude'] > 0.5:
+                    telemetry_data['flightMode'] = "in-flight"
+                else:
+                    telemetry_data['flightMode'] = "armed"
+
+            # simulated_rssi = int((math.sin(time.time() / 2) + 1) * 127) 
+            # telemetry_data['radio']['rssi'] = simulated_rssi
+                    
             payload = json.dumps(telemetry_data)
             client.publish(MQTT_TOPIC_TELEMETRY, payload)
             
             # Print ringkasan log di terminal agar mudah dipantau
-            print(f"[GCS Log] Volt: {telemetry_data['voltage']}V | "
-                  f"Cur: {telemetry_data['current']}A | "
+            print(f"[Development Log] Volt: {telemetry_data['voltage']}V | "
                   f"Mode: {telemetry_data['mode']} | "
+                  f"State: {telemetry_data['flightMode'].upper()} | "
                   f"CH6: {telemetry_data['rc']['ch6']}")
             
             last_pub_time = current_time

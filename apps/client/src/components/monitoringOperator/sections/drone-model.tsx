@@ -25,7 +25,7 @@ function CanvasLoader() {
 }
 
 function DroneModel({ roll, pitch, yaw }: DroneModelProps) {
-  const { scene } = useGLTF('/models/3d-models-drone.glb');
+  const { scene } = useGLTF('/models/3d-models-drone-transformed.glb');
   const groupRef = useRef<THREE.Group>(null);
 
   const negativeYAxis = useMemo(() => {
@@ -69,7 +69,7 @@ function DroneModel({ roll, pitch, yaw }: DroneModelProps) {
 }
 
 // Preload agar model langsung tersedia dari cache browser
-useGLTF.preload('/models/3d-models-drone.glb');
+useGLTF.preload('/models/3d-models-drone-transformed.glb');
 
 export default function Drone3DViewer({ roll = 0, pitch = 0, yaw = 0 }: DroneModelProps) {
   return (

@@ -88,12 +88,16 @@ export function initMqtt() {
                             latitude: updatedState.latitude ?? 0,
                             longitude: updatedState.longitude ?? 0,
                             groundSpeed: updatedState.groundSpeed ?? 0,
+                            climbRate: updatedState.climbRate ?? 0,
+                            distanceToHome: updatedState.distanceToHome ?? 0,
                             mode: updatedState.mode ?? "STABILIZE",
+                            flightMode: updatedState.flightMode ?? "standby",
                             battery: updatedState.battery ?? 100,
                             voltage: updatedState.voltage ?? 0,
                             current: updatedState.current ?? 0,
                             sys_check: updatedState.sys_check ?? {},
                             rc: updatedState.rc ?? {},
+                            radio: updatedState.radio ?? {},
                         }
                     });
                 } catch (dbError) {

@@ -23,39 +23,40 @@ if (env.NODE_ENV === "production") {
 //   .map((origin) => origin.trim())
 //   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
-  }),
-);
-
-// const allowedOrigins = [
-//   'http://localhost:3000',
-//   'http://192.168.100.12:3000',
-//   process.env.CLIENT_URL
-// ].filter(Boolean) as string[];
-
 // app.use(
 //   cors({
-//     origin: function (origin, callback) {
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error('Not allowed by CORS'));
-//       }
-//     },
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     origin: process.env.CLIENT_URL || 'http://localhost:3000',
 //     credentials: true,
+//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//     // allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 //   }),
 // );
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://192.168.100.124:3000',
+  process.env.CLIENT_URL
+].filter(Boolean) as string[];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  }),
+);
+
 app.use(helmet());
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 
 // Route Operator
