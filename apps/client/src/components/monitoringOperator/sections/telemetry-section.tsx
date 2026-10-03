@@ -31,23 +31,26 @@ interface DroneData {
 const T = DRONE_TOKENS;
 
 const PREFLIGHT_ITEMS = [
-  { key: 'gyro', label: 'Gyro' },
+  // --- SENSOR UTAMA ---
+  { key: 'gyro', label: 'Gyrometer' },
   { key: 'accelerometer', label: 'Accelerometer' },
   { key: 'magnetometer', label: 'Magnetometer' },
-  { key: 'absolute_pressure', label: 'Absolute Pressure' },
-  { key: 'differential_pressure', label: 'Differential Pressure' },
-  { key: 'gps', label: 'GPS' },
-  { key: 'optical_flow', label: 'Optical Flow' },
-  { key: 'vision_position', label: 'Vision Position' },
-  { key: 'laser_position', label: 'Laser Position' },
-  { key: 'external_ground_truth', label: 'External Ground Truth' },
+  { key: 'absolute_pressure', label: 'Barometer' },
+  { key: 'gps', label: 'GPS Module' },
+  
+  // --- SUBSISTEM AKTIF ---
+  { key: 'ahrs', label: 'AHRS / EKF3 System' },
+  { key: 'terrain', label: 'Terrain Tracking' },
+  { key: 'battery_monitor', label: 'Battery Monitor' },
+
+  // --- KONTROL PENERBANGAN ---
   { key: 'angular_rate_control', label: 'Angular Rate Control' },
   { key: 'attitude_stabilization', label: 'Attitude Stabilization' },
   { key: 'yaw_position', label: 'Yaw Position' },
-  { key: 'z_position_control', label: 'Z Position Control' },
-  { key: 'xy_position_control', label: 'XY Position Control' },
   { key: 'motor_outputs', label: 'Motor Outputs' },
   { key: 'rc_receiver', label: 'RC Receiver' },
+  
+  // --- STATUS KALIBRASI ---
   { key: 'gyro_cal', label: '3D Gyro Calibration' },
   { key: 'accel_cal', label: '3D Accelerometer Calibration' },
   { key: 'mag_cal', label: 'Magnetometer Calibration' },
@@ -415,7 +418,7 @@ export default function TelemetrySection() {
           </h3>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {PREFLIGHT_ITEMS.map((item, index) => {
             const isHealthy = telemetry.sys_check 
               ? telemetry.sys_check[item.key as keyof typeof telemetry.sys_check] 

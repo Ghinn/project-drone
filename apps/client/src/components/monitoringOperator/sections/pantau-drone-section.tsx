@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { io, Socket } from 'socket.io-client';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
@@ -10,6 +10,7 @@ import {
   Battery, 
   Wifi, 
   AlertTriangle,
+  RefreshCcw,
   CheckCircle,
   Radio,
   ArrowUpDown,
@@ -59,6 +60,7 @@ export default function PantauDroneSection() {
   const [snapshotPos, setSnapshotPos] = useState<{ latStr: string; lngStr: string; altStr: string } | null>(null);
   const [ndviValue, setNdviValue] = useState<number>(0);
   const [snapshotFlash, setSnapshotFlash] = useState(false);
+  const [isVideoActive, setIsVideoActive] = useState(false);
 
   // State Flow Controls
   const [isWaitingSnapshot, setIsWaitingSnapshot] = useState(false);
@@ -73,10 +75,14 @@ export default function PantauDroneSection() {
   const popupHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Monitor Spray
-  const TOTAL_SPRAY_SECONDS = 60;
+  const TANK_CAPACITY_ML = 700.0;
+  const TOTAL_SPRAY_SECONDS = 5;
+  const SPRAY_TARGET_ML = 15.0;
   const [sprayCountdown, setSprayCountdown] = useState(0);
   const [sprayVolume, setSprayVolume] = useState(0.0);
   const [tankRemaining, setTankRemaining] = useState(98);
+  const [currentTankVolume, setCurrentTankVolume] = useState(TANK_CAPACITY_ML);
+  const [modalCountdown, setModalCountdown] = useState(5);
 
   useEffect(() => {
     let isMounted = true;
@@ -99,10 +105,45 @@ export default function PantauDroneSection() {
     fetchMyDroneInfo();
     return () => { isMounted = false; };
   }, []);
+
+  const isValidTelemetryState = droneOn && telemetry.latitude !== 0 && telemetry.longitude !== 0;
+  const currentPos = (telemetry.latitude !== 0 && telemetry.longitude !== 0)
+    ? { 
+        lat: telemetry.latitude, 
+        lng: telemetry.longitude, 
+        yaw: telemetry.yaw ?? 0
+      }
+    : { 
+        lat: -6.5890586,
+        lng: 106.8055139, 
+        yaw: 0
+      };
+
+  const currentLatStr = isValidTelemetryState ? `${Math.abs(currentPos.lat).toFixed(6)}°S` : '0.000000°S';
+  const currentLngStr = isValidTelemetryState ? `${Math.abs(currentPos.lng).toFixed(6)}°E` : '0.000000°E';
+
+  const distanceToDevice = operatorPos 
+    ? calculateDistance(currentPos.lat, currentPos.lng, operatorPos.lat, operatorPos.lng) 
+    : 0;
+
+  const renderMapCanvas = () => (
+    <DroneMap
+      mode="live"
+      dronePosition={currentPos}
+      operatorPosition={operatorPos || currentPos}
+      latDisplay={currentLatStr}
+      lngDisplay={currentLngStr}
+      altDisplay={droneOn ? `${(telemetry.altitude ?? 0).toFixed(2)} m` : '0.00 m'}
+      height="100%"
+    />
+  );
   
   // Inisialisasi WebRTC
   useEffect(() => {
-    if (!droneOn || !droneId) return;
+    if (!droneOn || !droneId) {
+      setIsVideoActive(false);
+      return;
+    }
 
     const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_API_BASE_URL || 'http://localhost:4000';
     const socket = io(BACKEND_URL, { path: '/webrtc-signaling/' });
@@ -120,10 +161,11 @@ export default function PantauDroneSection() {
       console.log("[WebRTC] Stream video diterima dari Drone");
       if (event.streams[0]) {
         mediaStreamRef.current = event.streams[0]; // Simpan referensi stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = event.streams[0];
-          videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
-        }
+        setIsVideoActive(true);
+        // if (videoRef.current) {
+        //   videoRef.current.srcObject = event.streams[0];
+        //   videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
+        // }
       }
     };
 
@@ -164,73 +206,174 @@ export default function PantauDroneSection() {
     return () => {
       pc.close();
       socket.disconnect();
+      setIsVideoActive(false);
       if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [droneOn, droneId]);
 
   // Hook Stream: Selalu pasang ulang stream saat komponen Video ter-remount pasca-Swap
   useEffect(() => {
-    if (videoRef.current && mediaStreamRef.current) {
+    if (isVideoActive && videoRef.current && mediaStreamRef.current) {
       videoRef.current.srcObject = mediaStreamRef.current;
       videoRef.current.play().catch(e => console.error("[WebRTC Reattach] Gagal memutar video:", e));
     }
-  }, [mainView]); // Triggers every time views are swapped
+  }, [mainView, isVideoActive]); // Triggers every time views are swapped
 
   // Handler Gambar yang Masuk dari WebRTC/SSE
   useEffect(() => {
     if (isWaitingSnapshot && latestSnapshot && latestSnapshot.imageUrl) {
 
-      if (latestSnapshot.imageUrl === lastProcessedImgRef.current) {
+      const currentImgUrl = latestSnapshot.imageUrl;
+
+      if (currentImgUrl === lastProcessedImgRef.current) {
         return; 
-      } 
+      }
+
+      lastProcessedImgRef.current = currentImgUrl;
 
       setIsWaitingSnapshot(false);
       setIsAnalyzing(true);
       
-      setCurrentSnapshotImg(latestSnapshot.imageUrl);
+      setCurrentSnapshotImg(currentImgUrl);
       setSnapshotFlash(true);
       setTimeout(() => setSnapshotFlash(false), 300);
 
-      // Simulasi Proses AI 3 Detik
-      if (aiProcessTimerRef.current) clearTimeout(aiProcessTimerRef.current);
-      
-      aiProcessTimerRef.current = setTimeout(() => {
-        const isHealthy = Math.random() > 0.5; 
-        const mockNdvi = isHealthy ? 0.28 : 0.18;
+      // Integration PredictionAI
+      const fetchPredictionAI = async () => {
+        try {
 
-        setNdviValue(mockNdvi);
-        setSnapshotCondition(isHealthy ? 'sehat' : 'tidak_sehat');
-        setIsAnalyzing(false);
+          // Analyze Snapshot: Pra-Pemrosesan (YOLOv4 OpenVINO Cropping, NDVI, RG, RGR)
+          const analyzeRes = await fetch('/api/operator/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              droneId: droneId,
+              snapshotRAW: currentImgUrl, 
+            })
+          });
 
-        if (!isHealthy) {
-          popupShowTimerRef.current = setTimeout(() => {
+          if (!analyzeRes.ok) throw new Error("Gagal melakukan analyzeRes");
+          const analyzeData = await analyzeRes.json();
+          const praAnalyze = analyzeData.data;
+
+          // Prediction: Classification (Klasifikasi CNN .keras)
+          const predictionRes = await fetch('/api/operator/prediction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              droneId: droneId,
+              snapshotRAW: praAnalyze.snapshotRAW,
+              snapshotNDVI: praAnalyze.snapshotNDVI,
+              snapshotRG: praAnalyze.snapshotRG,
+              snapshotRGR: praAnalyze.snapshotRGR,
+              classification: praAnalyze.classification, 
+              ndviRAW: praAnalyze.ndviRAW,
+              ndviAI: praAnalyze.ndviAI,
+              latitudeAI: currentPos.lat,
+              longitudeAI: currentPos.lng,
+              altitudeAI: telemetry.altitude ?? 0
+            })
+          });
+
+          // [OPSIONAL] ndviRAW selagi menunggu CNN
+          // if (praAnalyze && praAnalyze.ndviRAW !== undefined) {
+          //    setNdviValue(praAnalyze.ndviRAW);
+          // }
+
+          if (!predictionRes.ok) throw new Error("Gagal melakukan predictionRes");
+          const predictionData = await predictionRes.json();
+          const finalResult = predictionData.data;
+
+          setSnapshotCondition(finalResult.classification);
+          if (finalResult.ndviAI !== undefined) {
+             setNdviValue(finalResult.ndviAI);
+          }
+
+          setIsAnalyzing(false);
+          lastProcessedImgRef.current = latestSnapshot.imageUrl;
+
+          // Logika Spray (trigger CNN .keras)
+          if (finalResult.classification === 'tidak_sehat') {
             setShowNozzleModal(true);
-            popupHideTimerRef.current = setTimeout(() => {
-              setShowNozzleModal(false);
-              setIsSprayingActive(true);
-            }, 10000);
-          }, 5000);
-        } else {
-          setShowNozzleModal(false);
-          setIsSprayingActive(false);
+            setModalCountdown(5);
+            
+            let countdown = 5;
+            popupHideTimerRef.current = setInterval(async () => {
+              countdown -= 1;
+              
+              if (countdown > 0) {
+                setModalCountdown(countdown);
+              } else {
+                clearInterval(popupHideTimerRef.current);
+                setShowNozzleModal(false);
+                setIsSprayingActive(true); 
+
+                try {
+                  await fetch('/api/operator/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      droneId: droneId, 
+                      targetTopic: 'action', 
+                      command: 'spray_on' 
+                    })
+                  });
+                  console.log("[Command] Perintah payload berhasil dikirim");
+                } catch (err) {
+                  console.error("Gagal mengirim perintah payload", err);
+                }
+              }
+            }, 1000);
+
+          } else {
+            setShowNozzleModal(false);
+            setIsSprayingActive(false);
+          }
+
+        } catch (error) {
+          console.error("[AI Pipeline] Kesalahan saat memproses fetchPredictionAI:", error);
+          setIsAnalyzing(false);
+          setSnapshotCondition('idle');
         }
-      }, 3000);
+      };
+
+      fetchPredictionAI();
     }
-  }, [latestSnapshot, isWaitingSnapshot]);
+  }, [latestSnapshot, isWaitingSnapshot, droneId, currentPos, telemetry.altitude]);
   
   // Monitor Penyemprotan Pestisida
   useEffect(() => {
     let sprayTimer: NodeJS.Timeout;
 
     if (isSprayingActive) {
+      const initialVolume = currentTankVolume; 
+
       setSprayCountdown(TOTAL_SPRAY_SECONDS);
       setSprayVolume(0.0);
-      setTankRemaining(98);
+      setTankRemaining(Math.round((initialVolume / TANK_CAPACITY_ML) * 100));
 
       sprayTimer = setInterval(() => {
         setSprayCountdown(prevSec => {
+          
           if (prevSec <= 1) {
             clearInterval(sprayTimer);
+
+            const finalTankVolume = initialVolume - SPRAY_TARGET_ML;
+            setCurrentTankVolume(finalTankVolume);
+            setSprayVolume(SPRAY_TARGET_ML);       
+            setTankRemaining(Math.round((finalTankVolume / TANK_CAPACITY_ML) * 100));     
+            setIsSprayingActive(false);            
+
+            fetch('/api/operator/command', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                droneId: droneId, 
+                targetTopic: 'action',
+                command: 'spray_off' 
+              })
+            }).then(() => console.log("[Command] Perintah payload berhasil dikirim"))
+              .catch(err => console.error("Gagal mengirim perintah payload", err));
 
             if (droneId) {
               fetch('/api/operator/spray', {
@@ -238,34 +381,41 @@ export default function PantauDroneSection() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   droneId: droneId,
-                  durationSpray: 60, // Durasi dalam detik
-                  volumeSpray: 100.0, // Volume akhir
-                  capacityTank: 100.0,
-                  remainingTank: 90.0 // Sisa akhir
+                  durationSpray: TOTAL_SPRAY_SECONDS,
+                  volumeSpray: SPRAY_TARGET_ML,
+                  capacityTank: TANK_CAPACITY_ML,
+                  remainingTank: finalTankVolume
                 })
               }).then(res => console.log("Data /spray tersimpan di DB"))
                 .catch(err => console.error("Gagal simpan data /spray di DB", err));
             }
 
-            return 60;
+            return 0;
           }
+
+          // Countdown duration
           const nextSec = prevSec - 1;
           const elapsed = TOTAL_SPRAY_SECONDS - nextSec;
-          const nextVol = Math.min(100.0, Number(((elapsed / TOTAL_SPRAY_SECONDS) * 100).toFixed(1)));
+
+          // Countdown volume keluar
+          const nextVol = Number(((elapsed / TOTAL_SPRAY_SECONDS) * SPRAY_TARGET_ML).toFixed(1));
           setSprayVolume(nextVol);
-          const nextTank = Math.max(90, Math.round(98 - (elapsed / TOTAL_SPRAY_SECONDS) * 8));
-          setTankRemaining(nextTank);
+
+          // Kalkulasi sisa tangki berjalan
+          const currentSisa = initialVolume - nextVol;
+          const nextTankPercent = Math.round((currentSisa / TANK_CAPACITY_ML) * 100);
+          setTankRemaining(nextTankPercent);
+
           return nextSec;
         });
       }, 1000);
     } else {
       setSprayCountdown(0);
       setSprayVolume(0.0);
-      setTankRemaining(98);
     }
 
     return () => clearInterval(sprayTimer);
-  }, [isSprayingActive, droneId]);
+  }, [isSprayingActive, droneId, currentTankVolume]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'geolocation' in navigator) {
@@ -281,38 +431,6 @@ export default function PantauDroneSection() {
       );
     }
   }, []);
-
-  const isValidTelemetryState = droneOn && telemetry.latitude !== 0 && telemetry.longitude !== 0;
-  const currentPos = (telemetry.latitude !== 0 && telemetry.longitude !== 0)
-    ? { 
-        lat: telemetry.latitude, 
-        lng: telemetry.longitude, 
-        yaw: telemetry.yaw ?? 0
-      }
-    : { 
-        lat: -6.5890586,
-        lng: 106.8055139, 
-        yaw: 0
-      };
-
-  const currentLatStr = isValidTelemetryState ? `${Math.abs(currentPos.lat).toFixed(6)}°S` : '0.000000°S';
-  const currentLngStr = isValidTelemetryState ? `${Math.abs(currentPos.lng).toFixed(6)}°E` : '0.000000°E';
-
-  const distanceToDevice = operatorPos 
-    ? calculateDistance(currentPos.lat, currentPos.lng, operatorPos.lat, operatorPos.lng) 
-    : 0;
-
-  const renderMapCanvas = () => (
-    <DroneMap
-      mode="live"
-      dronePosition={currentPos}
-      operatorPosition={operatorPos || currentPos}
-      latDisplay={currentLatStr}
-      lngDisplay={currentLngStr}
-      altDisplay={droneOn ? `${(telemetry.altitude ?? 0).toFixed(2)} m` : '0.00 m'}
-      height="100%"
-    />
-  );
 
   // Handle Snapshot
   const handleSnapshot = () => {
@@ -393,7 +511,7 @@ export default function PantauDroneSection() {
   // Helper untuk Me-render Kanvas
   const renderVideoCanvas = () => (
     <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center pointer-events-none">
-      {droneOn ? (
+      {droneOn && isVideoActive ? (
         <video
           ref={videoRef}
           autoPlay
@@ -421,6 +539,15 @@ export default function PantauDroneSection() {
     </div>
   );
 
+  const activeRCMode = useMemo(() => {
+    if (telemetry.rc?.ch8 === 'MODE_HIGH' || telemetry.rc?.ch8 === 'ON') return 'RTL';
+    if (telemetry.rc?.ch7 === 'MODE_HIGH' || telemetry.rc?.ch7 === 'ON') return 'AUTO';
+    if (telemetry.rc?.ch6 === 'MODE_HIGH' || telemetry.rc?.ch6 === 'ON') return 'LOITER';
+    if (telemetry.rc?.ch9 === 'MODE_HIGH' || telemetry.rc?.ch9 === 'ON') return 'SPRAY';
+    
+    return 'MODE RC OFF';
+  }, [telemetry.rc]);
+
   return (
     <div className="w-full space-y-4 max-w-[1400px] mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
 
@@ -431,13 +558,29 @@ export default function PantauDroneSection() {
           
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16] animate-pulse" />
+              {/* <span className="w-2.5 h-2.5 rounded-full bg-[#84CC16] animate-pulse" /> */}
               <h2 className="font-bold text-sm text-gray-800 dark:text-gray-200">Live Camera</h2>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-gray-400 font-medium">{timeStr}</span>
-              <span className="px-2.5 py-0.5 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-[11px] rounded tracking-wide">LIVE</span>
-              <span className="px-2.5 py-0.5 bg-[#D8EFEB] text-[#23816F] font-bold text-[11px] rounded tracking-wide">LOITER</span>
+              <span className={`px-2.5 py-0.5 font-bold text-[11px] rounded tracking-wide transition-colors ${
+              (!droneOn || !isVideoActive)
+                ? 'bg-[#FCE8E6] text-[#C84030] dark:bg-[#2e1513] dark:text-[#f87171]'
+                : 'bg-[#EAF5D6] text-[#5D7E2A] dark:bg-[#1c2c10] dark:text-[#84cc16]'
+              }`}>
+                {(!droneOn || !isVideoActive) ? 'OFFLINE' : 'LIVE'}
+              </span>
+
+              {/* Badge Mode RC Dinamis */}
+              <span className={`px-2.5 py-0.5 font-bold text-[11px] rounded tracking-wide transition-colors ${
+                activeRCMode === 'MODE RC OFF'
+                  ? 'bg-gray-100 text-gray-500 dark:bg-[#262626] dark:text-gray-400'
+                  : activeRCMode === 'RTL'
+                    ? 'bg-[#FCE8E6] text-[#C84030] dark:bg-[#2e1513] dark:text-[#f87171]'
+                    : 'bg-[#D8EFEB] text-[#23816F] dark:bg-[#13332d] dark:text-[#5eead4]'
+              }`}>
+                {activeRCMode}
+              </span>
             </div>
           </div>
 
@@ -469,22 +612,42 @@ export default function PantauDroneSection() {
               
               <div className="flex items-center gap-1.5 font-medium">
                 <Wifi size={16} className="text-gray-500" />
-                <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">52.4 GHz</span>
+                {droneOn && telemetry?.radio?.rssi !== undefined ? (
+                  <span className={`font-mono font-semibold ${
+                    telemetry.radio.rssi > 150 ? 'text-[#5D7E2A] dark:text-[#84cc16]' : 
+                    telemetry.radio.rssi > 90 ? 'text-amber-600 dark:text-amber-500' : 
+                    'text-[#C84030] dark:text-red-500'
+                  }`}>
+                    {Math.round((telemetry.radio.rssi / 254) * 100)}%
+                  </span>
+                ) : (
+                  <span className="font-mono text-gray-700 dark:text-gray-300 font-semibold">
+                    0%
+                  </span>
+                )}
               </div>
             </div>
 
             <button
               onClick={handleSnapshot}
-              disabled={!droneOn || isAnalyzing || isWaitingSnapshot || !droneId}
+              disabled={!droneOn || !isVideoActive || isAnalyzing || isWaitingSnapshot || !droneId}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold text-white transition-all shadow-xs ml-auto ${
-                isAnalyzing || isWaitingSnapshot || !droneId
-                  ? 'bg-amber-600 opacity-90 cursor-wait'
-                  : 'bg-[#5F802A] hover:bg-[#506D23] active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+                (!droneOn || !isVideoActive) 
+                  ? 'bg-gray-400 dark:bg-gray-700 opacity-50 cursor-not-allowed' // Style saat offline/kamera mati
+                  : (isAnalyzing || isWaitingSnapshot || !droneId)
+                    ? 'bg-amber-600 opacity-90 cursor-wait'
+                    : 'bg-[#5F802A] hover:bg-[#506D23] active:scale-95 cursor-pointer'
               }`}
             >
               <Camera size={15} className={(isAnalyzing || isWaitingSnapshot) ? 'animate-spin' : ''} />
               <span>
-                {isWaitingSnapshot ? 'Menangkap Gambar...' : isAnalyzing ? 'Memproses AI (3s)...' : 'Ambil Snapshot'}
+                {!droneOn || !isVideoActive 
+                  ? 'Kamera Offline' 
+                  : isWaitingSnapshot 
+                    ? 'Menangkap Gambar...' 
+                    : isAnalyzing 
+                      ? 'Memproses AI (3s)...' 
+                      : 'Ambil Snapshot'}
               </span>
             </button>
           </div>
@@ -725,81 +888,102 @@ export default function PantauDroneSection() {
 
       </div>
 
-
-      {/* SPRAY MONITOR */}
-      <div className={`bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs p-5 transition-opacity duration-300 ${
-        isSprayingActive ? 'opacity-100' : 'opacity-40 pointer-events-none'
-      }`}>
+      <div className="bg-white dark:bg-[#111] p-4 lg:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-[#222]">
+        
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Monitor Penyemprotan Pestisida</h3>
+          <h2 className="font-bold text-sm text-gray-800 dark:text-gray-200">
+            Monitor Penyemprotan Pestisida
+          </h2>
           {isSprayingActive && (
-            sprayCountdown === 0 ? (
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-[#EAF5D6] text-[#6A9A1E] dark:bg-[#1f2d12] dark:text-[#a3e635] flex items-center gap-1">
-                PENYEMPROTAN SELESAI
-              </span>
-            ) : (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 animate-pulse">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 animate-pulse">
                 ● PROSES PENYEMPROTAN
-              </span>
-            )
+            </span>
           )}
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 md:divide-x divide-gray-100 dark:divide-[#222] gap-y-4 md:gap-y-0">
-          
-          <div className="flex flex-col items-center justify-center px-4 py-1">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              DURASI
-            </span>
-            <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
-              {formatDuration(sprayCountdown)}
-            </div>
-            <span className="text-[11px] font-mono text-gray-400 mt-0.5">
-              mm:ss
-            </span>
-          </div>
 
-          <div className="flex flex-col items-center justify-center px-4 py-1">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              VOLUME KELUAR
-            </span>
+        {/* 
+          WRAPPER KONTEN
+          - Bagian Durasi, Volume Keluar, dan Sisa Volume dibungkus dalam div yang termute jika tidak aktif.
+          - Bagian Tangki dipisahkan agar tetap interaktif.
+        */}
+        <div className="grid grid-cols-4 gap-4 divide-x divide-gray-100 dark:divide-[#333]">
+          
+          <div className={`col-span-3 grid grid-cols-3 transition-opacity duration-300 ${!isSprayingActive ? 'opacity-40 grayscale' : 'opacity-100'}`}>
+            
+            <div className="flex flex-col items-center justify-center px-4 py-1">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                DURASI
+              </span>
+              <span className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
+                {formatDuration(sprayCountdown)}
+              </span>
+              <span className="text-[11px] font-mono text-gray-400 mt-0.5">
+              mm:ss
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center px-4 py-1">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                VOLUME KELUAR
+              </span>
             <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
               {sprayVolume.toFixed(1)}
             </div>
-            <span className="text-[11px] font-medium text-gray-400 mt-0.5">
-              ml
-            </span>
+              <span className="text-[11px] font-medium text-gray-400 mt-0.5">
+                ml
+              </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center px-4 py-1">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              SISA VOLUME (ML)
-            </span>
+            <div className="flex flex-col items-center justify-center px-4 py-1">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                SISA VOLUME
+              </span>
             <div className="text-xs font-bold text-gray-700 dark:text-gray-300 font-mono mt-0.5">
-              {isSprayingActive ? Math.max(0, Math.round(100 - sprayVolume)) : 0} ml
+              {isSprayingActive ? Math.max(0, Math.round(currentTankVolume - sprayVolume)) : Math.round(currentTankVolume)} ml
             </div>
 
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3">
-              SISA TANGKI
-            </span>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-3">
+                SISA TANGKI
+              </span>
             <div className="text-xs font-bold text-[#6B8E23] font-mono mt-0.5">
               {tankRemaining}%
             </div>
           </div>
+
+          </div>
+
 
           <div className="flex flex-col items-center justify-center px-4 py-1">
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               TANGKI
             </span>
 
-            <div className="w-8 h-14 bg-gray-100 dark:bg-[#222] rounded-md border border-gray-300 dark:border-[#333] relative overflow-hidden flex flex-col justify-end p-0.5 shadow-2xs">
-              <div className="w-4 h-1 bg-gray-400 rounded-t-xs -mt-1 mx-auto z-10" />
-              <div
-                className="w-full bg-linear-to-t from-[#597B27] to-[#7EA635] rounded-xs transition-all duration-500"
-                style={{ height: `${tankRemaining}%` }}
-              />
+            <div className="relative flex justify-center">
+              
+              {/* Visual Tangki Utama */}
+              <div className="w-8 h-14 bg-gray-100 dark:bg-[#222] rounded-md border border-gray-300 dark:border-[#333] relative overflow-hidden flex flex-col justify-end p-0.5 shadow-2xs">
+                <div className="w-4 h-1 bg-gray-400 rounded-t-xs -mt-1 mx-auto z-10" />
+                <div
+                  className="w-full bg-linear-to-t from-[#597B27] to-[#7EA635] rounded-xs transition-all duration-500"
+                  style={{ height: `${tankRemaining}%` }}
+                />
+              </div>
+
+              {/* Tombol Reload */}
+              <button 
+                  type="button"
+                  onClick={() => {
+                    setCurrentTankVolume(TANK_CAPACITY_ML);
+                    setTankRemaining(100);
+                  }}
+                  className="absolute -right-11 top-1/2 -translate-y-1/2 p-1.5 bg-white dark:bg-[#181818] hover:bg-gray-50 dark:hover:bg-[#262626] border border-gray-200 dark:border-[#333] rounded-lg transition-all shadow-sm flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none focus:ring-1 focus:ring-[#D8EFEB] dark:focus:ring-[#13332d]"
+                  title="Isi Ulang Tangki (700ml)"
+                >
+                  <RefreshCcw size={14} strokeWidth={2.5} />
+              </button>
             </div>
             
+            {/* Label Persentase */}
             <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300 mt-1">
               {tankRemaining}%
             </span>
@@ -824,12 +1008,12 @@ export default function PantauDroneSection() {
 
             {/* Description */}
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-2.5 leading-relaxed">
-              Segera instruksikan pilot untuk mengaktifkan spray toggle pada Remote Control drone.
+              Spray Penyemprotan Pestistida Otomatis Aktif.
             </p>
 
             {/* Note */}
             <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 leading-normal">
-              Pop-up ini akan tertutup otomatis setelah 10 detik.
+              Pop-up ini akan tertutup otomatis dan akan mulai melakukan spray setelah <span className="font-bold text-gray-700 dark:text-gray-200">{modalCountdown}</span> detik.
             </p>
           </div>
         </div>

@@ -99,12 +99,10 @@ telemetry_data = {
     # Pre-flight System Check (Boolean)
     "sys_check": {
         "gyro": False, "accelerometer": False, "magnetometer": False,
-        "absolute_pressure": False, "differential_pressure": False,
-        "gps": False, "optical_flow": False, "vision_position": False,
-        "laser_position": False, "external_ground_truth": False,
+        "absolute_pressure": False, "gps": False,
+        "ahrs": False, "terrain": False, "battery_monitor": False,
         "angular_rate_control": False, "attitude_stabilization": False,
-        "yaw_position": False, "z_position_control": False,
-        "xy_position_control": False, "motor_outputs": False,
+        "yaw_position": False, "motor_outputs": False,
         "rc_receiver": False, 
         "gyro_cal": False, "accel_cal": False, "mag_cal": False 
     },
@@ -126,13 +124,13 @@ telemetry_data = {
 # Peta Bitmask MAV_SYS_STATUS_SENSOR
 SENSOR_BITS = {
     "gyro": 1, "accelerometer": 2, "magnetometer": 4,
-    "absolute_pressure": 8, "differential_pressure": 16,
-    "gps": 32, "optical_flow": 64, "vision_position": 128,
-    "laser_position": 256, "external_ground_truth": 512,
+    "absolute_pressure": 8, "gps": 32,
     "angular_rate_control": 1024, "attitude_stabilization": 2048,
-    "yaw_position": 4096, "z_position_control": 8192,
-    "xy_position_control": 16384, "motor_outputs": 32768,
-    "rc_receiver": 65536
+    "yaw_position": 4096, "motor_outputs": 32768,
+    "rc_receiver": 65536,
+    "ahrs": 2097152,
+    "terrain": 4194304,
+    "battery_monitor": 33554432
 }
 
 def parse_rc_switch(pwm_value):
@@ -218,9 +216,16 @@ while True:
 
             # Bitwise Operation untuk System Check
             health_mask = msg.onboard_control_sensors_health
+            enabled_mask = msg.onboard_control_sensors_enabled
+
             for sensor, bit in SENSOR_BITS.items():
-                # Operasi AND (Masking) untuk mengecek apakah bit tertentu aktif
-                telemetry_data['sys_check'][sensor] = bool(health_mask & bit)
+                is_enabled = bool(enabled_mask & bit)
+                is_healthy = bool(health_mask & bit)
+
+                if is_enabled:
+                    telemetry_data['sys_check'][sensor] = is_healthy
+                else:
+                    telemetry_data['sys_check'][sensor] = None
             
             # Duplikasi status kalibrasi berdasarkan kesehatan sensor utama
             telemetry_data['sys_check']['gyro_cal'] = telemetry_data['sys_check']['gyro']
@@ -262,8 +267,8 @@ while True:
                 else:
                     telemetry_data['flightMode'] = "armed"
 
-            # simulated_rssi = int((math.sin(time.time() / 2) + 1) * 127) 
-            # telemetry_data['radio']['rssi'] = simulated_rssi
+            simulated_rssi = int((math.sin(time.time() / 2) + 1) * 127) 
+            telemetry_data['radio']['rssi'] = simulated_rssi
                     
             payload = json.dumps(telemetry_data)
             client.publish(MQTT_TOPIC_TELEMETRY, payload)

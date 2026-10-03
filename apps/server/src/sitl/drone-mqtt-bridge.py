@@ -133,9 +133,36 @@ def on_message(client, userdata, msg):
                 threading.Thread(target=trigger_camera_task, daemon=True).start()
                 # Trigger virtual OpenCV (upload ke backend AI)
                 threading.Thread(target=capture_and_upload_task, daemon=True).start()
+
+            elif command == "spray_on":
+                print("[ACTION] Trigger penyemprotan diaktifkan...")
+                master.mav.command_long_send(
+                    master.target_system, master.target_component,
+                    mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                    9, 2000, 0, 0, 0, 0, 0
+                )
+
+            elif command == "spray_off":
+                print("[ACTION] Trigger penyemprotan dinonaktifkan...")
+                master.mav.command_long_send(
+                    master.target_system, master.target_component,
+                    mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
+                    9, 1000, 0, 0, 0, 0, 0
+                )
                 
     except Exception as e:
         print(f"[MQTT] Error memproses payload: {e}")
+
+def monitor_mavlink_ack(master):
+    while True:
+        msg = master.recv_match(type=['COMMAND_ACK', 'SERVOUT'], blocking=False)
+        if msg:
+            if msg.get_type() == 'COMMAND_ACK':
+                print(f"[MAVLink ACK] Command {msg.command} hasil: {msg.result} (0=Success)")
+            elif msg.get_type() == 'SERVOUT':
+                # Memantau perubahan PWM pada channel 9 secara real-time
+                print(f"[PWM Output] Channel 9: {msg.servo9_raw}")
+        time.sleep(0.1)
 
 client_id_uniq = f"Phase_Production_{DRONE_ID}_{uuid.uuid4().hex[:6]}"
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id_uniq)
@@ -170,12 +197,10 @@ telemetry_data = {
     # Pre-flight System Check (Boolean)
     "sys_check": {
         "gyro": False, "accelerometer": False, "magnetometer": False,
-        "absolute_pressure": False, "differential_pressure": False,
-        "gps": False, "optical_flow": False, "vision_position": False,
-        "laser_position": False, "external_ground_truth": False,
+        "absolute_pressure": False, "gps": False,
+        "ahrs": False, "terrain": False, "battery_monitor": False,
         "angular_rate_control": False, "attitude_stabilization": False,
-        "yaw_position": False, "z_position_control": False,
-        "xy_position_control": False, "motor_outputs": False,
+        "yaw_position": False, "motor_outputs": False,
         "rc_receiver": False, 
         "gyro_cal": False, "accel_cal": False, "mag_cal": False 
     },
@@ -197,13 +222,13 @@ telemetry_data = {
 # Peta Bitmask MAV_SYS_STATUS_SENSOR
 SENSOR_BITS = {
     "gyro": 1, "accelerometer": 2, "magnetometer": 4,
-    "absolute_pressure": 8, "differential_pressure": 16,
-    "gps": 32, "optical_flow": 64, "vision_position": 128,
-    "laser_position": 256, "external_ground_truth": 512,
+    "absolute_pressure": 8, "gps": 32,
     "angular_rate_control": 1024, "attitude_stabilization": 2048,
-    "yaw_position": 4096, "z_position_control": 8192,
-    "xy_position_control": 16384, "motor_outputs": 32768,
-    "rc_receiver": 65536
+    "yaw_position": 4096, "motor_outputs": 32768,
+    "rc_receiver": 65536,
+    "ahrs": 2097152,
+    "terrain": 4194304,
+    "battery_monitor": 33554432
 }
 
 def parse_rc_switch(pwm_value):
@@ -301,8 +326,16 @@ while True:
             telemetry_data['current'] = msg.current_battery / 100.0   
 
             health_mask = msg.onboard_control_sensors_health
+            enabled_mask = msg.onboard_control_sensors_enabled
+
             for sensor, bit in SENSOR_BITS.items():
-                telemetry_data['sys_check'][sensor] = bool(health_mask & bit)
+                is_enabled = bool(enabled_mask & bit)
+                is_healthy = bool(health_mask & bit)
+
+                if is_enabled:
+                    telemetry_data['sys_check'][sensor] = is_healthy
+                else:
+                    telemetry_data['sys_check'][sensor] = None
             
             telemetry_data['sys_check']['gyro_cal'] = telemetry_data['sys_check']['gyro']
             telemetry_data['sys_check']['accel_cal'] = telemetry_data['sys_check']['accelerometer']

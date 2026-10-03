@@ -119,11 +119,13 @@ model TelemetryLog {
 
 model PredictionAI {
   id              String   @id @default(cuid())
-  snapshotPict    String   // URL atau path gambar
+  snapshotRAW     String 
+  snapshotNDVI    String 
+  snapshotRG      String 
+  snapshotRGR     String
   classification  String   // "sehat" atau "tidak sehat"
-  band            Float
-  ndvi            Float
-  diseaseSeverity Float    // Persentase (misal: 87.5)
+  ndviRAW         Float
+  ndviAI          Float
   altitudeAI      Float
   latitudeAI      Float
   longitudeAI     Float
