@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { io, Socket } from 'socket.io-client';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
@@ -18,7 +18,7 @@ import {
   MoveHorizontal,
   ArrowRight
 } from 'lucide-react';
-import DroneMap, { MapWaypoint } from './drone-map';
+import DroneMap from './drone-map';
 
 const T = DRONE_TOKENS;
 
@@ -80,9 +80,10 @@ export default function PantauDroneSection() {
   const SPRAY_TARGET_ML = 15.0;
   const [sprayCountdown, setSprayCountdown] = useState(0);
   const [sprayVolume, setSprayVolume] = useState(0.0);
-  const [tankRemaining, setTankRemaining] = useState(98);
+  const [tankRemaining, setTankRemaining] = useState(100);
   const [currentTankVolume, setCurrentTankVolume] = useState(TANK_CAPACITY_ML);
   const [modalCountdown, setModalCountdown] = useState(5);
+  const [currentPredictionId, setCurrentPredictionId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -99,7 +100,7 @@ export default function PantauDroneSection() {
           console.warn("[Operator] Gagal memuat data /operator/my-drone");
         }
       } catch (err) {
-        console.error("[Operator] Error fetching /operator/my-drone", err);
+        console.error("[Operator] Gagal fetching /operator/my-drone", err);
       }
     };
     fetchMyDroneInfo();
@@ -269,9 +270,15 @@ export default function PantauDroneSection() {
               classification: praAnalyze.classification, 
               ndviRAW: praAnalyze.ndviRAW,
               ndviAI: praAnalyze.ndviAI,
+
               latitudeAI: currentPos.lat,
               longitudeAI: currentPos.lng,
-              altitudeAI: telemetry.altitude ?? 0
+              altitudeAI: telemetry.altitude ?? 0,
+              groundSpeedAI: telemetry.groundSpeed ?? 0,
+              climbRateAI: telemetry.climbRate ?? 0,
+              distanceToHomeAI: distanceToDevice,
+              batteryAI: telemetry.battery ?? 0,
+              radioAI: telemetry.radio ?? null
             })
           });
 
@@ -283,6 +290,8 @@ export default function PantauDroneSection() {
           if (!predictionRes.ok) throw new Error("Gagal melakukan predictionRes");
           const predictionData = await predictionRes.json();
           const finalResult = predictionData.data;
+
+          setCurrentPredictionId(finalResult.id);
 
           setSnapshotCondition(finalResult.classification);
           if (finalResult.ndviAI !== undefined) {
@@ -381,6 +390,7 @@ export default function PantauDroneSection() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   droneId: droneId,
+                  predictionId: currentPredictionId,
                   durationSpray: TOTAL_SPRAY_SECONDS,
                   volumeSpray: SPRAY_TARGET_ML,
                   capacityTank: TANK_CAPACITY_ML,

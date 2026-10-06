@@ -46,9 +46,9 @@
       "learnMore": "Pelajari Lebih Lanjut",
       "primaryAction": "Masuk Dashboard",
       "metrics": {
-        "accuracy": "Akurasi klasifikasi AI",
         "sensor": "Sensor multispektral",
         "telemetry": "Pemantauan Telemetri Real-Time",
+        "marking": "Pendeteksian Penyakit menggunakan AI",
         "treatment": "Penyemprotan Tepat Sasaran"
       }
     },

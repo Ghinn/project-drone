@@ -1,104 +1,102 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { FileText, MapPin, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { FileText, MapPin, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 
 const T = DRONE_TOKENS;
 
-const STAT_CARDS = [
-  { 
-    label: 'TOTAL POHON TERDETEKSI', 
-    value: '1.248', 
-    unit: 'pohon', 
-    icon: MapPin,
-    bg: '#275225', 
-    textColor: '#ffffff' 
-  },
-  { 
-    label: 'POHON SEHAT', 
-    value: '1.037', 
-    unit: 'pohon', 
-    icon: CheckCircle2,
-    bg: '#4E882A', 
-    textColor: '#ffffff' 
-  },
-  { 
-    label: 'POHON TIDAK SEHAT', 
-    value: '211', 
-    unit: 'pohon', 
-    icon: AlertTriangle,
-    bg: '#8F2828', 
-    textColor: '#ffffff' 
-  },
-];
-
-const HEALTH_PCT = 83.1;
-const UNHEALTH_PCT = 16.9;
-
-const RECENT_DETECTIONS = [
-  { 
-    id: 'DET-037', 
-    time: '14:32:17 WIB', 
-    date: '25 Agustus 2026', 
-    lat: '3.3578°N', 
-    lng: '114.6004°E', 
-    ndvi: '0.18', 
-    cls: 'Tidak Sehat', 
-    status: 'unhealthy' 
-  },
-  { 
-    id: 'DET-036', 
-    time: '14:29:45 WIB', 
-    date: '25 Agustus 2026', 
-    lat: '3.3566°N', 
-    lng: '114.5990°E', 
-    ndvi: '0.20', 
-    cls: 'Tidak Sehat', 
-    status: 'unhealthy' 
-  },
-  { 
-    id: 'DET-035', 
-    time: '14:15:20 WIB', 
-    date: '25 Agustus 2026', 
-    lat: '3.3561°N', 
-    lng: '114.5983°E', 
-    ndvi: '0.17', 
-    cls: 'Tidak Sehat', 
-    status: 'unhealthy' 
-  },
-  { 
-    id: 'DET-034', 
-    time: '14:10:35 WIB', 
-    date: '25 Agustus 2026', 
-    lat: '3.3556°N', 
-    lng: '114.5977°E', 
-    ndvi: '0.25', 
-    cls: 'Sehat', 
-    status: 'healthy' 
-  },
-  { 
-    id: 'DET-033', 
-    time: '14:05:05 WIB', 
-    date: '25 Agustus 2026', 
-    lat: '3.3556°N', 
-    lng: '114.5970°E', 
-    ndvi: '0.50', 
-    cls: 'Sehat', 
-    status: 'healthy' 
-  },
-];
+// Tipe data berdasarkan API Log Prediksi
+type PredictionLogData = {
+  id: string;
+  timestamp: string;
+  classification: string;
+  ndviAI: number;
+  latitudeAI: number;
+  longitudeAI: number;
+};
 
 export default function DashboardSection() {
   const { setActiveTab } = useMonitoringOperator();
   const [tick, setTick] = useState<Date | null>(null);
+  
+  // State untuk data API
+  const [logs, setLogs] = useState<PredictionLogData[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Efek untuk jam real-time
   useEffect(() => {
     setTick(new Date());
     const t = setInterval(() => setTick(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Efek untuk Fetch Data API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('/api/monitoringOperator/log-prediction'); 
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data && isMounted) {
+            setLogs(result.data);
+          }
+        } else {
+          console.warn("[Operator] Gagal memuat data /monitoringOperator/log-prediction");
+        }
+      } catch (error) {
+        console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchLogs();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Kalkulasi Statistik Dinamis
+  const totalPohon = logs.length;
+  const pohonSehat = logs.filter(l => l.classification === 'sehat').length;
+  const pohonTidakSehat = logs.filter(l => l.classification === 'tidak_sehat').length;
+
+  const HEALTH_PCT = totalPohon > 0 ? Number(((pohonSehat / totalPohon) * 100).toFixed(1)) : 0;
+  const UNHEALTH_PCT = totalPohon > 0 ? Number(((pohonTidakSehat / totalPohon) * 100).toFixed(1)) : 0;
+
+  // Mendapatkan 5 deteksi terbaru untuk tabel
+  const recentDetections = useMemo(() => {
+    const sorted = [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return sorted.slice(0, 5);
+  }, [logs]);
+
+  // Data Cards Dinamis
+  const STAT_CARDS = [
+    { 
+      label: 'TOTAL POHON TERDETEKSI', 
+      value: totalPohon.toLocaleString('id-ID'), 
+      unit: 'pohon', 
+      icon: MapPin,
+      bg: '#275225', 
+      textColor: '#ffffff' 
+    },
+    { 
+      label: 'POHON SEHAT', 
+      value: pohonSehat.toLocaleString('id-ID'), 
+      unit: 'pohon', 
+      icon: CheckCircle2,
+      bg: '#4E882A', 
+      textColor: '#ffffff' 
+    },
+    { 
+      label: 'POHON TIDAK SEHAT', 
+      value: pohonTidakSehat.toLocaleString('id-ID'), 
+      unit: 'pohon', 
+      icon: AlertTriangle,
+      bg: '#8F2828', 
+      textColor: '#ffffff' 
+    },
+  ];
 
   return (
     <div className="space-y-5 text-gray-800 dark:text-gray-100 select-none pb-8">
@@ -218,38 +216,61 @@ export default function DashboardSection() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-[#1f1f1f] text-xs">
-              {RECENT_DETECTIONS.map(d => {
-                const isUnhealthy = d.status === 'unhealthy';
-                return (
-                  <tr key={d.id} className="hover:bg-gray-50/60 dark:hover:bg-[#161616] transition-colors">
-                    <td className="px-6 py-4 font-mono font-medium text-gray-500">
-                      {d.id}
-                    </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-xs text-[#6A717F]">
+                    <div className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#84994F]" />
+                      <span>Memuat deteksi terbaru...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : recentDetections.length > 0 ? (
+                recentDetections.map(d => {
+                  const isHealthy = d.classification === 'sehat';
+                  
+                  // Parsing Tanggal dari Timestamp API
+                  const dt = new Date(d.timestamp);
+                  const dateStr = dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  const timeStr = dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
 
-                    <td className="px-6 py-4 text-center">
-                      <div className="font-semibold text-gray-800 dark:text-gray-200">{d.time}</div>
-                      <div className="text-[11px] text-gray-400 mt-0.5">{d.date}</div>
-                    </td>
+                  return (
+                    <tr key={d.id} className="hover:bg-gray-50/60 dark:hover:bg-[#161616] transition-colors">
+                      <td className="px-6 py-4 font-mono font-medium text-gray-500">
+                        #{d.id.slice(-7).toUpperCase()}
+                      </td>
 
-                    <td className="px-6 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
-                      <div>{d.lat}</div>
-                      <div className="mt-0.5">{d.lng}</div>
-                    </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="font-semibold text-gray-800 dark:text-gray-200">{timeStr} WIB</div>
+                        <div className="text-[11px] text-gray-400 mt-0.5">{dateStr}</div>
+                      </td>
 
-                    <td className="px-6 py-4 text-center font-mono font-bold">
-                      <span className={isUnhealthy ? 'text-[#C84030]' : 'text-[#5F802A]'}>
-                        {d.ndvi}
-                      </span>
-                    </td>
+                      <td className="px-6 py-4 text-center font-mono text-gray-600 dark:text-gray-300">
+                        <div>{d.latitudeAI.toFixed(4)}°N</div>
+                        <div className="mt-0.5">{d.longitudeAI.toFixed(4)}°E</div>
+                      </td>
 
-                    <td className="px-6 py-4 text-center font-bold">
-                      <span className={isUnhealthy ? 'text-[#C84030]' : 'text-[#5F802A]'}>
-                        {d.cls}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                      <td className="px-6 py-4 text-center font-mono font-bold">
+                        <span className={!isHealthy ? 'text-[#C84030]' : 'text-[#5F802A]'}>
+                          {d.ndviAI.toFixed(2)}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-center font-bold">
+                        <span className={!isHealthy ? 'text-[#C84030]' : 'text-[#5F802A]'}>
+                          {isHealthy ? 'Sehat' : 'Tidak Sehat'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-6 text-center text-xs text-gray-400">
+                    Tidak ada deteksi yang ditemukan
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

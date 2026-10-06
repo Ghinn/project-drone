@@ -1,100 +1,63 @@
 "use client";
-import { useState } from 'react';
+
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { DRONE_TOKENS, type PredictionLogEntry } from '../layout/monitoringOperator-types';
+import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
+import { 
+  AlertTriangle, 
+  ArrowRight, 
+  ArrowUp, 
+  ArrowUpDown,
+  Battery,
+  CheckCircle,
+  CheckCircle2,
+  FileText,
+  Info,
+  MoveHorizontal,
+  Wifi,
+  Loader2
+} from 'lucide-react';
 import type { MapWaypoint } from './drone-map';
-import { AlertTriangle, ArrowDown, ArrowRight, ArrowUp, ArrowUpDown, Battery, Camera, CheckCircle, CheckCircle2, FileText, Info, MoveHorizontal, Radio, SatelliteDish, Wifi } from 'lucide-react';
+
+// Import Logic 3D Client Tanpa SSR
+const DroneMap = dynamic(() => import('./drone-map'), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full rounded-xl bg-gray-100 dark:bg-[#111] flex items-center justify-center min-h-[210px]">
+      <span className="text-xs text-gray-400">Memuat peta GPS 3D...</span>
+    </div>
+  ),
+});
 
 const T = DRONE_TOKENS;
 
-// Leaflet map harus dynamic import (tidak SSR)
-const DroneMap = dynamic(() => import('./drone-map'), { ssr: false, loading: () => (
-  <div className="w-full rounded-xl bg-[#0f172a] flex items-center justify-center" style={{ height: 280 }}>
-    <span className="text-xs text-gray-500">Memuat peta GPS...</span>
-  </div>
-)});
+type SprayLog = {
+  durationSpray: number;
+  volumeSpray: number;
+};
 
-const LIVE_IMG = 'https://images.unsplash.com/photo-1508175688576-0c076b47b5b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200';
-const NDVI_IMG = 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=800';
+type PredictionLogData = {
+  id: string;
+  timestamp: string;
+  snapshotRAW: string;
+  classification: string;
+  ndviRAW: number;
+  ndviAI: number;
+  altitudeAI: number;
+  latitudeAI: number;
+  longitudeAI: number;
+  groundSpeedAI: number | null;
+  climbRateAI: number | null;
+  distanceToHomeAI: number | null;
+  batteryAI: number | null;
+  radioAI: any | null;
+  spray: SprayLog | null; // Data relasi 1:1
+};
 
-// ── Mock log data ──────────────────────────────────────────────────────
-const MOCK_LOGS: PredictionLogEntry[] = [
-  {
-    id: 'LOG-037', sessionId: 'Misi #037', timestamp: '2026-08-25T14:32:17',
-    time: '14:32:17', date: '25 Agustus 2026',
-    location: 'Blok A-12 Baris 8', gps: '3°21\'14.2"N 114°35\'48.9"E',
-    classification: 'BSR Parah', confidence: 94, severity: 'critical', healthStatus: 'unhealthy',
-    healthy: 12.4, unhealthy: 87.6,
-    disease: 'Busuk Pangkal Batang (BSR) — Ganoderma boninense',
-    recommendation: 'Segera lakukan penyemprotan fungisida pada area Blok A-12, Baris 8. Isolasi pohon dan tandai koordinat GPS untuk inspeksi lanjutan.',
-    snapshotUrl: LIVE_IMG, ndviUrl: NDVI_IMG, ndviValue: 0.18,
-    freqLink: 52.4,
-    distance: 124.5,
-    elevationSpeed: 10.4,
-    telemetry: { battery: 85, altitude: 25.3, speed: 4.2, gpsSignal: 'Kuat · 14 Satelit', linkQuality: '-72 dBm' },
-    lat: 3.3578, lng: 114.6004,
-  },
-  {
-    id: 'LOG-036', sessionId: 'Misi #037', timestamp: '2026-08-25T14:28:05',
-    time: '14:28:05', date: '25 Agustus 2026',
-    location: 'Blok D-02 Baris 15', gps: '3°21\'12.1"N 114°35\'47.3"E',
-    classification: 'BSR Ringan', confidence: 55, severity: 'caution', healthStatus: 'unhealthy',
-    healthy: 44.0, unhealthy: 56.0,
-    disease: 'BSR Stadium Awal (Early Stage Ganoderma)',
-    recommendation: 'Pantau secara berkala setiap 2 minggu. Aplikasikan fungisida preventif pada area sekitar pohon.',
-    snapshotUrl: LIVE_IMG, ndviUrl: NDVI_IMG, ndviValue: 0.20,
-    freqLink: 52.4,
-    distance: 114.5,
-    elevationSpeed: 10.4,
-    telemetry: { battery: 87, altitude: 24.8, speed: 3.9, gpsSignal: 'Kuat · 14 Satelit', linkQuality: '-69 dBm' },
-    lat: 3.3566, lng: 114.5990,
-  },
-  {
-    id: 'LOG-035', sessionId: 'Misi #037', timestamp: '2026-08-25T14:25:11',
-    time: '14:25:11', date: '25 Agustus 2026',
-    location: 'Blok B-05 Baris 1', gps: '3°21\'10.8"N 114°35\'46.0"E',
-    classification: 'Sehat', confidence: 99, severity: 'ok', healthStatus: 'unhealthy',
-    healthy: 99.2, unhealthy: 0.8,
-    disease: 'Tidak terdeteksi penyakit',
-    recommendation: 'Pohon dalam kondisi optimal. Lanjutkan pemantauan rutin sesuai jadwal.',
-    snapshotUrl: LIVE_IMG, ndviUrl: NDVI_IMG, ndviValue: 0.17,
-    freqLink: 52.4,
-    distance: 126.5,
-    elevationSpeed: 10.4,
-    telemetry: { battery: 88, altitude: 26.1, speed: 4.5, gpsSignal: 'Kuat · 13 Satelit', linkQuality: '-68 dBm' },
-    lat: 3.3561, lng: 114.5983,
-  },
-  {
-    id: 'LOG-034', sessionId: 'Misi #036', timestamp: '2026-08-24T09:14:22',
-    time: '09:14:22', date: '24 Agustus 2026',
-    location: 'Blok C-07 Baris 3', gps: '3°21\'09.4"N 114°35\'44.7"E',
-    classification: 'BSR Sedang', confidence: 71, severity: 'warning', healthStatus: 'healthy',
-    healthy: 28.5, unhealthy: 71.5,
-    disease: 'BSR Stadium Sedang (Moderate Ganoderma)',
-    recommendation: 'Lakukan penyemprotan fungisida segera dan inspeksi manual pada pangkal batang. Pertimbangkan isolasi dari pohon tetangga.',
-    snapshotUrl: LIVE_IMG, ndviUrl: NDVI_IMG, ndviValue: 0.25,
-    freqLink: 52.4,
-    distance: 194.5,
-    elevationSpeed: 10.4,
-    telemetry: { battery: 79, altitude: 22.7, speed: 3.5, gpsSignal: 'Sedang · 11 Satelit', linkQuality: '-75 dBm' },
-    lat: 3.3556, lng: 114.5977,
-  },
-  {
-    id: 'LOG-033', sessionId: 'Misi #036', timestamp: '2026-08-24T09:02:09',
-    time: '09:02:09', date: '24 Agustus 2026',
-    location: 'Blok A-09 Baris 4', gps: '3°21\'08.1"N 114°35\'43.2"E',
-    classification: 'Sehat', confidence: 97, severity: 'ok', healthStatus: 'healthy',
-    healthy: 97.1, unhealthy: 2.9,
-    disease: 'Tidak terdeteksi penyakit',
-    recommendation: 'Pohon dalam kondisi sangat baik. Pertahankan pola perawatan saat ini.',
-    snapshotUrl: LIVE_IMG, ndviUrl: NDVI_IMG, ndviValue: 0.50,
-    freqLink: 52.4,
-    distance: 143.5,
-    elevationSpeed: 10.2,
-    telemetry: { battery: 82, altitude: 23.5, speed: 3.8, gpsSignal: 'Kuat · 14 Satelit', linkQuality: '-70 dBm' },
-    lat: 3.3556, lng: 114.5970,
-  },
-];
+const CLASSIFICATION_STYLE: Record<string, any> = {
+  sehat:       { bg: `${T.green}20`, text: T.green, border: `${T.green}44`, label: 'SEHAT' },
+  tidak_sehat: { bg: `${T.red}20`,   text: T.red,   border: `${T.red}44`,   label: 'TIDAK SEHAT' },
+};
 
 // const SEV_STYLE = {
 //   ok:       { bg: `${T.green}20`,  text: T.green,  border: `${T.green}44`,  label: 'SEHAT',     labelEn: 'HEALTHY'  },
@@ -103,25 +66,39 @@ const MOCK_LOGS: PredictionLogEntry[] = [
 //   critical: { bg: `${T.red}18`,    text: T.red,    border: `${T.red}44`,    label: 'KRITIS',    labelEn: 'CRITICAL' },
 // };
 
-const HEALTH_STATUS_STYLE = {
-  healthy:   { bg: `${T.green}20`,  text: T.green,  border: `${T.green}44`,  label: 'SEHAT',     labelEn: 'HEALTHY' },
-  unhealthy: { bg: `${T.red}20`, text: T.red, border: `${T.red}44`, label: 'TIDAK SEHAT', labelEn: 'UNHEALTHY' },
-};
+function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => void }) {
+  // Parsing Tanggal dan Waktu
+  const logDate = new Date(log.timestamp);
+  const timeStr = logDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+  
+  // Format Durasi Spray (mm:ss)
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
-// ── Detail View ───────────────────────────────────────────────────────
-function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: number; lng?: number }; onBack: () => void }) {
-  const sev = HEALTH_STATUS_STYLE[log.healthStatus];
-  const battColor = log.telemetry.battery > 50 ? T.green : log.telemetry.battery > 20 ? T.amber : T.red;
+  const isHealthy = log.classification === 'sehat';
+  const cStyle = isHealthy ? CLASSIFICATION_STYLE.sehat : CLASSIFICATION_STYLE.tidak_sehat;
 
   // Waypoint tunggal untuk posisi log ini
-  const waypoint: MapWaypoint[] = log.lat && log.lng ? [{
-    lat: log.lat,
-    lng: log.lng,
+  const waypoint: MapWaypoint[] = [{
+    lat: log.latitudeAI,
+    lng: log.longitudeAI,
     id: log.id,
     label: log.classification,
-    status: log.severity,
-    time: log.time,
-  }] : [];
+    status: isHealthy ? 'ok' : 'critical',
+    time: timeStr,
+  }];
+
+  const logPosition = { 
+    lat: log.latitudeAI, 
+    lng: log.longitudeAI, 
+    yaw: 0 
+  };
+
+  // Parsing radio.rssi (Kualitas Sinyal)
+  const rssiVal = log.radioAI?.rssi ? Math.round((log.radioAI.rssi / 254) * 100) : 0;
 
   return (
     <div className="space-y-4 mx-auto text-gray-800 dark:text-gray-100 select-none pb-8">
@@ -142,6 +119,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               waypoints={waypoint}
               height={280}
               droneOn={true}
+              dronePosition={logPosition}
             />
           </div>
 
@@ -158,7 +136,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                 <div className="flex items-center gap-1.5">
                   <ArrowUpDown size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.telemetry.altitude.toFixed(1)}{' '}
+                    {(log.altitudeAI ?? 0).toFixed(2)}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
                   </span>
                 </div>
@@ -170,7 +148,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                 <div className="flex items-center gap-1.5">
                   <ArrowUp size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.elevationSpeed?.toFixed(1)}{' '}
+                    {(log.climbRateAI ?? 0).toFixed(2)}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
                   </span>
                 </div>
@@ -182,7 +160,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                 <div className="flex items-center gap-1.5">
                   <Battery size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.telemetry.battery}
+                    {(log.batteryAI ?? 0).toFixed(0)}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">%</span>
                   </span>
                 </div>
@@ -194,7 +172,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                 <div className="flex items-center gap-1.5">
                   <MoveHorizontal size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.distance?.toFixed(1)}{' '}
+                    {(log.distanceToHomeAI ?? 0).toFixed(2)}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m</span>
                   </span>
                 </div>
@@ -206,7 +184,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                 <div className="flex items-center gap-1.5">
                   <ArrowRight size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.telemetry.speed.toFixed(1)}{' '}
+                    {(log.groundSpeedAI ?? 0).toFixed(2)}{' '}
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">m/s</span>
                   </span>
                 </div>
@@ -216,13 +194,13 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               {/* Frekuensi Link */}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1.5">
-                  <SatelliteDish size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
+                  <Wifi size={18} className="text-[#3A5A40] dark:text-gray-400 shrink-0 stroke-[2.2]" />
                   <span className="text-base sm:text-lg font-bold font-mono text-gray-800 dark:text-gray-100">
-                    {log.freqLink?.toFixed(1)}{' '}
-                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">GHz</span>
+                    {rssiVal}{' '}
+                    <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">%</span>
                   </span>
                 </div>
-                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Frekuensi Link</span>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Kualitas Sinyal</span>
               </div>
             </div>
           </div>
@@ -236,31 +214,31 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-[#222]">
             <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Snapshot</h3>
             <span className="text-xs font-mono text-gray-400 font-medium">
-              {log.time}
+              {timeStr}
             </span>
           </div>
           
           <div className="relative w-full aspect-[16/10] bg-gray-50 dark:bg-[#151515] overflow-hidden flex items-center justify-center">
                 <img
-                  src={log.snapshotUrl}
+                  src={log.snapshotRAW}
                   alt="Snapshot Pohon"
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-3 left-3 text-[11px] font-mono text-white/90 bg-black/60 px-2 py-0.5 rounded backdrop-blur-xs">
-                  {log.lat} {log.lng} · ALT {log.telemetry.altitude}
+                  {log.latitudeAI.toFixed(6)} {log.longitudeAI.toFixed(6)} · ALT {(log.altitudeAI ?? 0).toFixed(2)}
                 </div>
           </div>
         </div>
 
         <div className={`rounded-xl border shadow-xs p-5 flex flex-col justify-between transition-colors duration-300 ${
-          log.healthStatus === 'unhealthy'
+          !isHealthy
             ? 'bg-[#FDF3F0] dark:bg-[#1E1412] border-[#FCE2DB] dark:border-[#38201a]'
             : 'bg-white dark:bg-[#111] border-gray-100 dark:border-[#222]'
         }`}>
           
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Hasil Prediksi AI</h3>
-            {log.healthStatus === 'healthy' ? (
+            {isHealthy ? (
               <span className="px-3 py-1 bg-[#EAF5D6] text-[#6A9A1E] font-bold text-xs rounded tracking-wider">
                 SEHAT
               </span>
@@ -277,11 +255,11 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               INDEKS NDVI
             </span>
             <div className={`text-5xl sm:text-6xl font-extrabold tracking-tight my-2 font-mono ${
-              log.healthStatus === 'healthy'
+              isHealthy
                 ? 'text-[#4D7C0F]'
                 : 'text-[#E59819]'
             }`}>
-              {log.healthStatus === 'healthy' ? '0.28' : '0.18'}
+              {log.ndviAI.toFixed(2)}
             </div>
 
             <div className="w-full max-w-md mt-2">
@@ -290,11 +268,9 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
                     width:
-                      log.healthStatus === 'healthy'
-                        ? '28%'
-                        : '18%',
+                      `${log.ndviAI * 100}%`,
                     background:
-                      log.healthStatus === 'healthy'
+                      isHealthy
                         ? 'linear-gradient(to right, #7A1414 0%, #C83B2B 60%, #E67E22 100%)'
                         : 'linear-gradient(to right, #7A1414 0%, #C83B2B 100%)',
                   }}
@@ -311,8 +287,8 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
             </div>
           </div>
 
-          {/* loading AI ceritanya */}
-          {log.healthStatus === 'healthy' ? (
+          {/* Recommendation AI */}
+          {isHealthy ? (
             <div className="bg-[#F4F9EB] dark:bg-[#16210f] border border-[#D5E8B5] dark:border-[#2d421e] rounded-xl p-3.5 flex items-start gap-3 mt-2">
               <CheckCircle className="text-[#65A30D] shrink-0 mt-0.5" size={18} />
               <div>
@@ -328,7 +304,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               <div>
                 <h4 className="text-xs font-bold text-[#EA580C]">Tindakan Diperlukan</h4>
                 <p className="text-xs text-[#9A3412] dark:text-[#fdba74] mt-0.5 leading-relaxed">
-                  Instruksikan pilot untuk menyemprotkan pestisida ke pangkal batang menggunakan Remote Control.
+                  Lakukan peyemprotkan pestisida ke pangkal batang menggunakan Remote Control.
                 </p>
               </div>
             </div>
@@ -339,11 +315,13 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
       </div>
 
 
-      <div className={`bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs p-5 transition-opacity duration-300 opacity-40 pointer-events-none`}>
+      <div className={`bg-white dark:bg-[#111] rounded-xl border border-gray-100 dark:border-[#222] shadow-xs p-5 transition-opacity duration-300 ${
+        !log.spray ? 'opacity-40 pointer-events-none' : 'opacity-100'
+      }`}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200">Monitor Penyemprotan Pestisida</h3>
           <span className="text-[11px] font-bold px-2.5 py-0.5 rounded bg-[#EAF5D6] text-[#6A9A1E] dark:bg-[#1f2d12] dark:text-[#a3e635] flex items-center gap-1">
-            PENYEMPROTAN SELESAI
+            {log.spray ? 'PENYEMPROTAN SELESAI' : 'PENYEMPROTAN BELUM DILAKUKAN'}
           </span>
         </div>
         
@@ -355,7 +333,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               DURASI
             </span>
             <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
-              01:00
+              {log.spray ? formatDuration(log.spray.durationSpray) : '00:00'}
             </div>
             <span className="text-[11px] font-mono text-gray-400 mt-0.5">
               mm:ss
@@ -368,7 +346,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
               VOLUME KELUAR
             </span>
             <div className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 font-mono mt-1">
-              {100}
+              {log.spray ? log.spray.volumeSpray.toFixed(1) : '0.0'}
             </div>
             <span className="text-[11px] font-medium text-gray-400 mt-0.5">
               ml
@@ -381,49 +359,82 @@ function LogDetailView({ log, onBack }: { log: PredictionLogEntry & { lat?: numb
   );
 }
 
-// ── Main List View ────────────────────────────────────────────────────
 export default function LogPrediksiSection() {
-  const [selectedLog, setSelectedLog] = useState<PredictionLogEntry | null>(null);
+  const [logs, setLogs] = useState<PredictionLogData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<PredictionLogData | null>(null);
+  
   const [search, setSearch] = useState('');
   const [filterSev, setFilterSev] = useState<string>('all');
 
-  const filtered = MOCK_LOGS.filter(log => {
-    const matchSearch = search === '' ||
-      log.id.toLowerCase().includes(search.toLowerCase()) ||
-      log.location.toLowerCase().includes(search.toLowerCase()) ||
-      log.classification.toLowerCase().includes(search.toLowerCase());
-    const matchSev = filterSev === 'all' || log.healthStatus === filterSev;
-    return matchSearch && matchSev;
-  });
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  // Waypoints semua log untuk overview map
-  const allWaypoints: MapWaypoint[] = MOCK_LOGS
-    .filter(l => (l as PredictionLogEntry & { lat?: number; lng?: number }).lat)
-    .map(l => {
-      const ll = l as PredictionLogEntry & { lat?: number; lng?: number };
-      return {
-        lat: ll.lat!,
-        lng: ll.lng!,
-        id: l.id,
-        label: l.classification,
-        status: l.severity,
-        time: l.time,
-      };
+  // Fetch Real Data dari API Backend
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLogs = async () => {
+      try {
+        const res = await fetch('/api/monitoringOperator/log-prediction'); 
+        if (res.ok) {
+          const result = await res.json();
+          if (result.data && isMounted) {
+            setLogs(result.data);
+          }
+        } else {
+          console.warn("[Operator] Gagal memuat data /monitoringOperator/log-prediction");
+        }
+      } catch (error) {
+        console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchLogs();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Pencarian berdasarkan Klasifikasi
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const matchSearch = search === '' || log.id.toLowerCase().includes(search.toLowerCase());
+      const matchSev = filterSev === 'all' || log.classification === filterSev;
+      return matchSearch && matchSev;
     });
+  }, [logs, search, filterSev]);
+
+  // Reset pagination ketika filter/search berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterSev]);
+
+  // Pagination Slicing
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
+  const paginatedLogs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredLogs.slice(start, start + itemsPerPage);
+  }, [filteredLogs, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   if (selectedLog) {
     return (
       <LogDetailView
-        log={selectedLog as PredictionLogEntry & { lat?: number; lng?: number }}
+        log={selectedLog}
         onBack={() => setSelectedLog(null)}
       />
     );
   }
 
   // Hitung statistik
-  const totalLogs = MOCK_LOGS.length;
-  const criticalCount = MOCK_LOGS.filter(l => l.severity === 'critical').length;
-  const healthyCount = MOCK_LOGS.filter(l => l.severity === 'ok').length;
+  const totalLogs = logs.length;
+  const criticalCount = logs.filter(l => l.classification === 'tidak_sehat').length;
+  const healthyCount = logs.filter(l => l.classification === 'sehat').length;
 
   const icons = {
     total: <div className='p-3 rounded-xl bg-[#C1D34318]'>
@@ -436,6 +447,7 @@ export default function LogPrediksiSection() {
               <CheckCircle2 size={18} color={'#C1D343'} />
             </div>,
   };
+
   return (
     <div className="space-y-5">
 
@@ -482,19 +494,19 @@ export default function LogPrediksiSection() {
         <select value={filterSev} onChange={e => setFilterSev(e.target.value)}
           className="px-3 py-2 rounded-lg text-xs bg-white dark:bg-[#111] border border-gray-200 dark:border-[#2a2a2a] text-gray-700 dark:text-gray-300 focus:outline-none">
           <option value="all">Klasifikasi</option>
-          <option value="healthy">Sehat</option>
-          <option value="unhealthy">Tidak Sehat</option>
+          <option value="sehat">Sehat</option>
+          <option value="tidak_sehat">Tidak Sehat</option>
         </select>
       </div>
 
       {/* Log Table */}
-      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] overflow-x-auto lg:overflow-visible">
-        <div className="">
-          <table className="w-full text-left">
+      <div className="rounded-xl bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-x-auto lg:overflow-visible">
+          <table className="w-full text-left table-auto">
             <thead>
               <tr className="bg-gray-50 dark:bg-[#0f0f0f] text-[10px] text-gray-400 uppercase border-b border-gray-100 dark:border-[#1e1e1e]">
                 <th className="px-5 py-3 font-semibold">ID Log</th>
-                <th className="px-5 py-3 font-semibold">Waktu DAN Tanggal</th>
+                <th className="px-5 py-3 font-semibold">Waktu dan Tanggal</th>
                 <th className="px-5 py-3 font-semibold">Koordinat GPS</th>
                 <th className="px-5 py-3 font-semibold">Nilai NDVI</th>
                 <th className="px-5 py-3 font-semibold">Klasifikasi AI</th>
@@ -502,41 +514,103 @@ export default function LogPrediksiSection() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-[#1a1a1a]">
-              {filtered.map(log => {
-                const healthStat = HEALTH_STATUS_STYLE[log.healthStatus];
-                return (
-                  <tr key={log.id} className="hover:bg-gray-50/60 dark:hover:bg-[#161616] transition-colors">
-                    <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{log.id}</td>
-                    <td className="px-5 py-3.5">
-                      <span className="block font-mono text-xs text-gray-700 dark:text-gray-300">{log.time} WIB</span>
-                      <span className="block text-[10px] text-gray-400">{log.date}</span>
-                    </td>
-                    <td className="flex flex-col px-5 py-3.5 text-xs text-[#6B8E23] font-semibold">
-                      <span>{log.lat}°N</span>
-                      <span>{log.lng}°E</span>
-                    </td>
-                    <td className={`px-5 py-3.5 text-xs font-bold text-${healthStat.text} dark:text-gray-100`} style={{ color: healthStat.text }}>{log.ndviValue}</td>
-                    <td className={`px-5 py-3.5 text-xs font-bold text-[${healthStat.text}]`}>{healthStat.label}</td>
-                    <td className="px-5 py-3.5">
-                      <button onClick={() => setSelectedLog(log)}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition hover:opacity-80"
-                        style={{ background: `${T.violet}15`, color: T.violet }}>
-                        <Info size={12}/> Detail
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-xs text-gray-400">
-                    Tidak ada log yang ditemukan
+                  <td colSpan={6} className="px-4 py-8 text-center text-xs text-[#6A717F]">
+                    <div className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#84994F]" />
+                      <span>Memuat data log prediksi...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedLogs.length > 0 ? (
+                paginatedLogs.map(log => {
+                  const isHealthy = log.classification === 'sehat';
+                  const cStyle = isHealthy ? CLASSIFICATION_STYLE.sehat : CLASSIFICATION_STYLE.tidak_sehat;
+                  
+                  const dt = new Date(log.timestamp);
+                  const dateStr = dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  const timeStr = dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+
+                  return (
+                    <tr key={log.id} className="hover:bg-gray-50/60 dark:hover:bg-[#161616] transition-colors">
+                      <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
+                        #{log.id.slice(-7).toUpperCase()}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="block font-mono text-xs text-gray-700 dark:text-gray-300">{timeStr} WIB</span>
+                        <span className="block text-[10px] text-gray-400">{dateStr}</span>
+                      </td>
+                      <td className="flex flex-col px-5 py-3.5 text-xs text-[#6B8E23] font-semibold">
+                        <span>{log.latitudeAI.toFixed(4)}°N</span>
+                        <span>{log.longitudeAI.toFixed(4)}°E</span>
+                      </td>
+                      <td className="px-5 py-3.5 text-xs font-bold" style={{ color: cStyle.text }}>
+                        {log.ndviAI.toFixed(2)}
+                      </td>
+                      <td className={`px-5 py-3.5 text-xs font-bold`} style={{ color: cStyle.text }}>
+                        {cStyle.label}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <button onClick={() => setSelectedLog(log)}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition hover:opacity-80"
+                          style={{ background: `${T.violet}15`, color: T.violet }}>
+                          <Info size={12}/> Detail
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-6 py-6 text-center text-xs text-gray-400">
+                    Tidak ada log prediksi yang ditemukan
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION SECTION */}
+        {!loading && filteredLogs.length > 0 && (
+          <div className="shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Prev
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`w-6 h-6 text-xs font-bold rounded-md transition-all
+                    ${
+                      currentPage === page
+                        ? "bg-[#84994F] text-white shadow-sm"
+                        : "text-gray-500 hover:bg-gray-100 dark:hover:bg-[#1e1e1e]"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold border border-[#E5E7EB] dark:border-[#2a2a2a] rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        )}
       </div>
 
     </div>

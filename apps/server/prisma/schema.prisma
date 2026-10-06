@@ -118,37 +118,52 @@ model TelemetryLog {
 }
 
 model PredictionAI {
-  id              String   @id @default(cuid())
-  snapshotRAW     String 
-  snapshotNDVI    String 
-  snapshotRG      String 
-  snapshotRGR     String
-  classification  String   // "sehat" atau "tidak sehat"
-  ndviRAW         Float
-  ndviAI          Float
-  altitudeAI      Float
-  latitudeAI      Float
-  longitudeAI     Float
-  timestamp       DateTime @default(now())
+  id               String   @id @default(cuid())
+  snapshotRAW      String 
+  snapshotNDVI     String 
+  snapshotRG       String 
+  snapshotRGR      String
+  classification   String   // "sehat" atau "tidak sehat"
+  ndviRAW          Float
+  ndviAI           Float
+  
+  // Data Telemetry yang "dibekukan" saat snapshot
+  altitudeAI       Float
+  latitudeAI       Float
+  longitudeAI      Float
+  groundSpeedAI    Float?
+  climbRateAI      Float? 
+  distanceToHomeAI Float?
+  batteryAI        Float?
+  radioAI          Json?
+  
+  timestamp        DateTime @default(now())
 
-  // Identifier Drone (Best Practice: agar tahu drone mana yang mengambil)
-  droneId         String
-  drone           Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+  // Identifier Drone
+  droneId          String
+  drone            Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+
+  // Relasi 1:1 ke tabel Spray
+  spray            Spray?
 
   @@index([droneId, timestamp(sort: Desc)])
 }
 
 model Spray {
-  id              String   @id @default(cuid())
-  durationSpray   Float    // Detik
-  volumeSpray     Float    // ml atau liter
-  capacityTank    Float    // Persentase (0 - 100)
-  remainingTank   Float    // Persentase (0 - 100)
-  timestamp       DateTime @default(now())
+  id               String   @id @default(cuid())
+  durationSpray    Float    // Detik
+  volumeSpray      Float    // ml atau liter
+  capacityTank     Float    // Persentase (0 - 100)
+  remainingTank    Float    // Persentase (0 - 100)
+  timestamp        DateTime @default(now())
 
   // Identifier Drone
-  droneId         String
-  drone           Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+  droneId          String
+  drone            Drone    @relation(fields: [droneId], references: [id], onDelete: Cascade)
+
+  // Foreign Key ke PredictionAI
+  predictionId     String?  @unique
+  prediction       PredictionAI? @relation(fields: [predictionId], references: [id], onDelete: Cascade)
 
   @@index([droneId, timestamp(sort: Desc)])
 }

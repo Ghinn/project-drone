@@ -18,6 +18,7 @@ import {
 import {useRouter} from 'next/navigation';
 import {auth as firebaseAuth} from '@/lib/firebase/client';
 import {normalizeRole, type AppRole} from '@/lib/auth/roles';
+import { type User as FirebaseUser } from 'firebase/auth';
 
 type AuthStatus = 'loading' | 'authenticated' | 'guest';
 
@@ -50,14 +51,38 @@ async function readRoleFromUser(
 
 type AuthProviderProps = {
   children: ReactNode;
+  initialRole?: AppRole | null;
+  initialUserData?: { email?: string; name?: string; picture?: string } | null;
 };
 
-export function AuthProvider({children}: AuthProviderProps) {
+export function AuthProvider({ children, initialRole = null, initialUserData = null }: AuthProviderProps) {
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const mockInitialUser = useMemo(() => {
+    if (!initialUserData?.email) return null;
+    return {
+      email: initialUserData.email,
+      displayName: initialUserData.name || null,
+      photoURL: initialUserData.picture || null,
+      uid: 'pending-ssr-uid', 
+      emailVerified: true,
+      isAnonymous: false,
+      metadata: {},
+      providerData: [],
+      refreshToken: '',
+      tenantId: null,
+      delete: async () => {},
+      getIdToken: async () => '',
+      getIdTokenResult: async () => ({} as any),
+      reload: async () => {},
+      toJSON: () => ({}),
+    } as FirebaseUser;
+  }, [initialUserData]);
+
+  const [user, setUser] = useState<FirebaseUser | null>(mockInitialUser);
+  const [role, setRole] = useState<AppRole | null>(initialRole);
+
+  const [isReady, setIsReady] = useState(false); 
   const [isSessionSynced, setIsSessionSynced] = useState(false);
 
   const previousUidRef = useRef<string | null>(null);
@@ -155,22 +180,43 @@ export function AuthProvider({children}: AuthProviderProps) {
   }, []);
 
   const signOutApp = useCallback(async () => {
-    await firebaseSignOut(firebaseAuth);
+    try {
+      // 1. HAPUS COOKIE SERVER TERLEBIH DAHULU DAN TUNGGU SAMPAI SELESAI
+      await fetch('/api/auth/session-logout', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+      
+      // 2. SETELAH COOKIE MATI, BARU HAPUS SESI FIREBASE CLIENT
+      await firebaseSignOut(firebaseAuth);
+    } catch (error) {
+      console.error('[AuthProvider] Error saat Sign Out:', error);
+    }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (nextUser) => {
       if (!nextUser) {
         const hadPreviousUser = previousUidRef.current !== null;
-
         previousUidRef.current = null;
-        setUser(null);
-        setRole(null);
-        setIsSessionSynced(false);
 
         if (hadPreviousUser) {
-          await clearServerSessionCookie();
-          router.refresh();
+          // Kasus 1: Pengguna baru saja menekan tombol Logout
+          setUser(null);
+          setRole(null);
+          setIsSessionSynced(false);
+          
+          // HAPUS BARIS 'await clearServerSessionCookie();' DI SINI
+          router.refresh(); 
+        } else if (!initialRole) {
+          // Kasus 2: Murni pengunjung (Guest)
+          setUser(null);
+          setRole(null);
+          setIsSessionSynced(false);
+        } else {
+          // Kasus 3: SSR
+          console.warn('[AuthProvider] Client SDK kosong sementara, mempertahankan sesi SSR.');
         }
 
         setIsReady(true);
@@ -197,7 +243,7 @@ export function AuthProvider({children}: AuthProviderProps) {
     });
 
     return unsubscribe;
-  }, [clearServerSessionCookie, router, syncSession]);
+  }, [clearServerSessionCookie, router, syncSession, initialRole]); 
 
   const value = useMemo<AuthContextValue>(
     () => ({

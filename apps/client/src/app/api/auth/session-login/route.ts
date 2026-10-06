@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       secure: isProduction,
       sameSite: 'lax',
       path: '/',
-      maxAge: SESSION_MAX_AGE_MS / 1000,
+      // maxAge: SESSION_MAX_AGE_MS / 1000,
     });
 
     console.log('=========================================');

@@ -7,6 +7,8 @@ import { registerFarmer } from "../controllers/registration.controller";
 import { verifyEmail } from "../controllers/verification.controller";
 import { sendResetCode, verifyAndResetPassword } from "../controllers/forgot-password.controller";
 import { setupAccountPassword } from "../controllers/setup-password.controller";
+import { changeAccountPassword } from "../controllers/change-password.controller";
+import { requireSession, requireOperator } from "../middleware/auth.middleware";
 
 const router = Router();
 
@@ -28,5 +30,6 @@ router.get("/auth/verify", verifyEmail);
 router.post("/auth/forgot-password/send-reset-code", sendResetCode);
 router.post("/auth/forgot-password/verify-reset-password", verifyAndResetPassword);
 router.post("/auth/setup-password", setupAccountPassword);
+router.patch("/auth/change-password", requireSession, requireOperator, changeAccountPassword);
 
 export default router;

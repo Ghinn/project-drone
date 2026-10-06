@@ -8,6 +8,7 @@ import { env } from "./config/env.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
 import operatorRoutes from './routes/operator.route.js';
+import monitoringOperatorRoutes from './routes/monitoringOperator.route';
 import dataRoutes from "./routes/data.route.js"; 
 import { errorHandler, notFoundHandler } from "./lib/http.js";
 
@@ -61,6 +62,9 @@ app.use(cookieParser());
 
 // Route Operator
 app.use("/api/operator", operatorRoutes);
+
+// Route monitoringOperator
+app.use('/api/monitoringOperator', monitoringOperatorRoutes);
 
 // Route Admin
 app.use("/api/admin", adminRoutes); 

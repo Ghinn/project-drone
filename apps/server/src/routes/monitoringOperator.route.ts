@@ -20,7 +20,7 @@ router.use(requireSession, requireOperator);
 // Data Fetching Endpoint untuk Halaman Operator
 router.get('/dashboard', getDashboardData);
 router.get('/live-camera', getLiveCameraData);
-router.get('/ai-prediction-log', getAnalisisData);
+router.get('/log-prediction', getAnalisisData);
 router.get('/history', getHistoriData);
 router.get('/settings', getSettingsData);
 router.post('/command', sendDroneCommand);

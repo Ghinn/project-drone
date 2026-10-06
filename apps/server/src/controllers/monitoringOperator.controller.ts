@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { publishDroneCommand } from '../services/mqtt.service';
+import { prisma } from '../lib/prisma';
 
 export const getDashboardData = async (req: Request, res: Response) => {
   try {
@@ -27,12 +28,27 @@ export const getHistoriData = async (req: Request, res: Response) => {
 
 export const getAnalisisData = async (req: Request, res: Response) => {
   try {
+    const currentUser = (req as any).currentUser;
+    
+    const whereClause = currentUser?.assignedDroneId 
+      ? { droneId: currentUser.assignedDroneId } 
+      : {};
+
+    const predictionLogs = await prisma.predictionAI.findMany({
+      where: whereClause,
+      orderBy: { timestamp: 'desc' },
+      include: {
+        spray: true
+      }
+    });
+
     res.status(200).json({
       success: true,
-      message: "Data System Logs berhasil diambil",
-      data: []
+      message: "Data Log Prediksi berhasil diambil",
+      data: predictionLogs
     });
   } catch (error) {
+    console.error("[Prediction Log] Fetching Error:", error);
     res.status(500).json({ success: false, message: "Terjadi kesalahan pada server" });
   }
 };

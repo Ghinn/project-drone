@@ -101,10 +101,10 @@ export default function UserProfileDropdown() {
     if (confirm("Apakah Anda yakin ingin keluar dari akun?")) {
       try {
         await signOutApp();
-        router.push("/");
+        window.location.href = "/";
       } catch (error) {
         console.error("Logout error:", error);
-        router.push("/");
+        window.location.href = "/";
       }
     }
   };

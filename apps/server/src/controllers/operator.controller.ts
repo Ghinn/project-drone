@@ -74,7 +74,9 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
   // } = req.body;
   const { 
     droneId, snapshotRAW, snapshotNDVI, snapshotRG, 
-    snapshotRGR, ndviRAW, ndviAI, classification, latitudeAI, longitudeAI, altitudeAI 
+    snapshotRGR, ndviRAW, ndviAI, classification, latitudeAI, 
+    longitudeAI, altitudeAI, groundSpeedAI, climbRateAI, 
+    distanceToHomeAI, batteryAI, radioAI
   } = req.body;
 
   if (!currentUser) {
@@ -98,20 +100,22 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
     // Simpan Prediction ke Database
     const predictionResult = await prisma.predictionAI.create({
       data: {
-        droneId: droneId,
-        snapshotRAW: snapshotRAW,
-        snapshotNDVI: snapshotNDVI,
-        snapshotRG: snapshotRG,
-        snapshotRGR: snapshotRGR,
-        // classification: classificationOutput,
-        // ndviRAW: ndviRAW,
-        // ndviAI: outputNdviAI,
-        classification: classification,
-        ndviRAW: ndviRAW,
-        ndviAI: ndviAI,
+        droneId,
+        snapshotRAW,
+        snapshotNDVI,
+        snapshotRG,
+        snapshotRGR,
+        classification,
+        ndviRAW,
+        ndviAI,
         latitudeAI: latitudeAI || 0,
         longitudeAI: longitudeAI || 0,
         altitudeAI: altitudeAI || 0,
+        groundSpeedAI: groundSpeedAI || 0,
+        climbRateAI: climbRateAI || 0,
+        distanceToHomeAI: distanceToHomeAI || 0,
+        batteryAI: batteryAI || 0,
+        radioAI: radioAI || null
       }
     });
 
@@ -139,7 +143,7 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
 
 export const saveSprayLog = asyncHandler(async (req, res) => {
   const currentUser = req.currentUser;
-  const { droneId, durationSpray, volumeSpray, capacityTank, remainingTank } = req.body;
+  const { droneId, predictionId, durationSpray, volumeSpray, capacityTank, remainingTank } = req.body;
 
   if (!currentUser) return res.status(401).json({ error: "Unauthorized" });
   if (!droneId) return res.status(400).json({ error: "ID Drone tidak ditemukan" });
@@ -148,6 +152,7 @@ export const saveSprayLog = asyncHandler(async (req, res) => {
     const sprayResult = await prisma.spray.create({
       data: {
         droneId: droneId,
+        predictionId: predictionId || null,
         durationSpray: durationSpray,
         volumeSpray: volumeSpray,
         capacityTank: capacityTank,
