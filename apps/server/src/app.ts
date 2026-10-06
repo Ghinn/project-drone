@@ -36,6 +36,8 @@ if (env.NODE_ENV === "production") {
 const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.100.124:3000',
+  'https://dreampalm.id',
+  'https://www.dreampalm.id',
   process.env.CLIENT_URL
 ].filter(Boolean) as string[];
 

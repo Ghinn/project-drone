@@ -1,0 +1,81 @@
+# Frontend (Next.js)
+server {
+    server_name dreampalm.id www.dreampalm.id;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/dreampalm.id/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/dreampalm.id/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+}
+
+# Backend API (Express.js)
+server {
+    server_name api.dreampalm.id;
+
+    # telemetryState MQTT Broker (SSE)
+    location /api/drone/telemetryState/stream {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+
+        # Konfigurasi SSE
+        proxy_set_header Connection '';
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 86400s;
+    }
+
+    # Route API Default Lainnya
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/api.dreampalm.id/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/api.dreampalm.id/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+
+server {
+    if ($host = www.dreampalm.id) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    if ($host = dreampalm.id) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name dreampalm.id www.dreampalm.id;
+    return 404; # managed by Certbot
+
+}
+server {
+    if ($host = api.dreampalm.id) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+    listen 80;
+    server_name api.dreampalm.id;
+    return 404; # managed by Certbot
+
+}

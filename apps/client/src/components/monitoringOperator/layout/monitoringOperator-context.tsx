@@ -6,6 +6,7 @@ import type {
   NavItem,
   TelemetryData
 } from './monitoringOperator-types';
+import { createEventSource } from '@/lib/utils';
 
 export type SseConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed';
 
@@ -27,8 +28,6 @@ export const defaultTelemetry: TelemetryData = {
   rc: { ch6: 'OFF', ch7: 'OFF', ch8: 'OFF', ch9: 'OFF' },
   radio: { rssi: 0, remrssi: 0, noise: 0, txbuf: 0 } 
 };
-
-
 
 type MonitoringOperatorContextValue = {
   activeTab: MonitoringOperatorTab;
@@ -66,7 +65,7 @@ export const useMonitoringOperator = () => {
 const SSE_MAX_CONSECUTIVE_ERRORS = 3;
 
 // Custom Hook untuk menangkap SSE
-export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
+export const useTelemetrySSE = (droneId?: string) => {
   const [telemetry, setTelemetry] = useState<TelemetryData>(defaultTelemetry);
   const [latestSnapshot, setLatestSnapshot] = useState<any>(null);
   const [droneStatus, setDroneStatus] = useState<'online' | 'offline' | 'unknown'>('unknown');
@@ -76,17 +75,15 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    if (!apiUrl) return;
-
     consecutiveErrorsRef.current = 0;
     setConnectionStatus('connecting');
 
     // URL Endpoint Topic_MQTT
-    const streamUrl = droneId 
-      ? `${apiUrl}/api/drone/telemetryState/stream?droneId=${droneId}`
-      : `${apiUrl}/api/drone/telemetryState/stream`;
+    const endpoint = droneId 
+      ? `/api/drone/telemetryState/stream?droneId=${droneId}`
+      : `/api/drone/telemetryState/stream`;
 
-    const eventSource = new EventSource(streamUrl, { withCredentials: true });
+    const eventSource = createEventSource(endpoint);
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
@@ -144,7 +141,7 @@ export const useTelemetrySSE = (apiUrl: string, droneId?: string) => {
       eventSource.close();
       eventSourceRef.current = null;
     };
-  }, [apiUrl, droneId]);
+  }, [droneId]);
 
   return { telemetry, flightMode: telemetry.flightMode, droneStatus, connectionStatus, latestSnapshot };
 };

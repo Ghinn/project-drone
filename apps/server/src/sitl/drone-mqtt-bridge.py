@@ -18,8 +18,8 @@ MQTT_USER = "mqtt-dreampalm"
 MQTT_PASS = "dreampalm"
 
 # BACKEND API URL
-BACKEND_API_BASE_URL = "http://192.168.100.124:4000/api/data/snapshot/upload"
-# BACKEND_API_BASE_URL = "http://api.dreampalm.id:4000/api/data/snapshot/upload"
+# BACKEND_API_BASE_URL = "http://192.168.100.124:4000/api/data/snapshot/upload"
+BACKEND_API_BASE_URL = "https://api.dreampalm.id/api/data/snapshot/upload"
 
 # Identifier Drone
 DRONE_ID = "v1-001"

@@ -44,11 +44,8 @@ export default function MonitoringOperatorShell({ children }: { children: React.
     }
   }, []);
 
-  // Direct Request ke Express Backend
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
   // Panggil Custom Hook SSE
-  const { telemetry, droneStatus, latestSnapshot } = useTelemetrySSE(API_URL, droneId);
+  const { telemetry, droneStatus, latestSnapshot } = useTelemetrySSE(droneId);
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },

@@ -96,17 +96,17 @@ def process_and_extract_ndvi(image_path):
             ndvi_ai_val = float(prediction[0][1]) if prediction.shape[1] > 1 else float(prediction[0][0])
 
         # Logika threshold kelas (misal >= 0.5 adalah tidak_sehat)
-        # classification_res = "tidak_sehat" if probabilitas >= 0.5 else "sehat"
+        classification_res = "tidak_sehat" if probabilitas >= 0.5 else "sehat"
 
         # testing spray
-        classification_res = "tidak_sehat"
+        # classification_res = "tidak_sehat"
         
         # Nilai ndviAI diambil langsung dari model sesuai permintaan Anda
         ndvi_ai = round(ndvi_ai_val, 2)
 
     except Exception as e:
-        # classification_res = "sehat"
-        classification_res = "tidak_sehat"
+        classification_res = "sehat"
+        # classification_res = "tidak_sehat"
         ndvi_ai = 0.0
 
     # 8. Kembalikan Output ke Node.js dalam format JSON

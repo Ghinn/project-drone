@@ -14,6 +14,7 @@ import {
   Users,
   AlertCircle
 } from "lucide-react";
+import { createEventSource } from "@/lib/utils";
 
 interface Operator {
   id: string;
@@ -87,7 +88,7 @@ export default function DroneManagementSection() {
   useEffect(() => {
     fetchDrones();
 
-    const eventSource = new EventSource("/api/data/stream?droneId=ALL");
+    const eventSource = createEventSource("/api/data/stream?droneId=ALL");
 
     eventSource.onmessage = (event) => {
       try {
