@@ -9,7 +9,7 @@ const activeDronesState = new Map<string, any>();
 let mqttClientInstance: MqttClient | null = null;
 
 export function initMqtt() {
-    const client = mqtt.connect('mqtt://mqtt.dreampalm.id:1883', {
+    const client = mqtt.connect('mqtt://10.0.0.1:1883', {
         username: process.env.MQTT_USERNAME || 'mqtt-dreampalm',
         password: process.env.MQTT_PASSWORD || 'dreampalm'
     });

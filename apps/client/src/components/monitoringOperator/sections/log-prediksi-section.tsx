@@ -67,6 +67,24 @@ const CLASSIFICATION_STYLE: Record<string, any> = {
 // };
 
 function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => void }) {
+
+  const [operatorPos, setOperatorPos] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setOperatorPos({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => console.warn("[GPS] Gagal mendapatkan lokasi perangkat:", error.message),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+  }, []);
+
   // Parsing Tanggal dan Waktu
   const logDate = new Date(log.timestamp);
   const timeStr = logDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
@@ -91,6 +109,17 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
     time: timeStr,
   }];
 
+  // [seed-test-log-prediction.ts] Tentukan Home statis berdasarkan koordinat log
+  const homeJonggol = { lat: -6.475715, lng: 107.032235 };
+  const homeCikabayan = { lat: -6.552211705425046, lng: 106.7185597960522 };
+
+  // Deteksi dinamis: Jika koordinat log lebih dekat ke Cikabayan, gunakan Home Cikabayan. Sebaliknya ke Jonggol.
+  const distToJonggol = Math.abs(log.latitudeAI - homeJonggol.lat) + Math.abs(log.longitudeAI - homeJonggol.lng);
+  const distToCikabayan = Math.abs(log.latitudeAI - homeCikabayan.lat) + Math.abs(log.longitudeAI - homeCikabayan.lng);
+
+  const staticHomePos = distToCikabayan < distToJonggol ? homeCikabayan : homeJonggol;
+
+  // Bukan [seed-test-log-prediction.ts]
   const logPosition = { 
     lat: log.latitudeAI, 
     lng: log.longitudeAI, 
@@ -115,11 +144,15 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
           
           <div className="h-full w-full">
             <DroneMap
-              mode="waypoints"
+              mode="live"
               waypoints={waypoint}
               height={280}
               droneOn={true}
               dronePosition={logPosition}
+              // [seed-test-log-prediction.ts]
+              operatorPosition={staticHomePos}
+              // Bukan [seed-test-log-prediction.ts]
+              // operatorPosition={operatorPos || logPosition}
             />
           </div>
 

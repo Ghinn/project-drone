@@ -18,8 +18,10 @@ MQTT_USER = "mqtt-dreampalm"
 MQTT_PASS = "dreampalm"
 
 # BACKEND API URL
-# BACKEND_API_BASE_URL = "http://192.168.100.124:4000/api/data/snapshot/upload"
-BACKEND_API_BASE_URL = "https://api.dreampalm.id/api/data/snapshot/upload"
+BACKEND_API_BASE_URL = [
+    "http://192.168.100.124:4000/api/data/snapshot/upload",
+    "https://api.dreampalm.id/api/data/snapshot/upload"
+]
 
 # Identifier Drone
 DRONE_ID = "v1-001"
@@ -69,19 +71,23 @@ def capture_and_upload_task():
         # Konversi array piksel ke format file .jpg
         success, buffer = cv2.imencode('.jpg', frame)
         if success:
-            try:
-                # Siapkan payload multipart/form-data
-                files = {
-                    'image': ('snapshot.jpg', buffer.tobytes(), 'image/jpeg')
-                }
-                data = {
-                    'droneId': DRONE_ID
-                }
-                # Tembak ke endpoint backend
-                response = requests.post(BACKEND_API_BASE_URL, files=files, data=data, timeout=10)
-                print(f"[ACTION] Upload selesai. Server merespons dengan kode: {response.status_code}")
-            except Exception as e:
-                print(f"[ACTION] Gagal mengunggah snapshot ke server: {e}")
+            # Iterasi ke semua endpoint URL yang didaftarkan
+            for url in BACKEND_API_BASE_URL:
+                try:
+                    files = {
+                        'image': ('snapshot.jpg', buffer.tobytes(), 'image/jpeg')
+                    }
+                    data = {
+                        'droneId': DRONE_ID
+                    }
+                    
+                    print(f"[ACTION] Mengirim ke endpoint: {url}")
+                    # Tembak ke endpoint backend
+                    response = requests.post(url, files=files, data=data, timeout=10)
+                    print(f"[ACTION] Upload ke {url} selesai. Status: {response.status_code}")
+                
+                except requests.exceptions.RequestException as e:
+                    print(f"[ACTION] Gagal mengunggah snapshot ke {url}: {e}")
     else:
         print("[ACTION] Gagal membaca frame dari /dev/video6.")
 
