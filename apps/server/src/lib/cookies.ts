@@ -9,7 +9,7 @@ export function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_MS): CookieOpti
   const isProduction = env.NODE_ENV === "production";
   
   const secure = isProduction;
-  const sameSite = isProduction ? env.COOKIE_SAME_SITE : "lax";
+  const sameSite = isProduction ? (env.COOKIE_SAME_SITE as "lax" | "strict" | "none") : "lax";
 
   return {
     httpOnly: true,
@@ -19,6 +19,11 @@ export function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_MS): CookieOpti
     maxAge,
     ...(isProduction && env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   };
+}
+
+export function getClearSessionCookieOptions(): CookieOptions {
+  const { maxAge, ...rest } = getSessionCookieOptions();
+  return rest;
 }
 
 // Production Phase
@@ -35,8 +40,4 @@ export function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_MS): CookieOpti
 //   };
 // }
 
-export function getClearSessionCookieOptions(): CookieOptions {
-  const { maxAge, ...rest } = getSessionCookieOptions();
-  return rest;
-}
 

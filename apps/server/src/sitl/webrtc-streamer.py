@@ -5,18 +5,17 @@ from aiortc.sdp import candidate_from_sdp
 from aiortc.contrib.media import MediaPlayer
 
 # Konfigurasi Koneksi
-BACKEND_SIGNALING_URL = "http://192.168.100.124:4000"
-# BACKEND_SIGNALING_URL = "https://api.dreampalm.id"
+BACKEND_SIGNALING_URL = [
+    "http://192.168.100.124:4000",
+    "https://api.dreampalm.id"
+]
 
 # Identifier Drone
 DRONE_ID = "v1-001"
 
-# Inisialisasi Socket.IO dan WebRTC Peer Connection
-sio = socketio.AsyncClient()
-
+# Global state untuk WebRTC
 pc = None
 player = None
-
 is_initializing = False
 
 async def cleanup_webrtc():
@@ -31,17 +30,17 @@ async def cleanup_webrtc():
     await asyncio.sleep(0.5)
 
 # Fungsi untuk memulai WebRTC yang dipanggil secara manual
-async def start_webrtc():
+async def start_webrtc(active_sio, url):
     global pc, player, is_initializing
 
     if is_initializing:
-        print("[WebRTC] Sedang inisialisasi, mengabaikan request ganda...")
+        print(f"[WebRTC] Sedang inisialisasi, mengabaikan request ganda dari {url}...")
         return
 
     is_initializing = True
     try:
         await cleanup_webrtc()
-        print("[WebRTC] Menginisialisasi PeerConnection dan Camera...")
+        print(f"[WebRTC] Menginisialisasi PeerConnection dan Camera untuk {url}...")
         pc = RTCPeerConnection()
         
         player = MediaPlayer(
@@ -56,94 +55,97 @@ async def start_webrtc():
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
         
-        await sio.emit('sdp-message', {
+        await active_sio.emit('sdp-message', {
             'droneId': DRONE_ID,
             'sdp': {
                 'type': pc.localDescription.type,
                 'sdp': pc.localDescription.sdp
             }
         })
-        print("[WebRTC] SDP Offer terkirim ke Operator")
+        print(f"[WebRTC] SDP Offer terkirim ke Operator di {url}")
     finally:
         is_initializing = False
 
-@sio.event
-async def connect():
-    global pc, player
-    print("[Signaling] Terhubung ke VPS Signaling Server")
+# Fungsi pembungkus untuk membuat dan mengelola koneksi per URL
+async def setup_and_connect_sio(url):
+    sio = socketio.AsyncClient()
 
-    await sio.emit('join-room', {'droneId': DRONE_ID, 'role': 'drone'})
-    print("[Signaling] Menunggu permintaan stream dari Operator...")
+    @sio.event
+    async def connect():
+        print(f"[Signaling] Terhubung ke server: {url}")
+        await sio.emit('join-room', {'droneId': DRONE_ID, 'role': 'drone'})
+        print(f"[Signaling] Menunggu permintaan stream dari {url}...")
 
-@sio.on('sdp-message')
-async def on_sdp_message(data):
-    global pc
-    msg_type = data.get('type')
-    
-    # Menangkap Trigger/Permintaan dari UI React
-    if msg_type == 'request-offer':
-        print("[WebRTC] Operator membuka section Pantau Drone. Memulai Streaming...")
-        await start_webrtc()
-
-    # Menangkap Jawaban SDP dari UI React
-    elif msg_type == 'answer':
-        print("[WebRTC] Menerima SDP Answer dari Operator")
-        if pc:
-            answer = RTCSessionDescription(sdp=data.get('sdp'), type=msg_type)
-            await pc.setRemoteDescription(answer)
-
-@sio.on('ice-candidate')
-async def on_ice_candidate(data):
-    global pc
-    try:
-        # Menangani berbagai bentuk data payload ICE Candidate dari socket.io
-        candidate_info = data.get('candidate') if isinstance(data, dict) else data
+    @sio.on('sdp-message')
+    async def on_sdp_message(data):
+        global pc
+        msg_type = data.get('type')
         
-        if not candidate_info:
-            return
+        # Menangkap Trigger/Permintaan dari UI React
+        if msg_type == 'request-offer':
+            print(f"[WebRTC] Operator ({url}) membuka section Pantau Drone. Memulai Streaming...")
+            await start_webrtc(sio, url)
 
-        candidate_str = None
-        sdp_mid = None
-        sdp_mline_index = None
+        # Menangkap Jawaban SDP dari UI React
+        elif msg_type == 'answer':
+            print(f"[WebRTC] Menerima SDP Answer dari Operator ({url})")
+            if pc:
+                answer = RTCSessionDescription(sdp=data.get('sdp'), type=msg_type)
+                await pc.setRemoteDescription(answer)
 
-        # Jika candidate_info berupa dictionary (misal: {'candidate': '...', 'sdpMid': '0', ...})
-        if isinstance(candidate_info, dict):
-            candidate_str = candidate_info.get('candidate')
-            sdp_mid = candidate_info.get('sdpMid')
-            sdp_mline_index = candidate_info.get('sdpMLineIndex')
-            
-        # Jika candidate_info dikirim sebagai string mentah langsung
-        elif isinstance(candidate_info, str):
-            candidate_str = candidate_info
-            # Ambil metadata tambahan dari data utama jika ada
-            if isinstance(data, dict):
-                sdp_mid = data.get('sdpMid')
-                sdp_mline_index = data.get('sdpMLineIndex')
+    @sio.on('ice-candidate')
+    async def on_ice_candidate(data):
+        global pc
+        try:
+            candidate_info = data.get('candidate') if isinstance(data, dict) else data
+            if not candidate_info:
+                return
 
-        if candidate_str:
-            # Parse string mentah menggunakan fungsi aiortc
-            cand = candidate_from_sdp(candidate_str)
-            
-            if sdp_mid is not None:
-                cand.sdpMid = sdp_mid
-            if sdp_mline_index is not None:
-                cand.sdpMLineIndex = sdp_mline_index
-            
-            await pc.addIceCandidate(cand)
-            print("[WebRTC] ICE Candidate dari Operator berhasil ditambahkan.")
-            
+            candidate_str = None
+            sdp_mid = None
+            sdp_mline_index = None
+
+            if isinstance(candidate_info, dict):
+                candidate_str = candidate_info.get('candidate')
+                sdp_mid = candidate_info.get('sdpMid')
+                sdp_mline_index = candidate_info.get('sdpMLineIndex')
+            elif isinstance(candidate_info, str):
+                candidate_str = candidate_info
+                if isinstance(data, dict):
+                    sdp_mid = data.get('sdpMid')
+                    sdp_mline_index = data.get('sdpMLineIndex')
+
+            if candidate_str:
+                cand = candidate_from_sdp(candidate_str)
+                if sdp_mid is not None:
+                    cand.sdpMid = sdp_mid
+                if sdp_mline_index is not None:
+                    cand.sdpMLineIndex = sdp_mline_index
+                
+                if pc:
+                    await pc.addIceCandidate(cand)
+                    print(f"[WebRTC] ICE Candidate dari Operator ({url}) berhasil ditambahkan.")
+                
+        except Exception as e:
+            print(f"[WebRTC] Gagal memproses ICE Candidate dari {url}: {e}")
+
+    @sio.event
+    async def disconnect():
+        print(f"[Signaling] Terputus dari server: {url}")
+        await cleanup_webrtc()
+
+    # Loop penahan agar koneksi Socket.IO tetap berjalan
+    try:
+        await sio.connect(url, socketio_path='/webrtc-signaling/')
+        await sio.wait()
     except Exception as e:
-        print(f"[WebRTC] Gagal memproses ICE Candidate: {e}")
-
-@sio.event
-async def disconnect():
-    print("[Signaling] Terputus dari server")
-    await cleanup_webrtc()
+        print(f"[Signaling] Gagal terhubung ke {url} (Pastikan server aktif): {e}")
 
 async def main():
-    print("Memulai Drone WebRTC Streamer...")
-    await sio.connect(BACKEND_SIGNALING_URL, socketio_path='/webrtc-signaling/')
-    await sio.wait()
+    print("Memulai Drone WebRTC Streamer secara paralel...")
+    # Menjalankan tugas koneksi untuk semua URL secara bersamaan
+    tasks = [setup_and_connect_sio(url) for url in BACKEND_SIGNALING_URL]
+    await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
     try:

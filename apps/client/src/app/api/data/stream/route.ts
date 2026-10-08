@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const cookieHeader = await getCookieHeader(request);
 
     // Menyusun URL target ke backend Express
-    const backendUrl = `${API_URL}/api/data/stream${droneId ? `?droneId=${droneId}` : ""}`;
+    const backendUrl = `${API_URL}/api/drone/telemetryState/stream${droneId ? `?droneId=${droneId}` : ""}`;
 
     const backendRes = await fetch(backendUrl, {
       method: "GET",
