@@ -15,7 +15,7 @@ export function createEventSource(endpoint: string, isLocalProxy: boolean = fals
     return new EventSource(localUrl);
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const url = `${baseUrl.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
 
   return new EventSource(url, {

@@ -83,7 +83,7 @@ export const useTelemetrySSE = (droneId?: string) => {
       ? `/api/data/stream?droneId=${droneId}`
       : `/api/data/stream`;
 
-    // Tambahkan parameter `true` agar tidak ditimpa oleh NEXT_PUBLIC_API_BASE_URL
+    // Tambahkan parameter `true` agar tidak ditimpa oleh NEXT_PUBLIC_API_URL
     const eventSource = createEventSource(endpoint, true);
     eventSourceRef.current = eventSource;
 
