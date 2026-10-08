@@ -8,7 +8,7 @@ import { env } from "./config/env.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
 import operatorRoutes from './routes/operator.route.js';
-import monitoringOperatorRoutes from './routes/monitoringOperator.route';
+import monitoringOperatorRoutes from './routes/monitoringOperator.route.js';
 import dataRoutes from "./routes/data.route.js"; 
 import { errorHandler, notFoundHandler } from "./lib/http.js";
 
@@ -45,12 +45,12 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
+        callback(null, origin || env.CLIENT_ORIGIN || "https://dreampalm.id");
       } else {
         callback(new Error('Not allowed by CORS'));
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   }),
 );

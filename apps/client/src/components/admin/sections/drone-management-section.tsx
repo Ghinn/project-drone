@@ -88,7 +88,7 @@ export default function DroneManagementSection() {
   useEffect(() => {
     fetchDrones();
 
-    const eventSource = createEventSource("/api/data/stream?droneId=ALL");
+    const eventSource = createEventSource("/api/data/stream?droneId=ALL", true);
 
     eventSource.onmessage = (event) => {
       try {

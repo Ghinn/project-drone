@@ -80,10 +80,11 @@ export const useTelemetrySSE = (droneId?: string) => {
 
     // URL Endpoint Topic_MQTT
     const endpoint = droneId 
-      ? `/api/drone/telemetryState/stream?droneId=${droneId}`
-      : `/api/drone/telemetryState/stream`;
+      ? `/api/data/stream?droneId=${droneId}`
+      : `/api/data/stream`;
 
-    const eventSource = createEventSource(endpoint);
+    // Tambahkan parameter `true` agar tidak ditimpa oleh NEXT_PUBLIC_API_BASE_URL
+    const eventSource = createEventSource(endpoint, true);
     eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
