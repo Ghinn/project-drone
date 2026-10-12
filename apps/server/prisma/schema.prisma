@@ -146,6 +146,7 @@ model PredictionAI {
   // Relasi 1:1 ke tabel Spray
   spray            Spray?
 
+  @@index([classification])
   @@index([droneId, timestamp(sort: Desc)])
 }
 

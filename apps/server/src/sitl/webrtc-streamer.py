@@ -1,8 +1,13 @@
+import os
 import asyncio
 import socketio
+from dotenv import load_dotenv
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
 from aiortc.sdp import candidate_from_sdp
-from aiortc.contrib.media import MediaPlayer
+from aiortc.contrib.media import MediaPlayer, MediaRelay
+
+# Memuat file .env
+load_dotenv()
 
 # Konfigurasi Koneksi
 BACKEND_SIGNALING_URL = [
@@ -11,27 +16,36 @@ BACKEND_SIGNALING_URL = [
 ]
 
 # Identifier Drone
-DRONE_ID = "v1-001"
+DRONE_ID = os.getenv("DRONE_ID")
 
 # Global state untuk WebRTC
 pc = None
 player = None
 is_initializing = False
 
+def get_camera_track():
+    global player, relay
+    if player is None:
+        print("[Camera] Menginisialisasi hardware /dev/video5 untuk {DRONE_ID}...")
+        player = MediaPlayer(
+            '/dev/video5', 
+            format='v4l2', 
+            options={'video_size': '1280x720', 'framerate': '30'}
+        )
+        relay = MediaRelay()
+        
+    return relay.subscribe(player.video)
+
 async def cleanup_webrtc():
-    global pc, player
-    print("[WebRTC] Membersihkan resource (Release Camera)...")
+    global pc
+    print("[WebRTC] Menutup PeerConnection sebelumnya...")
     if pc:
         await pc.close()
         pc = None
-    if player and player.video:
-        player.video.stop()
-        player = None
-    await asyncio.sleep(0.5)
 
 # Fungsi untuk memulai WebRTC yang dipanggil secara manual
 async def start_webrtc(active_sio, url):
-    global pc, player, is_initializing
+    global pc, is_initializing
 
     if is_initializing:
         print(f"[WebRTC] Sedang inisialisasi, mengabaikan request ganda dari {url}...")
@@ -43,14 +57,9 @@ async def start_webrtc(active_sio, url):
         print(f"[WebRTC] Menginisialisasi PeerConnection dan Camera untuk {url}...")
         pc = RTCPeerConnection()
         
-        player = MediaPlayer(
-            '/dev/video5', 
-            format='v4l2', 
-            options={'video_size': '1280x720', 'framerate': '30'}
-        )
-
-        if player.video:
-            pc.addTrack(player.video)
+        video_track = get_camera_track()
+        if video_track:
+            pc.addTrack(video_track)
         
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
@@ -142,7 +151,9 @@ async def setup_and_connect_sio(url):
         print(f"[Signaling] Gagal terhubung ke {url} (Pastikan server aktif): {e}")
 
 async def main():
-    print("Memulai Drone WebRTC Streamer secara paralel...")
+    print("Memulai Drone WebRTC Streamer untuk {DRONE_ID} secara paralel...")
+    get_camera_track()
+
     # Menjalankan tugas koneksi untuk semua URL secara bersamaan
     tasks = [setup_and_connect_sio(url) for url in BACKEND_SIGNALING_URL]
     await asyncio.gather(*tasks)
@@ -153,4 +164,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\n[WebRTC] Terputus dari pengguna")
         asyncio.run(cleanup_webrtc())
-        pass
+        if player and player.video:
+            player.video.stop()

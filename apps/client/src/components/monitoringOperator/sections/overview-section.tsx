@@ -18,11 +18,12 @@ type PredictionLogData = {
 };
 
 export default function DashboardSection() {
-  const { setActiveTab } = useMonitoringOperator();
+  const { setActiveTab, latestSnapshot } = useMonitoringOperator();
   const [tick, setTick] = useState<Date | null>(null);
   
   // State untuk data API
-  const [logs, setLogs] = useState<PredictionLogData[]>([]);
+  const [recentDetections, setRecentDetections] = useState<any[]>([]);
+  const [stats, setStats] = useState({ total: 0, sehat: 0, tidak_sehat: 0 });
   const [loading, setLoading] = useState(true);
 
   // Efek untuk jam real-time
@@ -32,49 +33,44 @@ export default function DashboardSection() {
     return () => clearInterval(t);
   }, []);
 
-  // Efek untuk Fetch Data API
-  useEffect(() => {
-    let isMounted = true;
-    const fetchLogs = async () => {
-      try {
-        const res = await fetch('/api/monitoringOperator/log-prediction'); 
-        if (res.ok) {
-          const result = await res.json();
-          if (result.data && isMounted) {
-            setLogs(result.data);
-          }
-        } else {
-          console.warn("[Operator] Gagal memuat data /monitoringOperator/log-prediction");
+  const fetchOverviewData = async () => {
+    try {
+      const res = await fetch('/api/monitoringOperator/log-prediction?page=1&limit=5'); 
+      if (res.ok) {
+        const result = await res.json();
+        if (result.data) {
+          setRecentDetections(result.data);
+          setStats(result.stats);
         }
-      } catch (error) {
-        console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
-      } finally {
-        if (isMounted) setLoading(false);
       }
-    };
-    fetchLogs();
-    return () => { isMounted = false; };
+    } catch (error) {
+      console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Data API saat awal dimuat
+  useEffect(() => {
+    fetchOverviewData();
   }, []);
 
-  // Kalkulasi Statistik Dinamis
-  const totalPohon = logs.length;
-  const pohonSehat = logs.filter(l => l.classification === 'sehat').length;
-  const pohonTidakSehat = logs.filter(l => l.classification === 'tidak_sehat').length;
+  // Fetch Data API ketika ada data baru dari SSE (Auto-Refresh)
+  useEffect(() => {
+    if (latestSnapshot) {
+      fetchOverviewData();
+    }
+  }, [latestSnapshot]);
 
-  const HEALTH_PCT = totalPohon > 0 ? Number(((pohonSehat / totalPohon) * 100).toFixed(1)) : 0;
-  const UNHEALTH_PCT = totalPohon > 0 ? Number(((pohonTidakSehat / totalPohon) * 100).toFixed(1)) : 0;
-
-  // Mendapatkan 5 deteksi terbaru untuk tabel
-  const recentDetections = useMemo(() => {
-    const sorted = [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    return sorted.slice(0, 5);
-  }, [logs]);
+  // Kalkulasi persentase dari stats backend
+  const HEALTH_PCT = stats.total > 0 ? Number(((stats.sehat / stats.total) * 100).toFixed(1)) : 0;
+  const UNHEALTH_PCT = stats.total > 0 ? Number(((stats.tidak_sehat / stats.total) * 100).toFixed(1)) : 0;
 
   // Data Cards Dinamis
   const STAT_CARDS = [
     { 
       label: 'TOTAL POHON TERDETEKSI', 
-      value: totalPohon.toLocaleString('id-ID'), 
+      value: stats.total.toLocaleString('id-ID'), 
       unit: 'pohon', 
       icon: MapPin,
       bg: '#275225', 
@@ -82,7 +78,7 @@ export default function DashboardSection() {
     },
     { 
       label: 'POHON SEHAT', 
-      value: pohonSehat.toLocaleString('id-ID'), 
+      value: stats.sehat.toLocaleString('id-ID'), 
       unit: 'pohon', 
       icon: CheckCircle2,
       bg: '#4E882A', 
@@ -90,7 +86,7 @@ export default function DashboardSection() {
     },
     { 
       label: 'POHON TIDAK SEHAT', 
-      value: pohonTidakSehat.toLocaleString('id-ID'), 
+      value: stats.tidak_sehat.toLocaleString('id-ID'),  
       unit: 'pohon', 
       icon: AlertTriangle,
       bg: '#8F2828', 

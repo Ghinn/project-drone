@@ -11,7 +11,6 @@ export async function GET(
     const { id } = await params;
     const cookieHeader = await getCookieHeader(request);
 
-    
     const backendRes = await fetch(`${API_URL}/api/admin/drones/${id}`, {
       method: "GET",
       headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },

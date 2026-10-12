@@ -181,14 +181,14 @@ export function AuthProvider({ children, initialRole = null, initialUserData = n
 
   const signOutApp = useCallback(async () => {
     try {
-      // 1. HAPUS COOKIE SERVER TERLEBIH DAHULU DAN TUNGGU SAMPAI SELESAI
+      // Menghapaus Cookie Server terlebih dahulu
       await fetch('/api/auth/session-logout', {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store'
       });
       
-      // 2. SETELAH COOKIE MATI, BARU HAPUS SESI FIREBASE CLIENT
+      // Setelah cookie berhasil dihapus, maka hapus sesi firebase client
       await firebaseSignOut(firebaseAuth);
     } catch (error) {
       console.error('[AuthProvider] Error saat Sign Out:', error);
@@ -206,8 +206,6 @@ export function AuthProvider({ children, initialRole = null, initialUserData = n
           setUser(null);
           setRole(null);
           setIsSessionSynced(false);
-          
-          // HAPUS BARIS 'await clearServerSessionCookie();' DI SINI
           router.refresh(); 
         } else if (!initialRole) {
           // Kasus 2: Murni pengunjung (Guest)

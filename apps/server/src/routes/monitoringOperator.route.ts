@@ -5,6 +5,7 @@ import {
     getDashboardData, 
     getHistoriData, 
     getAnalisisData,
+    getAnalisisDetail,
     getLiveCameraData,
     getSettingsData,
     sendDroneCommand
@@ -24,5 +25,8 @@ router.get('/log-prediction', getAnalisisData);
 router.get('/history', getHistoriData);
 router.get('/settings', getSettingsData);
 router.post('/command', sendDroneCommand);
+
+// CRUD Specific Log Prediction
+router.get('/log-prediction/:id', requireSession, requireOperator, getAnalisisDetail);
 
 export default router;

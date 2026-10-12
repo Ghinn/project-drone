@@ -1,15 +1,8 @@
-import subprocess
-# import os
+import math
 import time
 import json
-import threading
-import uuid
-import cv2
-import requests
-import math
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
-from gpiozero import PWMOutputDevice
 
 # Konfigurasi MQTT Broker
 MQTT_BROKER = "127.0.0.1" 
@@ -23,67 +16,8 @@ DRONE_ID = "v1-001"
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"
 MQTT_TOPIC_STATUS = f"dreampalm/drone/uid/{DRONE_ID}/command/status"
-MQTT_TOPIC_SYSTEM = f"dreampalm/drone/uid/{DRONE_ID}/command/system"
-MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/command/action"
-
-try:
-    # Pin 18, frekuensi 50Hz (standar RC)
-    camera_trigger = PWMOutputDevice(18, frequency=50)
-    # Set ke posisi idle / 1000µs (5% duty cycle dari 20ms)
-    camera_trigger.value = 0.05
-    print("[Camera] GPIO 18 berhasil diinisialisasi.")
-except Exception as e:
-    print(f"[Camera] Gagal menginisialisasi GPIO 18: {e}")
-    camera_trigger = None
-
-def trigger_camera_task():
-    if camera_trigger:
-        print("[ACTION] Mengirim PWM Trigger 2000us ke Mapir Survey3...")
-        camera_trigger.value = 0.10  # 10% duty cycle = 2000µs (Trigger)
-        time.sleep(0.5)         # Tahan 0.5 detik
-        camera_trigger.value = 0.05  # Kembalikan ke idle (1000µs)
-        print("[ACTION] Trigger camera selesai.")
-    else:
-        print("[ACTION] Gagal trigger: camera_trigger tidak terinisialisasi.")
-
-def capture_and_upload_task():
-    print("[ACTION] Mengambil snapshot OpenCV dari /dev/video6...")
-    # Buka kamera virtual 2
-    # cap = cv2.VideoCapture('/dev/video6', cv2.CAP_V4L2)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-    cap = cv2.VideoCapture('/dev/video6')
-
-    time.sleep(0.5)
-    
-    # Baca 1 frame
-    ret, frame = cap.read()
-    cap.release()
-    
-    if ret:
-        print("[ACTION] Snapshot berhasil diambil. Memproses unggahan ke server...")
-        # Konversi array piksel ke format file .jpg
-        success, buffer = cv2.imencode('.jpg', frame)
-        if success:
-            # Iterasi ke semua endpoint URL yang didaftarkan
-            for url in BACKEND_API_BASE_URL:
-                try:
-                    files = {
-                        'image': ('snapshot.jpg', buffer.tobytes(), 'image/jpeg')
-                    }
-                    data = {
-                        'droneId': DRONE_ID
-                    }
-                    
-                    print(f"[ACTION] Mengirim ke endpoint: {url}")
-                    # Tembak ke endpoint backend
-                    response = requests.post(url, files=files, data=data, timeout=10)
-                    print(f"[ACTION] Upload ke {url} selesai. Status: {response.status_code}")
-                
-                except requests.exceptions.RequestException as e:
-                    print(f"[ACTION] Gagal mengunggah snapshot ke {url}: {e}")
-    else:
-        print("[ACTION] Gagal membaca frame dari /dev/video6.")
+# MQTT_TOPIC_SYSTEM = f"dreampalm/drone/uid/{DRONE_ID}/command/system"
+# MQTT_TOPIC_ACTION = f"dreampalm/drone/uid/{DRONE_ID}/command/action" 
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371000  # Radius bumi dalam meter
@@ -98,71 +32,16 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R * c
-
+    
 # Event Callback Connection
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Terhubung ke broker (Kode: {reason_code})")
-
-    client.subscribe(MQTT_TOPIC_SYSTEM)
-    client.subscribe(MQTT_TOPIC_ACTION)
+    
+    client.subscribe(MQTT_TOPIC_TELEMETRY)
+    client.subscribe(MQTT_TOPIC_STATUS)
     
     # Memublikasikan status "online" dengan flag retain=True
     client.publish(MQTT_TOPIC_STATUS, json.dumps({"status": "online"}), qos=1, retain=True)
-
-def on_message(client, userdata, msg):
-    topic = msg.topic
-    
-    try:
-        payload = json.loads(msg.payload.decode('utf-8'))
-        command = payload.get("command")
-        
-        # Logika Command SYSTEM (Restart WiFi)
-        if topic == MQTT_TOPIC_SYSTEM:
-            if command == "reboot_os":
-                # print("[SYSTEM] Restart WiFi...")
-                print("[SYSTEM] Reboot OS...")
-                # os.system("sudo reboot")
-                subprocess.run(["sudo", "reboot"], check=False)
-                # os.system("sudo ip link set wlan0 down && sudo ip link set wlan0 up")
-        
-        # Logika Command ACTION (Camera)
-        elif topic == MQTT_TOPIC_ACTION:
-            if command == "take_picture":
-                print("[ACTION] Trigger kamera diaktifkan...")
-                # Trigger fisik MAPIR via PWM (simpan ke SD Card)
-                threading.Thread(target=trigger_camera_task, daemon=True).start()
-                # Trigger virtual OpenCV (upload ke backend AI)
-                threading.Thread(target=capture_and_upload_task, daemon=True).start()
-
-            elif command == "spray_on":
-                print("[ACTION] Trigger penyemprotan diaktifkan...")
-                master.mav.command_long_send(
-                    master.target_system, master.target_component,
-                    mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
-                    9, 2000, 0, 0, 0, 0, 0
-                )
-
-            elif command == "spray_off":
-                print("[ACTION] Trigger penyemprotan dinonaktifkan...")
-                master.mav.command_long_send(
-                    master.target_system, master.target_component,
-                    mavutil.mavlink.MAV_CMD_DO_SET_SERVO, 0,
-                    9, 1000, 0, 0, 0, 0, 0
-                )
-                
-    except Exception as e:
-        print(f"[MQTT] Error memproses payload: {e}")
-
-def monitor_mavlink_ack(master):
-    while True:
-        msg = master.recv_match(type=['COMMAND_ACK', 'SERVOUT'], blocking=False)
-        if msg:
-            if msg.get_type() == 'COMMAND_ACK':
-                print(f"[MAVLink ACK] Command {msg.command} hasil: {msg.result} (0=Success)")
-            elif msg.get_type() == 'SERVOUT':
-                # Memantau perubahan PWM pada channel 9 secara real-time
-                print(f"[PWM Output] Channel 9: {msg.servo9_raw}")
-        time.sleep(0.1)
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, f"VPS_Bridge_{DRONE_ID}")
 client.username_pw_set(MQTT_USER, MQTT_PASS)
@@ -171,7 +50,6 @@ client.username_pw_set(MQTT_USER, MQTT_PASS)
 client.will_set(MQTT_TOPIC_STATUS, payload=json.dumps({"status": "offline"}), qos=1, retain=True)
 
 client.on_connect = on_connect
-client.on_message = on_message
 
 client.connect(MQTT_BROKER, MQTT_PORT, keepalive=120)
 client.loop_start()
@@ -242,15 +120,15 @@ print("Menunggu koneksi SITL Ardupilot dari luar (Port UDP 14550)...")
 master = mavutil.mavlink_connection('udpin:0.0.0.0:14550')
 
 master.wait_heartbeat()
-print("SITL Terhubung! Memulai streaming ke MQTT...") #[cite: 3]
+print("SITL Terhubung! Memulai streaming ke MQTT...")
 
-# Data MAVLink dengan frekuensi 5 detik
+# Data MAVLink dengan frekuensi 5 Hz
 master.mav.request_data_stream_send(
     master.target_system,
     master.target_component,
     mavutil.mavlink.MAV_DATA_STREAM_ALL,
-    5, # Frekuensi pembaruan dalam Hertz (Hz)
-    1  # 1 = Start Stream, 0 = Stop Stream
+    5, 
+    1  
 )
 
 # Loop Pembacaan MAVLink dan Publish MQTT
@@ -301,7 +179,7 @@ while True:
         elif msg_type == 'HEARTBEAT':
             telemetry_data['mode'] = mavutil.mode_string_v10(msg)
             drone_is_armed = bool(msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
-
+    
         # Indikator Penerbangan dan Pre-Flight System Check
         elif msg_type == 'SYS_STATUS':
             # Baterai, Voltase, dan Arus
@@ -344,7 +222,7 @@ while True:
                 'noise': msg.noise,
                 'txbuf': msg.txbuf         # Buffer transmisi (%)
             }
-
+        
         # Ekstraksi RC Switch
         elif msg_type == 'RC_CHANNELS':
             telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useMonitoringOperator } from '../layout/monitoringOperator-context';
 import { DRONE_TOKENS } from '../layout/monitoringOperator-types';
 import { 
   AlertTriangle, 
@@ -393,61 +394,66 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
 }
 
 export default function LogPrediksiSection() {
-  const [logs, setLogs] = useState<PredictionLogData[]>([]);
+  const { latestSnapshot } = useMonitoringOperator();
+  const [logs, setLogs] = useState<any[]>([]);
+  const [stats, setStats] = useState({ total: 0, sehat: 0, tidak_sehat: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<PredictionLogData | null>(null);
-  
+  const [fetchingId, setFetchingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filterSev, setFilterSev] = useState<string>('all');
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch Real Data dari API Backend
-  useEffect(() => {
-    let isMounted = true;
-    const fetchLogs = async () => {
-      try {
-        const res = await fetch('/api/monitoringOperator/log-prediction'); 
-        if (res.ok) {
-          const result = await res.json();
-          if (result.data && isMounted) {
-            setLogs(result.data);
-          }
-        } else {
-          console.warn("[Operator] Gagal memuat data /monitoringOperator/log-prediction");
-        }
-      } catch (error) {
-        console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchLogs();
-    return () => { isMounted = false; };
-  }, []);
+  // Fetch Data API secara dinamis
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        search: search,
+        filterSev: filterSev
+      });
 
-  // Pencarian berdasarkan Klasifikasi
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      const matchSearch = search === '' || log.id.toLowerCase().includes(search.toLowerCase());
-      const matchSev = filterSev === 'all' || log.classification === filterSev;
-      return matchSearch && matchSev;
-    });
-  }, [logs, search, filterSev]);
+      const res = await fetch(`/api/monitoringOperator/log-prediction?${query.toString()}`); 
+      if (res.ok) {
+        const result = await res.json();
+        if (result.data) {
+          setLogs(result.data);
+          setStats(result.stats);
+          setTotalPages(result.pagination?.totalPages || 1);
+        }
+      } else {
+        console.warn("[Operator] Gagal memuat data monitoringOperator/log-prediction");
+      }
+    } catch (error) {
+      console.error("[Operator] Gagal fetching monitoringOperator/log-prediction", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger fetch saat halaman, pencarian, atau filter berubah
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchLogs();
+    }, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [currentPage, search, filterSev]);
 
   // Reset pagination ketika filter/search berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filterSev]);
 
-  // Pagination Slicing
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
-  const paginatedLogs = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredLogs.slice(start, start + itemsPerPage);
-  }, [filteredLogs, currentPage, itemsPerPage]);
+  // Auto-Refresh
+  useEffect(() => {
+    if (latestSnapshot) fetchLogs();
+  }, [latestSnapshot]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -465,10 +471,6 @@ export default function LogPrediksiSection() {
   }
 
   // Hitung statistik
-  const totalLogs = logs.length;
-  const criticalCount = logs.filter(l => l.classification === 'tidak_sehat').length;
-  const healthyCount = logs.filter(l => l.classification === 'sehat').length;
-
   const icons = {
     total: <div className='p-3 rounded-xl bg-[#C1D34318]'>
               <FileText size={18} color={'#C1D343'} />
@@ -491,16 +493,16 @@ export default function LogPrediksiSection() {
           <p className="text-xs text-gray-500 mt-0.5">AI Prediction Log · Riwayat deteksi dan analisis kesehatan sawit</p>
         </div>
         <span className="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-400 border border-slate-300">
-          {totalLogs} Log Tersimpan
+          {stats.total} Log Tersimpan
         </span>
       </div>
 
       {/* Stat mini cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Total Log', value: totalLogs, icon: icons.total, color: T.violet },
-          { label: 'Tidak Sehat', value: criticalCount, icon: icons.critical, color: T.red },
-          { label: 'Pohon Sehat', value: healthyCount, icon: icons.healthy, color: T.green },
+          { label: 'Total Log', value: stats.total, icon: icons.total, color: T.violet },
+          { label: 'Tidak Sehat', value: stats.tidak_sehat, icon: icons.critical, color: T.red },
+          { label: 'Pohon Sehat', value: stats.sehat, icon: icons.healthy, color: T.green },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1e1e1e] flex items-center gap-3">
             <span className="text-2xl">{s.icon}</span>
@@ -520,7 +522,7 @@ export default function LogPrediksiSection() {
           </svg>
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Cari ID, lokasi, atau klasifikasi..."
+            placeholder="Cari ID log..."
             className="w-full pl-9 pr-4 py-2 rounded-lg text-xs bg-white dark:bg-[#111] border border-gray-200 dark:border-[#2a2a2a] text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none"
           />
         </div>
@@ -556,8 +558,8 @@ export default function LogPrediksiSection() {
                     </div>
                   </td>
                 </tr>
-              ) : paginatedLogs.length > 0 ? (
-                paginatedLogs.map(log => {
+              ) : logs.length > 0 ? (
+                logs.map(log => {
                   const isHealthy = log.classification === 'sehat';
                   const cStyle = isHealthy ? CLASSIFICATION_STYLE.sehat : CLASSIFICATION_STYLE.tidak_sehat;
                   
@@ -585,10 +587,42 @@ export default function LogPrediksiSection() {
                         {cStyle.label}
                       </td>
                       <td className="px-5 py-3.5">
-                        <button onClick={() => setSelectedLog(log)}
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md transition hover:opacity-80"
+                        <button 
+                          onClick={async () => {
+                            setFetchingId(log.id);
+                            try {
+                              const res = await fetch(`/api/monitoringOperator/log-prediction/${log.id}`);
+                              if (res.ok) {
+                                const result = await res.json();
+                                if (result.data) setSelectedLog(result.data);
+                              }
+                            } catch (err) {
+                              console.error("Gagal mengambil detail Data Log:", err);
+                            } finally {
+                              setFetchingId(null);
+                            }
+                          }}
+
+                          disabled={fetchingId === log.id}
+                          className="relative inline-flex items-center justify-center text-xs font-semibold rounded-md transition hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{ background: `${T.violet}15`, color: T.violet }}>
-                          <Info size={12}/> Detail
+
+                          <div className="invisible flex items-center gap-1.5 px-3 py-1.5">
+                            <Info size={12}/>
+                            <span>Detail</span>
+                          </div>
+
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            {fetchingId === log.id ? (
+                              <span>...</span>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <Info size={12}/>
+                                <span>Detail</span>
+                              </div>
+                            )}
+                          </div>
+                          
                         </button>
                       </td>
                     </tr>
@@ -606,7 +640,7 @@ export default function LogPrediksiSection() {
         </div>
 
         {/* PAGINATION SECTION */}
-        {!loading && filteredLogs.length > 0 && (
+        {!loading && totalPages > 0 && (
           <div className="shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-[#1e1e1e] bg-white dark:bg-[#111]">
             <button
               onClick={() => handlePageChange(currentPage - 1)}

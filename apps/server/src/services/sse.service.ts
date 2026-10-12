@@ -10,9 +10,9 @@ interface SseClient {
 let clients: SseClient[] = [];
 
 const ALLOWED_ORIGINS: string[] = [
-    'https://app.dreampalm.id',
-    'https://dreampalm.id',
     'http://localhost:3000',
+    'https://api.dreampalm.id',
+    'https://dreampalm.id',
 ];
 
 // Helper SSE

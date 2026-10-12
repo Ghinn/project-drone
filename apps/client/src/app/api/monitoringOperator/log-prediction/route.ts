@@ -6,8 +6,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 export async function GET(request: Request) {
   try {
     const cookieHeader = await getCookieHeader(request);
-    
-    const endpoint = `${API_URL}/api/monitoringOperator/log-prediction`;
+
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+
+    const endpoint = `${API_URL}/api/monitoringOperator/log-prediction${queryString ? `?${queryString}` : ""}`;
     
     const backendRes = await fetch(endpoint, {
       method: 'GET',

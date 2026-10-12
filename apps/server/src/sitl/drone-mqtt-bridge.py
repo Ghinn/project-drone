@@ -1,5 +1,5 @@
+import os
 import subprocess
-# import os
 import time
 import json
 import threading
@@ -10,6 +10,10 @@ import math
 import paho.mqtt.client as mqtt
 from pymavlink import mavutil
 from gpiozero import PWMOutputDevice
+from dotenv import load_dotenv
+
+# Memuat file .env
+load_dotenv()
 
 # Konfigurasi MQTT Broker via WireGuard
 MQTT_BROKER = "10.0.0.1"
@@ -24,7 +28,7 @@ BACKEND_API_BASE_URL = [
 ]
 
 # Identifier Drone
-DRONE_ID = "v1-001"
+DRONE_ID = os.getenv("DRONE_ID")
 
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"

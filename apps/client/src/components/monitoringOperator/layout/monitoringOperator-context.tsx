@@ -78,10 +78,18 @@ export const useTelemetrySSE = (droneId?: string) => {
     consecutiveErrorsRef.current = 0;
     setConnectionStatus('connecting');
 
+    if (!droneId) {
+        console.log("[SSE] Menunda koneksi, menunggu droneId...");
+        return;
+    }
+
     // URL Endpoint Topic_MQTT
-    const endpoint = droneId 
-      ? `/api/data/stream?droneId=${droneId}`
-      : `/api/data/stream`;
+    // const endpoint = droneId 
+    //   ? `/api/data/stream?droneId=${droneId}`
+    //   : `/api/data/stream`;
+
+    // URL Endpoint 
+    const endpoint = `/api/data/stream?droneId=${droneId}`;
 
     // Tambahkan parameter `true` agar tidak ditimpa oleh NEXT_PUBLIC_API_URL
     const eventSource = createEventSource(endpoint, true);
@@ -139,6 +147,7 @@ export const useTelemetrySSE = (droneId?: string) => {
     };
 
     return () => {
+      console.log(`[SSE] Cleanup dipanggil, menutup stream untuk: ${droneId}`);
       eventSource.close();
       eventSourceRef.current = null;
     };

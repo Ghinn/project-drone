@@ -163,19 +163,36 @@ export default function PantauDroneSection() {
       if (event.streams[0]) {
         mediaStreamRef.current = event.streams[0]; // Simpan referensi stream
         setIsVideoActive(true);
-        // if (videoRef.current) {
-        //   videoRef.current.srcObject = event.streams[0];
-        //   videoRef.current.play().catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
-        // }
+
+        if (videoRef.current) {
+          if (videoRef.current.srcObject !== event.streams[0]) {
+            videoRef.current.srcObject = event.streams[0];
+            videoRef.current.play().catch(e => {
+              if (e.name !== 'AbortError') {
+                console.error("[WebRTC] Autoplay ditolak browser:", e);
+              }
+            });
+          }
+        }
       }
     };
+
+    socket.on('connect', () => {
+      console.log("[Signaling] Terhubung ke WebRTC");
+      socket.emit('join-room', { droneId, role: 'operator' });
+      socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } });
+    });
+
+    socket.on('peer-joined', (data) => {
+      if (data.role === 'drone') {
+        console.log("[Signaling] Drone masuk ke room, me-request ulang stream...");
+        socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } });
+      }
+    });
 
     pc.onicecandidate = (event) => {
       if (event.candidate) socket.emit('ice-candidate', { droneId, candidate: event.candidate });
     };
-
-    socket.emit('join-room', { droneId, role: 'operator' });
-    setTimeout(() => socket.emit('sdp-message', { droneId, sdp: { type: 'request-offer' } }), 500);
 
     socket.on('sdp-message', async (sdpData) => {
       if (sdpData && sdpData.type === 'offer') {
@@ -215,8 +232,14 @@ export default function PantauDroneSection() {
   // Hook Stream: Selalu pasang ulang stream saat komponen Video ter-remount pasca-Swap
   useEffect(() => {
     if (isVideoActive && videoRef.current && mediaStreamRef.current) {
-      videoRef.current.srcObject = mediaStreamRef.current;
-      videoRef.current.play().catch(e => console.error("[WebRTC Reattach] Gagal memutar video:", e));
+      if (videoRef.current.srcObject !== mediaStreamRef.current) {
+        videoRef.current.srcObject = mediaStreamRef.current;
+      }
+      videoRef.current.play().catch(e => {
+        if (e.name !== 'AbortError') {
+          console.error("[WebRTC Reattach] Gagal memutar video:", e);
+        }
+      });
     }
   }, [mainView, isVideoActive]); // Triggers every time views are swapped
 
@@ -523,7 +546,19 @@ export default function PantauDroneSection() {
     <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center pointer-events-none">
       {droneOn && isVideoActive ? (
         <video
-          ref={videoRef}
+          ref={(node) => {
+            (videoRef as any).current = node;
+            if (node && mediaStreamRef.current) {
+              if (node.srcObject !== mediaStreamRef.current) {
+                node.srcObject = mediaStreamRef.current;
+                node.play().catch(e => {
+                  if (e.name !== 'AbortError') {
+                    console.error("[WebRTC] Autoplay ditolak browser:", e);
+                  }
+                });
+              }
+            }
+          }}
           autoPlay
           loop
           muted

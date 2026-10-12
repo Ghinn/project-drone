@@ -8,10 +8,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const cookieHeader = await getCookieHeader(request);
+    
     const { searchParams } = new URL(request.url);
     const droneId = searchParams.get("droneId");
 
-    const cookieHeader = await getCookieHeader(request);
 
     // Menyusun URL target ke backend Express
     const backendUrl = `${API_URL}/api/drone/telemetryState/stream${droneId ? `?droneId=${droneId}` : ""}`;
