@@ -83,10 +83,31 @@ export const useTelemetrySSE = (droneId?: string) => {
         return;
     }
 
-    // URL Endpoint Topic_MQTT
-    // const endpoint = droneId 
-    //   ? `/api/data/stream?droneId=${droneId}`
-    //   : `/api/data/stream`;
+    const fetchInitialState = async () => {
+      try {
+        const timestamp = new Date().getTime();
+        const res = await fetch(`/api/data/current?droneId=${droneId}&_t=${timestamp}`, {
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+            }
+        });
+        
+        if (res.ok) {
+          const parsed = await res.json();
+          if (parsed.data) {
+             if (parsed.data.status) setDroneStatus(parsed.data.status);
+             if (parsed.data.telemetry) {
+                 setTelemetry(prev => ({ ...prev, ...parsed.data.telemetry }));
+             }
+          }
+        }
+      } catch (error) {
+        console.warn('[fetchInitialState] Gagal mengambil state awal drone, fallback ke default SSE:', error);
+      }
+    };
+
+    fetchInitialState();
 
     // URL Endpoint 
     const endpoint = `/api/data/stream?droneId=${droneId}`;
@@ -122,7 +143,9 @@ export const useTelemetrySSE = (droneId?: string) => {
 
     eventSource.onerror = () => {
       consecutiveErrorsRef.current += 1;
-      setDroneStatus('unknown');
+      if (consecutiveErrorsRef.current >= 2) {
+          setDroneStatus('unknown');
+      }
       setConnectionStatus('error');
 
       if (consecutiveErrorsRef.current === 1) {

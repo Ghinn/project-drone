@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCookieHeader } from '@/lib/bff';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.dreampalm.id";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Menonaktifkan runtime statis agar Next.js tidak melakukan caching pada stream ini
 export const dynamic = "force-dynamic";

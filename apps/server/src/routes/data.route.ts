@@ -6,7 +6,8 @@ import {
     getDashboardData, 
     getDataLogs, 
     getDataStats,
-    streamTelemetrySSE
+    streamTelemetrySSE,
+    getCurrentDroneState
 } from '../controllers/data.controller';
 import { requireSession } from '../middleware/auth.middleware';
 import { broadcastToDrone } from '../services/sse.service'; 
@@ -73,6 +74,7 @@ router.use(requireSession);
 router.get('/dashboard', getDashboardData);
 router.get('/histori', getDataLogs);
 router.get('/analisis', getDataStats);
-router.get('/stream', streamTelemetrySSE); 
+router.get('/stream', streamTelemetrySSE);
+router.get('/current', getCurrentDroneState); 
 
 export default router;

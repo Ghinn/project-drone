@@ -44,7 +44,11 @@ export function initMqtt() {
             }
 
             if (category === 'command' && subCategory === 'status') {
-                const statusStr = payload.status; 
+                const statusStr = payload.status;
+
+                const currentState = activeDronesState.get(droneId) || {};
+                activeDronesState.set(droneId, { ...currentState, status: statusStr, timestamp: new Date() });
+
                 try {
                     await prisma.drone.upsert({
                         where: { id: droneId },
@@ -54,7 +58,6 @@ export function initMqtt() {
 
                     try {
                         telemetryEmitter.emit(`status_update_${droneId}`, { status: statusStr });
-                        // telemetryEmitter.emit('status_update_all', { droneId: droneId, status: statusStr });
                     } catch (emitError) {
                         console.error(`[MQTT] Emitter Error pada Status ${droneId}:`, emitError);
                     }

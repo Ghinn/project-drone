@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { addClient } from '../services/sse.service';
+import { getTelemetryLogStateByDrone } from '../services/mqtt.service';
 
 export const getDashboardData = async (req: Request, res: Response) => {
     try {
@@ -50,4 +51,40 @@ export const getDataStats = async (req: Request, res: Response) => {
 export const streamTelemetrySSE = (req: Request, res: Response) => {
     // Teruskan request dan response langsung ke service SSE
     addClient(req, res);
+};
+
+export const getCurrentDroneState = async (req: Request, res: Response) => {
+    try {
+        const droneId = req.query.droneId as string;
+        
+        if (!droneId) {
+            return res.status(400).json({ success: false, error: 'Parameter droneId wajib disertakan' });
+        }
+
+        // Ambil state telemetri dari memory MQTT Service
+        const memoryState = getTelemetryLogStateByDrone(droneId);
+        
+        // Format response sesuai kebutuhan Frontend { status: string, telemetry: object }
+        const currentState = {
+            status: memoryState?.status || 'unknown',
+            telemetry: memoryState || null
+        };
+
+        // Fallback: Jika di memory belum ada status, query ke database (berguna saat backend baru restart)
+        if (currentState.status === 'unknown') {
+            const dbDrone = await prisma.drone.findUnique({
+                where: { id: droneId },
+                select: { status: true }
+            });
+            
+            if (dbDrone && dbDrone.status) {
+                currentState.status = dbDrone.status;
+            }
+        }
+
+        res.status(200).json({ success: true, data: currentState });
+    } catch (error) {
+        console.error('[dataController] Error getCurrentDroneState:', error);
+        res.status(500).json({ success: false, message: 'Gagal mengambil state saat ini' });
+    }
 };
