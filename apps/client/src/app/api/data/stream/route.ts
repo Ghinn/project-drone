@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
 
     // Menyusun URL target ke backend Express
-    const backendUrl = `${API_URL}/api/drone/telemetryState/stream${droneId ? `?droneId=${droneId}` : ""}`;
+    const backendUrl = `${API_URL}/api/data/stream${droneId ? `?droneId=${droneId}` : ""}`;
 
     const backendRes = await fetch(backendUrl, {
       method: "GET",
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache, no-transform",
-        "Connection": "keep-alive",
+        // "Connection": "keep-alive",
       },
     });
   } catch (error) {

@@ -5,7 +5,6 @@ import { EventEmitter } from 'events';
 
 export const telemetryEmitter = new EventEmitter();
 
-const activeDronesState = new Map<string, any>();
 let mqttClientInstance: MqttClient | null = null;
 
 export function initMqtt() {
@@ -46,9 +45,6 @@ export function initMqtt() {
             if (category === 'command' && subCategory === 'status') {
                 const statusStr = payload.status;
 
-                const currentState = activeDronesState.get(droneId) || {};
-                activeDronesState.set(droneId, { ...currentState, status: statusStr, timestamp: new Date() });
-
                 try {
                     await prisma.drone.upsert({
                         where: { id: droneId },
@@ -69,13 +65,16 @@ export function initMqtt() {
             }
 
             if (category === 'telemetryState') {
-                const currentState = activeDronesState.get(droneId) || {};
-                const updatedState = { ...currentState, ...payload, timestamp: new Date() };
-                
-                activeDronesState.set(droneId, updatedState);
+                const updatedState = { 
+                    status: 'online', 
+                    ...payload, 
+                    timestamp: new Date() 
+                };
                 
                 try {
                     telemetryEmitter.emit(`telemetry_update_${droneId}`, updatedState);
+                    telemetryEmitter.emit(`status_update_${droneId}`, { status: 'online' });
+                    console.log(`Drone ${droneId} dipulihkan ke 'Online' berdasarkan data telemetri.`);
                 } catch (emitError) {
                     console.error(`[MQTT] Emitter Error pada Telemetri ${droneId}:`, emitError);
                 }
@@ -129,8 +128,4 @@ export const publishDroneCommand = (droneId: string, targetTopic: 'system' | 'ac
     
     mqttClientInstance.publish(topic, payload);
     console.log(`[MQTT] command '${command}' dikirim ke topic: ${topic}`);
-};
-
-export const getTelemetryLogStateByDrone = (droneId: string) => {
-    return activeDronesState.get(droneId) || null;
 };

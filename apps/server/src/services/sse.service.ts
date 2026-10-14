@@ -1,5 +1,5 @@
 import { Response, Request } from 'express';
-import { telemetryEmitter, getTelemetryLogStateByDrone } from './mqtt.service';
+import { telemetryEmitter } from './mqtt.service';
 import { prisma } from '../lib/prisma';
 
 interface SseClient {
@@ -75,11 +75,6 @@ export const addClient = async (req: Request, res: Response) => {
         });
 
         return;
-    }
-
-    const initialState = getTelemetryLogStateByDrone(targetDroneId);
-    if (initialState) {
-        safeWrite(res, { type: 'telemetry', data: initialState });
     }
 
     try {
