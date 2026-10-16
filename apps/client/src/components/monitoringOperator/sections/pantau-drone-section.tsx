@@ -150,32 +150,81 @@ export default function PantauDroneSection() {
     const socket = io(BACKEND_URL, { path: '/webrtc-signaling/' });
     socketRef.current = socket;
 
-    const pc = new RTCPeerConnection({ 
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] 
-    });
+    const iceServers: RTCIceServer[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      {
+        urls: [
+          'turn:openrelay.metered.ca:80',
+          'turn:openrelay.metered.ca:443',
+          'turn:openrelay.metered.ca:443?transport=tcp'
+        ],
+        username: 'openrelayproject@gmail.com',
+        credential: 'openrelayproject'
+      }
+    ];
+
+    if (process.env.NEXT_PUBLIC_TURN_USERNAME && process.env.NEXT_PUBLIC_TURN_PASSWORD) {
+      iceServers.push({
+        urls: [
+          'turn:turn.cloudflare.com:3478',
+          'turn:turn.cloudflare.com:3478?transport=tcp'
+        ],
+        username: process.env.NEXT_PUBLIC_TURN_USERNAME,
+        credential: process.env.NEXT_PUBLIC_TURN_PASSWORD
+      });
+      console.log("[WebRTC] Menggunakan Cloudflare TURN Server (UDP & TCP)");
+    }
+
+    const pc = new RTCPeerConnection({ iceServers });
     pcRef.current = pc;
 
-    let isRemoteSet = false;
-    let pendingCandidates: any[] = [];
-
-    pc.ontrack = (event) => {
-      console.log("[WebRTC] Stream video diterima dari Drone");
-      if (event.streams[0]) {
-        mediaStreamRef.current = event.streams[0]; // Simpan referensi stream
-        setIsVideoActive(true);
-
-        if (videoRef.current) {
-          if (videoRef.current.srcObject !== event.streams[0]) {
-            videoRef.current.srcObject = event.streams[0];
-            videoRef.current.play().catch(e => {
-              if (e.name !== 'AbortError') {
-                console.error("[WebRTC] Autoplay ditolak browser:", e);
-              }
-            });
-          }
-        }
+    pc.oniceconnectionstatechange = () => {
+      console.log(`[WebRTC ICE State] Koneksi Jaringan: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'failed') {
+        console.error("[WebRTC] Jaringan WebRTC Gagal. Kemungkinan terblokir Firewall atau TURN Server gagal merelay.");
       }
     };
+    
+    let isRemoteSet = false;
+    let pendingCandidates: any[] = [];
+    
+    pc.ontrack = (event) => {
+      console.log("[WebRTC] Stream video diterima dari Drone.");
+      if (event.streams && event.streams[0]) {
+        mediaStreamRef.current = event.streams[0];
+        setIsVideoActive(true);
+
+        // Binding Stream yang agresif untuk mencegah DOM lose state
+        setTimeout(() => {
+          if (videoRef.current && videoRef.current.srcObject !== event.streams[0]) {
+            videoRef.current.srcObject = event.streams[0];
+            videoRef.current.play().then(() => {
+                console.log("[WebRTC] Stream berhasil diputar di browser.");
+            }).catch(e => console.error("[WebRTC] Autoplay ditolak browser:", e));
+          }
+        }, 100);
+      }
+    };
+
+    // pc.ontrack = (event) => {
+    //   console.log("[WebRTC] Stream video diterima dari Drone");
+    //   if (event.streams[0]) {
+    //     mediaStreamRef.current = event.streams[0]; // Simpan referensi stream
+    //     setIsVideoActive(true);
+
+    //     if (videoRef.current) {
+    //       if (videoRef.current.srcObject !== event.streams[0]) {
+    //         videoRef.current.srcObject = event.streams[0];
+    //         videoRef.current.play().catch(e => {
+    //           if (e.name !== 'AbortError') {
+    //             console.error("[WebRTC] Autoplay ditolak browser:", e);
+    //           }
+    //         });
+    //       }
+    //     }
+    //   }
+    // };
 
     socket.on('connect', () => {
       console.log("[Signaling] Terhubung ke WebRTC");
@@ -585,9 +634,9 @@ export default function PantauDroneSection() {
   );
 
   const activeRCMode = useMemo(() => {
-    if (telemetry.rc?.ch8 === 'MODE_HIGH' || telemetry.rc?.ch8 === 'ON') return 'RTL';
-    if (telemetry.rc?.ch7 === 'MODE_HIGH' || telemetry.rc?.ch7 === 'ON') return 'AUTO';
     if (telemetry.rc?.ch6 === 'MODE_HIGH' || telemetry.rc?.ch6 === 'ON') return 'LOITER';
+    if (telemetry.rc?.ch7 === 'MODE_HIGH' || telemetry.rc?.ch7 === 'ON') return 'AUTO';
+    if (telemetry.rc?.ch8 === 'MODE_HIGH' || telemetry.rc?.ch8 === 'ON') return 'RTL';
     if (telemetry.rc?.ch9 === 'MODE_HIGH' || telemetry.rc?.ch9 === 'ON') return 'SPRAY';
     
     return 'MODE RC OFF';

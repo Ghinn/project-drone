@@ -39,10 +39,11 @@ export interface TelemetryData {
   current: number;
   sys_check?: SysCheckData;
   rc?: {
-    ch6: string;
-    ch7: string;
-    ch8: string;
-    ch9: string;
+    ch5: number;
+    ch6: number;
+    ch7: number;
+    ch8: number;
+    ch9: number;
   };
   radio?: {
     rssi: number;

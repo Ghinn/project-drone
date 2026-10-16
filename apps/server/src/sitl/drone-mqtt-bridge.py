@@ -217,7 +217,7 @@ telemetry_data = {
     
     # RC Switch Status
     "rc": {
-        "ch6": "OFF", "ch7": "OFF", "ch8": "OFF", "ch9": "OFF"
+        "ch5": 0, "ch6": 0, "ch7": 0, "ch8": 0, "ch9": 0
     },
 
     # Kualitas Sinyal
@@ -240,12 +240,6 @@ SENSOR_BITS = {
     "terrain": 4194304,
     "battery_monitor": 33554432
 }
-
-def parse_rc_switch(pwm_value):
-    if pwm_value < 500: return "DISCONNECTED"
-    elif pwm_value < 1300: return "OFF"
-    elif 1300 <= pwm_value <= 1700: return "MODE_MID"
-    else: return "MODE_HIGH"
 
 # Koneksi Flight Controller (Mission Planner)
 print("Menunggu koneksi ke Flight Controller via TELEM 2 (UART)...")
@@ -370,10 +364,11 @@ while True:
             
         # Ekstraksi RC Switch
         elif msg_type == 'RC_CHANNELS':
-            telemetry_data['rc']['ch6'] = parse_rc_switch(msg.chan6_raw)
-            telemetry_data['rc']['ch7'] = parse_rc_switch(msg.chan7_raw)
-            telemetry_data['rc']['ch8'] = parse_rc_switch(msg.chan8_raw)
-            telemetry_data['rc']['ch9'] = parse_rc_switch(msg.chan9_raw)
+            telemetry_data['rc']['ch5'] = msg.chan5_raw
+            telemetry_data['rc']['ch6'] = msg.chan6_raw
+            telemetry_data['rc']['ch7'] = msg.chan7_raw
+            telemetry_data['rc']['ch8'] = msg.chan8_raw
+            telemetry_data['rc']['ch9'] = msg.chan9_raw
 
         # Publish ke MQTT Broker setiap 1 detik
         current_time = time.time()
@@ -395,7 +390,9 @@ while True:
             print(f"[Production Log] Volt: {telemetry_data['voltage']}V | "
                   f"Mode: {telemetry_data['mode']} | "
                   f"State: {telemetry_data['flightMode'].upper()} | "
-                  f"CH6: {telemetry_data['rc']['ch6']}")
+                  f"CH5: {telemetry_data['rc']['ch5']} | "
+                  f"CH6: {telemetry_data['rc']['ch6']} | "
+                  f"CH7: {telemetry_data['rc']['ch7']}")
             
             last_pub_time = current_time
 

@@ -36,12 +36,20 @@ const SEED_USERS = [
     assignedDroneId: null,
   },
   {
-    email: "halo.operator@gmail.com",
+    email: "halo.1operator@gmail.com",
     password: "admin123",
-    name: "Halo Operator",
+    name: "Halo Operator-1",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
     assignedDroneId: "v1-001",
+  },
+  {
+    email: "halo.2operator@gmail.com",
+    password: "admin123",
+    name: "Halo Operator-2",
+    role: Role.OPERATOR,
+    status: ApprovalStatus.APPROVED,
+    assignedDroneId: "v1-002",
   },
   {
     email: "dioaranda2004@gmail.com",
@@ -49,7 +57,7 @@ const SEED_USERS = [
     name: "Dio Aranda",
     role: Role.OPERATOR,
     status: ApprovalStatus.APPROVED,
-    assignedDroneId: "v1-002",
+    assignedDroneId: "v1-001",
   },
   {
     email: "ahmadsaiziraden@apps.ipb.ac.id",

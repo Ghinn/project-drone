@@ -25,7 +25,7 @@ export const defaultTelemetry: TelemetryData = {
     xy_position_control: false, motor_outputs: false,
     rc_receiver: false, gyro_cal: false, accel_cal: false, mag_cal: false
   },
-  rc: { ch6: 'OFF', ch7: 'OFF', ch8: 'OFF', ch9: 'OFF' },
+  rc: { ch5: 0, ch6: 0, ch7: 0, ch8: 0, ch9: 0 },
   radio: { rssi: 0, remrssi: 0, noise: 0, txbuf: 0 } 
 };
 

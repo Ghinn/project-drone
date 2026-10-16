@@ -2,7 +2,7 @@ import os
 import asyncio
 import socketio
 from dotenv import load_dotenv
-from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, RTCConfiguration, RTCIceServer
 from aiortc.sdp import candidate_from_sdp
 from aiortc.contrib.media import MediaPlayer, MediaRelay
 
@@ -55,7 +55,50 @@ async def start_webrtc(active_sio, url):
     try:
         await cleanup_webrtc()
         print(f"[WebRTC] Menginisialisasi PeerConnection dan Camera untuk {url}...")
-        pc = RTCPeerConnection()
+
+        # Cloudflare TURN Server
+        # TURN_URL = os.getenv("TURN_URL", "")
+        TURN_USER = os.getenv("TURN_USERNAME", "")
+        TURN_PASS = os.getenv("TURN_PASSWORD", "")
+
+        ice_servers = [
+            RTCIceServer(urls=["stun:stun.l.google.com:19302"]),
+            RTCIceServer(urls=["stun:stun1.l.google.com:19302"]),
+            RTCIceServer(
+                urls=[
+                    "turn:openrelay.metered.ca:80",
+                    "turn:openrelay.metered.ca:443",
+                    "turn:openrelay.metered.ca:443?transport=tcp"
+                ],
+                username="openrelayproject@gmail.com",
+                credential="openrelayproject"
+            )
+        ]
+        print("[WebRTC] Menggunakan OpenRelay TURN/STUN Universal.")
+        
+        if TURN_USER and TURN_PASS:
+            ice_servers.append(
+                RTCIceServer(
+                    urls=[
+                        "turn:turn.cloudflare.com:3478",
+                        "turn:turn.cloudflare.com:3478?transport=tcp"
+                    ],
+                    username=TURN_USER,
+                    credential=TURN_PASS
+                )
+            )
+            print("[WebRTC] Cloudflare TURN Server (UDP & TCP) berhasil disisipkan ke konfigurasi ICE.")
+
+        pc = RTCPeerConnection(
+            configuration=RTCConfiguration(iceServers=ice_servers)
+        )
+
+        @pc.on("iceconnectionstatechange")
+        async def on_iceconnectionstatechange():
+            print(f"[WebRTC ICE State] Status koneksi paket UDP: {pc.iceConnectionState}")
+            if pc.iceConnectionState == "failed":
+                print("[WebRTC] Gagal menembus NAT/Firewall. Menutup PeerConnection.")
+                await cleanup_webrtc()
         
         video_track = get_camera_track()
         if video_track:
@@ -63,6 +106,14 @@ async def start_webrtc(active_sio, url):
         
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
+
+        print("[WebRTC] Menunggu pengumpulan kandidat ICE (STUN/TURN) selesai...")
+        gather_timeout = 0
+        while pc.iceGatheringState != "complete" and gather_timeout < 50:
+            await asyncio.sleep(0.1)
+            gather_timeout += 1
+            
+        print(f"[WebRTC] Pengumpulan ICE selesai (State: {pc.iceGatheringState}). Mengirim SDP lengkap ke Operator.")
         
         await active_sio.emit('sdp-message', {
             'droneId': DRONE_ID,
@@ -99,8 +150,11 @@ async def setup_and_connect_sio(url):
         elif msg_type == 'answer':
             print(f"[WebRTC] Menerima SDP Answer dari Operator ({url})")
             if pc:
-                answer = RTCSessionDescription(sdp=data.get('sdp'), type=msg_type)
-                await pc.setRemoteDescription(answer)
+                if pc.signalingState == "have-local-offer":
+                    answer = RTCSessionDescription(sdp=data.get('sdp'), type=msg_type)
+                    await pc.setRemoteDescription(answer)
+                else:
+                    print(f"[WebRTC] Mengabaikan SDP Answer duplikat. State sudah '{pc.signalingState}'")
 
     @sio.on('ice-candidate')
     async def on_ice_candidate(data):

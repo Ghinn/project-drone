@@ -160,7 +160,7 @@ export default function TelemetrySection() {
 
   const connStatus = droneStatus === 'online' ? 'connected' : 'disconnected';
   const displayMode = telemetry.mode?.startsWith('Mode(') ? 'INITIALIZING' : (telemetry.mode || 'DISARMED');
-  const isLinkFreqReady = droneStatus === 'online';
+  // const isLinkFreqReady = droneStatus === 'online';
 
   const DEVICE_INFO = [
     { label: 'Model Drone', value: isLoading ? '...' : (droneDetail?.name || 'Tidak Ditemukan') },
@@ -207,11 +207,43 @@ export default function TelemetrySection() {
     { label: 'YAW', value: toDeg(telemetry.yaw) },
   ];
 
+  const isRcConnected = telemetry.sys_check?.rc_receiver === true;
+
+  // Deteksi Profil Drone (droneDetail dan activeDroneId)
+  const isDrone2 = droneDetail?.name?.includes('2') || activeDroneId?.includes('2');
+
+  // Drone-1: Flight Mode (CH6), Spray (CH7)
+  // Drone-2: Flight Mode (CH5), Spray (CH6)
+  const flightModeChannel = isDrone2 ? telemetry.rc?.ch5 : telemetry.rc?.ch6;
+  const sprayChannel = isDrone2 ? telemetry.rc?.ch6 : telemetry.rc?.ch7;
+
+  // Inisialisasi Status Default
+  let loiterStatus = 'OFF';
+  let autoStatus = 'OFF';
+  let rtlStatus = 'OFF';
+  let sprayStatus = 'OFF';
+
+  if (isRcConnected) {
+    if (typeof flightModeChannel === 'number') {
+      if (flightModeChannel < 1200) {
+        loiterStatus = 'ON';
+      } else if (flightModeChannel >= 1200 && flightModeChannel <= 1700) {
+        autoStatus = 'ON';
+      } else if (flightModeChannel > 1700) {
+        rtlStatus = 'ON';
+      }
+    }
+
+    if (typeof sprayChannel === 'number' && sprayChannel > 1700) {
+      sprayStatus = 'ON';
+    }
+  }
+
   const RC_SWITCHES = [
-    { key: 'loiter', label: 'Loiter', status: (telemetry.rc?.ch6 === 'MODE_HIGH' || telemetry.rc?.ch6 === 'ON') ? 'ON' : 'OFF' },
-    { key: 'auto', label: 'Auto', status: (telemetry.rc?.ch7 === 'MODE_HIGH' || telemetry.rc?.ch7 === 'ON') ? 'ON' : 'OFF' },
-    { key: 'rtl', label: 'RTL', status: (telemetry.rc?.ch8 === 'MODE_HIGH' || telemetry.rc?.ch8 === 'ON') ? 'ON' : 'OFF' },
-    { key: 'spray', label: 'Spray', status: (telemetry.rc?.ch9 === 'MODE_HIGH' || telemetry.rc?.ch9 === 'ON') ? 'ON' : 'OFF' },
+    { key: 'loiter', label: 'Loiter', status: loiterStatus },
+    { key: 'auto', label: 'Auto', status: autoStatus },
+    { key: 'rtl', label: 'RTL', status: rtlStatus },
+    { key: 'spray', label: 'Spray', status: sprayStatus },
   ];
 
   const TELEMETRY = [
