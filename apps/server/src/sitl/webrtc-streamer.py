@@ -11,6 +11,7 @@ load_dotenv()
 
 # Konfigurasi Koneksi
 BACKEND_SIGNALING_URL = [
+    "http://127.0.0.1:4000",
     "http://192.168.100.124:4000",
     "https://api.dreampalm.id"
 ]

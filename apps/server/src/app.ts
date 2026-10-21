@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
 
 import { env } from "./config/env.js";
 import adminRoutes from "./routes/admin.route.js";
@@ -61,6 +62,12 @@ app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
+
+const snapshotsPath = path.join(__dirname, '../../client/public/snapshots');
+const uploadsPath = path.join(__dirname, '../../client/public/uploads');
+
+app.use('/snapshots', express.static(snapshotsPath));
+app.use('/uploads', express.static(uploadsPath));
 
 // Route Operator
 app.use("/api/operator", operatorRoutes);

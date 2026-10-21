@@ -11,7 +11,7 @@ MQTT_USER = "mqtt-dreampalm"
 MQTT_PASS = "dreampalm"
 
 # Identifier Drone
-DRONE_ID = "v1-002"
+DRONE_ID = "v1-001"
 
 # Konfigurasi MQTT Topics
 MQTT_TOPIC_TELEMETRY = f"dreampalm/drone/uid/{DRONE_ID}/telemetryState"

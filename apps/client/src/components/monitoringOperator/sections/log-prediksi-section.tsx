@@ -198,7 +198,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
                     <span className="text-xs sm:text-sm font-semibold text-[#5D7E2A]">%</span>
                   </span>
                 </div>
-                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Batre</span>
+                <span className="text-[10px] text-gray-400 font-medium mt-0.5">Baterai</span>
               </div>
 
               {/* Jarak dari Home */}

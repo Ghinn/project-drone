@@ -5,6 +5,32 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { spawn } from 'child_process';
 
+// Helper Resolusi Path URL ke Path Fisik di Server
+const getPhysicalPath = (baseDir: string, urlPath: string) => {
+  if (urlPath.startsWith('/snapshots/')) {
+    return path.join(baseDir, '../../../client/public', urlPath);
+  }
+  if (urlPath.startsWith('/uploads/')) {
+    return path.join(baseDir, '../../public', urlPath);
+  }
+  return urlPath;
+};
+
+// Helper Konversi File Fisik menjadi Base64 Data URI
+const getBase64URI = (filePath: string): string | null => {
+  try {
+    if (fs.existsSync(filePath)) {
+      const ext = path.extname(filePath).replace('.', '').toLowerCase() || 'png';
+      const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+      const base64Data = fs.readFileSync(filePath, 'base64');
+      return `data:${mimeType};base64,${base64Data}`;
+    }
+  } catch (err) {
+    console.error(`[Base64 Error] Gagal mengkonversi ${filePath}:`, err);
+  }
+  return null;
+};
+
 export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
   const currentUser = req.currentUser;
   const { droneId, snapshotRAW } = req.body;
@@ -28,7 +54,6 @@ export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
     if (imagePathToProcess.startsWith('http')) {
       try {
         const parsedUrl = new URL(imagePathToProcess);
-        // Mengekstrak '/uploads/snapshot-v1-...' dari URL penuh
         imagePathToProcess = parsedUrl.pathname; 
       } catch (err) {
         console.warn("Gagal melakukan parse URL snapshotRAW:", err);
@@ -48,11 +73,8 @@ export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
       fs.writeFileSync(absoluteFilePath, buffer);
       imageUrl = `/uploads/${fileName}`;
     } 
-    else if (imagePathToProcess.startsWith('/uploads/')) {
-      absoluteFilePath = path.join(__dirname, '../../public', imagePathToProcess);
-    }
-    else if (imagePathToProcess.startsWith('/snapshots/')) {
-      absoluteFilePath = path.join(__dirname, '../../../client/public', imagePathToProcess);
+    else if (imagePathToProcess.startsWith('/uploads/') || imagePathToProcess.startsWith('/snapshots/')) {
+      absoluteFilePath = getPhysicalPath(__dirname, imagePathToProcess);
     }
     else {
       const uploadDir = path.join(__dirname, '../../public/uploads');
@@ -62,7 +84,6 @@ export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
 
     // Pastikan fisik filenya benar-benar ada di server sebelum dilempar ke Python
     if (!fs.existsSync(absoluteFilePath)) {
-      // Fallback tambahan: Coba cari langsung di public/snapshots jika belum ketemu
       const altPath = path.join(__dirname, '../../public/snapshots', path.basename(imagePathToProcess));
       if (fs.existsSync(altPath)) {
         absoluteFilePath = altPath;
@@ -73,12 +94,16 @@ export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
     }
 
     // Eksekusi Script Python
-    const pythonScriptPath = path.join(__dirname, '../../scripts/process-snapshot.py');
-    const pythonProcess = spawn('python', [pythonScriptPath, absoluteFilePath]);
+    const pythonScriptPath = path.join(process.cwd(), 'venv-backend', 'bin', 'python');
+    const pythonFileScript = path.join(process.cwd(), 'scripts', 'process-snapshot.py');
+
+    const pythonProcess = spawn(pythonScriptPath, [
+      pythonFileScript,
+      absoluteFilePath 
+    ]);
 
     let pythonOutput = '';
     
-    // Tangkap data dari print(json.dumps(...)) di Python
     pythonProcess.stdout.on('data', (data) => {
       pythonOutput += data.toString();
     });
@@ -94,23 +119,29 @@ export const saveAnalyzeSnapshot = asyncHandler(async (req: any, res: any) => {
 
       try {
         
-        // 1. CEK OUTPUT MENTAH DARI PYTHON
+        // CEK OUTPUT MENTAH DARI PYTHON
         console.log("[Analyze Debug] Output Mentah Python:", pythonOutput);
 
         const parsedOutput = JSON.parse(pythonOutput);
         
-        // 2. CEK HASIL PARSING
+        // CEK HASIL PARSING
         console.log("[Analyze Debug] Parsed Output:", parsedOutput);
         
         if (!parsedOutput.success) {
           return res.status(500).json({ error: parsedOutput.error });
         }
 
+        // Resolusi lokasi fisik dari output Python
+        const rawPhysicalPath = getPhysicalPath(__dirname, imageUrl);
+        const ndviPhysicalPath = getPhysicalPath(__dirname, parsedOutput.snapshotNDVI);
+        const rgPhysicalPath = getPhysicalPath(__dirname, parsedOutput.snapshotRG);
+        const rgrPhysicalPath = getPhysicalPath(__dirname, parsedOutput.snapshotRGR);
+
         const finalData = {
-          snapshotRAW: imageUrl,
-          snapshotNDVI: parsedOutput.snapshotNDVI,
-          snapshotRG: parsedOutput.snapshotRG,
-          snapshotRGR: parsedOutput.snapshotRGR,
+          snapshotRAW: getBase64URI(rawPhysicalPath) || imageUrl,
+          snapshotNDVI: getBase64URI(ndviPhysicalPath) || parsedOutput.snapshotNDVI,
+          snapshotRG: getBase64URI(rgPhysicalPath) || parsedOutput.snapshotRG,
+          snapshotRGR: getBase64URI(rgrPhysicalPath) || parsedOutput.snapshotRGR,
           ndviRAW: parsedOutput.ndviRAW,
           ndviAI: parsedOutput.ndviAI,
           classification: parsedOutput.classification

@@ -23,6 +23,7 @@ MQTT_PASS = "dreampalm"
 
 # BACKEND API URL
 BACKEND_API_BASE_URL = [
+    "http://127.0.0.1:4000/api/data/snapshot/upload",
     "http://192.168.100.124:4000/api/data/snapshot/upload",
     "https://api.dreampalm.id/api/data/snapshot/upload"
 ]
