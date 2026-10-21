@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Konfigurasi Parameter
-const DRONE_ID = 'v1-002';
+const DRONE_ID = 'v1-001';
 const ALTITUDE_STATIC = 50.0;
 const GROUND_SPEED_STATIC = 0.0;
 const CLIMB_RATE_STATIC = 0.0;
