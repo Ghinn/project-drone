@@ -1,13 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { MonitoringOperatorContext, useTelemetrySSE } from './monitoringOperator-context';
-import type { MonitoringOperatorTab, NavItem } from './monitoringOperator-types';
+import {
+  MONITORING_OPERATOR_PATHS,
+  type MonitoringOperatorTab,
+  type NavItem,
+} from './monitoringOperator-types';
 import MonitoringOperatorNavbar from './monitoringOperator-sidebar';
 import AppHeader from './app-header';
 
 export default function MonitoringOperatorShell({ children }: { children: React.ReactNode }) {
-  const [activeTab, setActiveTab] = useState<MonitoringOperatorTab>('dashboard');
+  const pathname = usePathname().replace(/^\/(id|en)(?=\/|$)/, '');
+  const router = useRouter();
+  const activeTab =
+    (Object.entries(MONITORING_OPERATOR_PATHS).find(([, path]) => path === pathname)?.[0] as MonitoringOperatorTab | undefined) ??
+    'dashboard';
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [spray] = useState(62);
   const [droneOn, setDroneOn] = useState(true);
@@ -47,6 +56,10 @@ export default function MonitoringOperatorShell({ children }: { children: React.
   // Panggil Custom Hook SSE
   const { telemetry, droneStatus, latestSnapshot } = useTelemetrySSE(droneId);
 
+  const setActiveTab = (tab: MonitoringOperatorTab) => {
+    router.push(MONITORING_OPERATOR_PATHS[tab]);
+  };
+
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', labelEn: 'Overview', icon: 'dashboard' },
     { id: 'telemetri', label: 'Telemetri', labelEn: 'Telemetry', icon: 'telemetry' },
@@ -83,6 +96,7 @@ export default function MonitoringOperatorShell({ children }: { children: React.
         collapsed: !isSidebarOpen,
         setCollapsed,
         telemetry,
+        flightMode: telemetry.flightMode,
         droneStatus,
         latestSnapshot,
         spray,
