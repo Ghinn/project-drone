@@ -27,10 +27,10 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
 
   return (
     <div
-      className="bg-white rounded-2xl border border-[#ECECF2]"
+      className="bg-white dark:bg-[#111] rounded-2xl border border-[#ECECF2] dark:border-[#222]"
       style={{ boxShadow: "0 2px 8px rgba(15,23,42,0.04)" }}
     >
-      <div className="px-5 py-4 border-b border-[#F0F0F3] flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-[#F0F0F3] dark:border-[#222] flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <svg
             className="w-4 h-4 text-[#6B8E23] shrink-0"
@@ -45,7 +45,7 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
             <circle cx="12" cy="13" r="3" />
           </svg>
-          <span className="text-sm font-semibold text-[#1C1D21]">
+          <span className="text-sm font-semibold text-[#1C1D21] dark:text-gray-100">
             Live Camera MAPIR
           </span>
         </div>
@@ -53,10 +53,10 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
         <div
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
             loading
-              ? "bg-[#F5F5FA] text-[#8181A5] border border-[#ECECF2]"
+              ? "bg-[#F5F5FA] text-[#8181A5] border border-[#ECECF2] dark:bg-[#202020] dark:text-gray-400 dark:border-[#2a2a2a]"
               : isCameraReady
-                ? "bg-[#F0F7E6] text-[#6B8E23] border border-[#6B8E23]/20"
-                : "bg-[#FDF2F0] text-[#C8553D] border border-[#C8553D]/20"
+                ? "bg-[#F0F7E6] text-[#6B8E23] border border-[#6B8E23]/20 dark:bg-[#1c2c10] dark:text-[#a3e635]"
+                : "bg-[#FDF2F0] text-[#C8553D] border border-[#C8553D]/20 dark:bg-[#2e1513] dark:text-[#f87171]"
           }`}
         >
           <span
@@ -146,7 +146,7 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({
         </button>
 
         {!isCameraReady && !loading && (
-          <p className="mt-2 text-center text-xs text-[#C8553D]">
+          <p className="mt-2 text-center text-xs text-[#C8553D] dark:text-[#f87171]">
             Kamera offline — periksa koneksi MAPIR.
           </p>
         )}
