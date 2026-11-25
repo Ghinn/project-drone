@@ -85,7 +85,7 @@ function getWorkspace(role: AppRole | null): {
 
   if (role === 'OPERATOR') {
     return {
-      href: '/monitoringOperator',
+      href: '/dashboard',
       labelKey: 'workspaceOperator'
     };
   }

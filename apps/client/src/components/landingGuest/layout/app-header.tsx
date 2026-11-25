@@ -32,7 +32,7 @@ export async function AppHeader() {
 
   if (session?.role === 'OPERATOR') {
     navItems.push({
-      href: '/monitoringOperator',
+      href: '/dashboard',
       label: t('nav.monitoringOperator')
     });
   }

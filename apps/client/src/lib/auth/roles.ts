@@ -26,7 +26,7 @@ export function homeForRole(role: AppRole | null): string {
   }
   
   if (role === 'OPERATOR') {
-    return '/monitoringOperator';
+    return '/dashboard';
   }
   
   if (role === 'FARMER') {

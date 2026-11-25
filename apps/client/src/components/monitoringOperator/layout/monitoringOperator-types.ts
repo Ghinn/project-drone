@@ -1,19 +1,33 @@
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 // 5 menu: dashboard | telemetri | pantau-drone | log-prediksi | settings
-export type MonitoringOperatorTab = 'dashboard' | 'telemetri' | 'pantau-drone' | 'log-prediksi' | 'settings';
+export type MonitoringOperatorTab =
+  | "dashboard"
+  | "telemetri"
+  | "pantau-drone"
+  | "log-prediksi"
+  | "settings";
+
+export const MONITORING_OPERATOR_PATHS: Record<MonitoringOperatorTab, string> =
+  {
+    dashboard: "/dashboard",
+    telemetri: "/telemetri",
+    "pantau-drone": "/pantau-drone",
+    "log-prediksi": "/log-prediksi",
+    settings: "/settings",
+  };
 
 export interface NavItem {
   id: MonitoringOperatorTab;
-  label: string;       // Bahasa Indonesia (primary)
-  labelEn: string;     // Bahasa Inggris (sub-label)
-  icon: string;        // SVG path key
+  label: string; // Bahasa Indonesia (primary)
+  labelEn: string; // Bahasa Inggris (sub-label)
+  icon: string; // SVG path key
 }
 
 export interface AlertItem {
   id: number;
   // level: 'critical' | 'warning' | 'caution' | 'ok';
-  level: 'healthy' | 'unhealthy';
+  level: "healthy" | "unhealthy";
   title: string;
   note: string;
   loc: string;
@@ -78,19 +92,19 @@ export interface SysCheckData {
 
 // Tipe data log prediksi (record satu sesi prediksi)
 export interface PredictionLogEntry {
-  id: string;           // LOG-001, LOG-002 dst
-  sessionId: string;    // Misi #037
-  timestamp: string;    // ISO string
-  time: string;         // 14:32:17
-  date: string;         // 14 Agustus 2026
-  location: string;     // Blok A-12 Baris 8
-  gps: string;          // 3°21'14.2"N 114°35'48.9"E
+  id: string; // LOG-001, LOG-002 dst
+  sessionId: string; // Misi #037
+  timestamp: string; // ISO string
+  time: string; // 14:32:17
+  date: string; // 14 Agustus 2026
+  location: string; // Blok A-12 Baris 8
+  gps: string; // 3°21'14.2"N 114°35'48.9"E
   classification: string; // BSR Parah / Sehat
-  confidence: number;   // 94
-  severity: 'ok' | 'caution' | 'warning' | 'critical';
-  healthStatus: 'healthy' | 'unhealthy';
-  healthy: number;      // 12.4
-  unhealthy: number;    // 87.6
+  confidence: number; // 94
+  severity: "ok" | "caution" | "warning" | "critical";
+  healthStatus: "healthy" | "unhealthy";
+  healthy: number; // 12.4
+  unhealthy: number; // 87.6
   disease: string;
   recommendation: string;
   snapshotUrl: string;
@@ -113,13 +127,13 @@ export interface PredictionLogEntry {
 }
 
 export const DRONE_TOKENS = {
-  green:       '#6B8E23',   // Olive Green (primary)
-  greenLight:  '#8BAE3A',   // Olive Green Light
-  greenBright: '#9BBF4A',   // Olive Green Bright
-  red:         '#C8553D',   // Pastel Rust (disease/alert)
-  orange:      '#D9644E',   // Rust Orange
-  amber:       '#FCB53B',   // Amber (caution)
-  brick:       '#C8553D',   // Pastel Rust
-  violet:      '#7C3AED',   // Violet (AI/tech)
-  dark:        '#0F172A',   // Slate Dark
+  green: "#6B8E23", // Olive Green (primary)
+  greenLight: "#8BAE3A", // Olive Green Light
+  greenBright: "#9BBF4A", // Olive Green Bright
+  red: "#C8553D", // Pastel Rust (disease/alert)
+  orange: "#D9644E", // Rust Orange
+  amber: "#FCB53B", // Amber (caution)
+  brick: "#C8553D", // Pastel Rust
+  violet: "#7C3AED", // Violet (AI/tech)
+  dark: "#0F172A", // Slate Dark
 };
