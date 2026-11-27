@@ -2,6 +2,140 @@ import { Request, Response } from 'express';
 import { publishDroneCommand } from '../services/mqtt.service';
 import { prisma } from '../lib/prisma';
 
+type MapirBands = {
+  green: number | null;
+  red: number | null;
+  nir: number | null;
+};
+
+type MapirPredictionResult = {
+  success: true;
+  filename: string;
+  modelName: string;
+  modelStatus: string;
+  classification: 'Sehat' | 'Terserang';
+  classIndex: 0 | 1;
+  scoreTerserang: number;
+  scoreSehat: number;
+  predictionScore: number;
+  scoreCalibrated: boolean;
+  threshold: number;
+  ndvi: number | null;
+  bands: MapirBands;
+  validPixelPercentage: number;
+  inputShape: number[];
+  snapshotThumbnail: string;
+  snapshotNDVI: string;
+  radiometricMode: string;
+  radiometricValidated: boolean;
+  physicalCoverageTargetMeters: number;
+  physicalCoverageValidated: boolean;
+  automaticSprayingAllowed: boolean;
+};
+
+type StoredMapirFields = {
+  filename: string | null;
+  modelName: string | null;
+  modelStatus: string | null;
+  classification: string;
+  classIndex: number | null;
+  scoreTerserang: number | null;
+  scoreSehat: number | null;
+  predictionScore: number | null;
+  scoreCalibrated: boolean | null;
+  threshold: number | null;
+  ndviAI: number | null;
+  bands: unknown;
+  validPixelPercentage: number | null;
+  inputShape: unknown;
+  snapshotThumbnail: string | null;
+  snapshotNDVI: string;
+  radiometricMode: string | null;
+  radiometricValidated: boolean | null;
+  physicalCoverageTargetMeters: number | null;
+  physicalCoverageValidated: boolean | null;
+  automaticSprayingAllowed: boolean | null;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value);
+
+const isNullableFiniteNumber = (value: unknown): value is number | null =>
+  value === null || isFiniteNumber(value);
+
+const isMapirBands = (value: unknown): value is MapirBands =>
+  isRecord(value) &&
+  isNullableFiniteNumber(value.green) &&
+  isNullableFiniteNumber(value.red) &&
+  isNullableFiniteNumber(value.nir);
+
+const isFiniteNumberArray = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.every(isFiniteNumber);
+
+const buildMapirPredictionResult = (
+  fields: StoredMapirFields,
+): MapirPredictionResult | null => {
+  const classification =
+    fields.classification === 'sehat'
+      ? 'Sehat'
+      : fields.classification === 'tidak_sehat'
+        ? 'Terserang'
+        : null;
+
+  if (
+    !classification ||
+    fields.filename === null ||
+    fields.modelName === null ||
+    fields.modelStatus === null ||
+    (fields.classIndex !== 0 && fields.classIndex !== 1) ||
+    !isFiniteNumber(fields.scoreTerserang) ||
+    !isFiniteNumber(fields.scoreSehat) ||
+    !isFiniteNumber(fields.predictionScore) ||
+    fields.scoreCalibrated === null ||
+    !isFiniteNumber(fields.threshold) ||
+    !isNullableFiniteNumber(fields.ndviAI) ||
+    !isMapirBands(fields.bands) ||
+    !isFiniteNumber(fields.validPixelPercentage) ||
+    !isFiniteNumberArray(fields.inputShape) ||
+    fields.snapshotThumbnail === null ||
+    fields.radiometricMode === null ||
+    fields.radiometricValidated === null ||
+    !isFiniteNumber(fields.physicalCoverageTargetMeters) ||
+    fields.physicalCoverageValidated === null ||
+    fields.automaticSprayingAllowed === null
+  ) {
+    return null;
+  }
+
+  return {
+    success: true,
+    filename: fields.filename,
+    modelName: fields.modelName,
+    modelStatus: fields.modelStatus,
+    classification,
+    classIndex: fields.classIndex,
+    scoreTerserang: fields.scoreTerserang,
+    scoreSehat: fields.scoreSehat,
+    predictionScore: fields.predictionScore,
+    scoreCalibrated: fields.scoreCalibrated,
+    threshold: fields.threshold,
+    ndvi: fields.ndviAI,
+    bands: fields.bands,
+    validPixelPercentage: fields.validPixelPercentage,
+    inputShape: fields.inputShape,
+    snapshotThumbnail: fields.snapshotThumbnail,
+    snapshotNDVI: fields.snapshotNDVI,
+    radiometricMode: fields.radiometricMode,
+    radiometricValidated: fields.radiometricValidated,
+    physicalCoverageTargetMeters: fields.physicalCoverageTargetMeters,
+    physicalCoverageValidated: fields.physicalCoverageValidated,
+    automaticSprayingAllowed: fields.automaticSprayingAllowed,
+  };
+};
+
 export const getDashboardData = async (req: Request, res: Response) => {
   try {
     res.status(200).json({
@@ -114,10 +248,15 @@ export const getAnalisisDetail = async (req: Request, res: Response) => {
       });
     }
 
+    const mapirResult = buildMapirPredictionResult(logDetail);
+
     return res.status(200).json({
       success: true,
       message: "Data detail log berhasil diambil",
-      data: logDetail
+      data: {
+        ...logDetail,
+        mapirResult,
+      },
     });
   } catch (error) {
     console.error("[Prediction Log] Fetching Error:", error);

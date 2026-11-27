@@ -357,6 +357,10 @@ export default function PantauDroneSection() {
               body: JSON.stringify({
                 droneId,
                 mapirResult: result,
+                originalJpgUrl:
+                  typeof statusData.originalJpgUrl === "string"
+                    ? statusData.originalJpgUrl
+                    : null,
                 snapshotRAW:
                   typeof statusData.originalRawUrl === "string"
                     ? statusData.originalRawUrl

@@ -147,7 +147,7 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
   const currentUser = req.currentUser;
 
   if (req.body?.mapirResult !== undefined) {
-    const { droneId, mapirResult, telemetryAI } = req.body;
+    const { droneId, mapirResult, telemetryAI, originalJpgUrl } = req.body;
 
     if (!currentUser) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -181,6 +181,8 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
               typeof req.body.snapshotRAW === "string"
                 ? req.body.snapshotRAW
                 : mapirResult.snapshotThumbnail,
+            originalJpgUrl:
+              typeof originalJpgUrl === "string" ? originalJpgUrl : null,
             snapshotNDVI: mapirResult.snapshotNDVI,
             snapshotRG: null,
             snapshotRGR: null,

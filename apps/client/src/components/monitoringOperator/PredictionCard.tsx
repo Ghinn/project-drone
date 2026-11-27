@@ -6,17 +6,20 @@ import type { NDVIPredictionResult } from "@/types/mapir";
 
 interface PredictionCardProps {
   data: NDVIPredictionResult;
+  title?: string;
   originalJpgUrl?: string | null;
   originalRawUrl?: string | null;
 }
 
 export const PredictionCard: React.FC<PredictionCardProps> = ({
   data,
+  title = "Hasil Capture Terbaru",
   originalJpgUrl,
   originalRawUrl,
 }) => {
   const isSehat = data.classification === "Sehat";
   const confidencePercent = (data.predictionScore * 100).toFixed(1);
+  const jpgUrl = originalJpgUrl || data.snapshotThumbnail;
 
   return (
     <div
@@ -25,7 +28,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
     >
       <div className="px-5 py-4 border-b border-[#F0F0F3] dark:border-[#222]">
         <h2 className="text-sm font-semibold text-[#1C1D21] dark:text-gray-100">
-          Hasil Capture Terbaru
+          {title}
         </h2>
         <p className="mt-0.5 text-xs text-[#8181A5]">{data.filename}</p>
       </div>
@@ -34,27 +37,33 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
         <div className="p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#1C1D21] dark:text-gray-100">
-              Foto Hasil Capture
+              Hasil Capture JPG
             </span>
-            <div className="flex items-center gap-3">
-              {originalJpgUrl && (
-                <a
-                  href={originalJpgUrl}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#8181A5] hover:text-[#6B8E23] dark:text-gray-400 dark:hover:text-[#a3e635] transition-colors"
-                >
-                  Unduh JPG
-                </a>
-              )}
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <a
+                href={data.snapshotThumbnail}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-md border border-[#ECECF2] px-2.5 py-1 text-[11px] text-[#8181A5] transition-colors hover:text-[#6B8E23] dark:border-[#2a2a2a] dark:text-gray-400 dark:hover:text-[#a3e635]"
+              >
+                Lihat JPG 720
+              </a>
+              <a
+                href={jpgUrl}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded-md border border-[#ECECF2] px-2.5 py-1 text-[11px] text-[#8181A5] transition-colors hover:text-[#6B8E23] dark:border-[#2a2a2a] dark:text-gray-400 dark:hover:text-[#a3e635]"
+              >
+                Unduh JPG
+              </a>
               {originalRawUrl && (
                 <a
                   href={originalRawUrl}
                   download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-[#8181A5] hover:text-[#6B8E23] dark:text-gray-400 dark:hover:text-[#a3e635] transition-colors"
+                  className="inline-flex items-center rounded-md border border-[#ECECF2] px-2.5 py-1 text-[11px] text-[#8181A5] transition-colors hover:text-[#6B8E23] dark:border-[#2a2a2a] dark:text-gray-400 dark:hover:text-[#a3e635]"
                 >
                   Unduh RAW
                 </a>
@@ -63,8 +72,8 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
           </div>
           <div className="relative aspect-square rounded-xl overflow-hidden border border-[#ECECF2] dark:border-[#2a2a2a] bg-[#0F172A]">
             <Image
-              src={data.snapshotThumbnail}
-              alt="Foto Hasil Capture MAPIR"
+              src={jpgUrl}
+              alt="Hasil Capture JPG MAPIR"
               fill
               unoptimized
               className="object-cover"
@@ -122,35 +131,39 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
         </div>
       </div>
 
-      <details className="border-t border-[#F0F0F3] dark:border-[#222] group">
-        <summary className="flex items-center justify-between px-5 py-3 cursor-pointer select-none list-none text-xs text-[#8181A5] hover:text-[#1C1D21] dark:text-gray-400 dark:hover:text-gray-100 transition-colors">
-          <span className="font-medium">Visual NDVI</span>
-          <span className="flex items-center gap-1 text-[11px] text-[#8181A5]">
-            Visualisasi tambahan
-            <svg
-              className="w-3.5 h-3.5 transition-transform group-open:rotate-180"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+      <section className="border-t border-[#F0F0F3] dark:border-[#222]">
+        <div className="flex items-center justify-between gap-3 px-5 py-3">
+          <h3 className="text-xs font-semibold text-[#1C1D21] dark:text-gray-100">
+            Visual NDVI
+          </h3>
+          {data.snapshotNDVI && (
+            <a
+              href={data.snapshotNDVI}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center rounded-md border border-[#ECECF2] px-2.5 py-1 text-[11px] text-[#8181A5] transition-colors hover:text-[#6B8E23] dark:border-[#2a2a2a] dark:text-gray-400 dark:hover:text-[#a3e635]"
             >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </span>
-        </summary>
-        <div className="px-5 pb-5 pt-2">
-          <div className="relative aspect-video rounded-xl overflow-hidden border border-[#ECECF2] dark:border-[#2a2a2a] bg-[#0F172A]">
-            <Image
-              src={data.snapshotNDVI}
-              alt="Visual NDVI"
-              fill
-              unoptimized
-              className="object-cover"
-            />
-          </div>
+              Unduh PNG
+            </a>
+          )}
         </div>
-      </details>
+        <div className="px-5 pb-5">
+          {data.snapshotNDVI ? (
+            <div className="relative aspect-video rounded-xl overflow-hidden border border-[#ECECF2] dark:border-[#2a2a2a] bg-[#0F172A]">
+              <Image
+                src={data.snapshotNDVI}
+                alt="Visual NDVI"
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-[#8181A5]">Visual NDVI tidak tersedia.</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 };

@@ -105,7 +105,7 @@ model TelemetryLog {
   distanceToHome Float 
   mode        String
   flightMode  String   @default("standby")
-  
+
   battery     Float
   voltage     Float?
   current     Float?
@@ -120,6 +120,7 @@ model TelemetryLog {
 model PredictionAI {
   id               String   @id @default(cuid())
   snapshotRAW      String
+  originalJpgUrl   String?
   snapshotNDVI     String
   snapshotRG       String?
   snapshotRGR      String?
@@ -156,7 +157,7 @@ model PredictionAI {
   distanceToHomeAI Float?
   batteryAI        Float?
   radioAI          Json?
-  
+
   timestamp        DateTime @default(now())
 
   // Identifier Drone
