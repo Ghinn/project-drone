@@ -71,6 +71,8 @@ export function AuthProvider({ children, initialRole = null, initialUserData = n
       providerData: [],
       refreshToken: '',
       tenantId: null,
+      phoneNumber: null,
+      providerId: 'firebase',
       delete: async () => {},
       getIdToken: async () => '',
       getIdTokenResult: async () => ({} as any),

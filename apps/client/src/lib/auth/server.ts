@@ -2,7 +2,7 @@ import 'server-only';
 
 import {cookies} from 'next/headers';
 import {redirect} from 'next/navigation';
-import {firebaseAuth} from '@/lib/firebase';
+import {adminAuth as firebaseAuth} from '@/lib/firebase/admin';
 import {
   normalizeRole,
   redirectForUnauthorized,
