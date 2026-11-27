@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "target": "ES2023",
     "lib": ["es2023"],
     "types": ["node"],
