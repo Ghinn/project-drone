@@ -41,9 +41,10 @@ type PredictionLogData = {
   id: string;
   timestamp: string;
   snapshotRAW: string;
+  snapshotThumbnail: string | null;
   classification: string;
-  ndviRAW: number;
-  ndviAI: number;
+  ndviRAW: number | null;
+  ndviAI: number | null;
   altitudeAI: number;
   latitudeAI: number;
   longitudeAI: number;
@@ -254,7 +255,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
           
           <div className="relative w-full aspect-[16/10] bg-gray-50 dark:bg-[#151515] overflow-hidden flex items-center justify-center">
                 <img
-                  src={log.snapshotRAW}
+                  src={log.snapshotThumbnail ?? log.snapshotRAW}
                   alt="Snapshot Pohon"
                   className="w-full h-full object-cover"
                 />
@@ -293,7 +294,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
                 ? 'text-[#4D7C0F]'
                 : 'text-[#E59819]'
             }`}>
-              {log.ndviAI.toFixed(2)}
+              {log.ndviAI?.toFixed(2) ?? '—'}
             </div>
 
             <div className="w-full max-w-md mt-2">
@@ -302,7 +303,7 @@ function LogDetailView({ log, onBack }: { log: PredictionLogData; onBack: () => 
                   className="h-full rounded-full transition-all duration-700 ease-out"
                   style={{
                     width:
-                      `${log.ndviAI * 100}%`,
+                      `${(log.ndviAI ?? 0) * 100}%`,
                     background:
                       isHealthy
                         ? 'linear-gradient(to right, #7A1414 0%, #C83B2B 60%, #E67E22 100%)'
@@ -581,7 +582,7 @@ export default function LogPrediksiSection() {
                         <span>{log.longitudeAI.toFixed(4)}°E</span>
                       </td>
                       <td className="px-5 py-3.5 text-xs font-bold" style={{ color: cStyle.text }}>
-                        {log.ndviAI.toFixed(2)}
+                        {log.ndviAI?.toFixed(2) ?? '—'}
                       </td>
                       <td className={`px-5 py-3.5 text-xs font-bold`} style={{ color: cStyle.text }}>
                         {cStyle.label}

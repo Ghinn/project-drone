@@ -119,13 +119,33 @@ model TelemetryLog {
 
 model PredictionAI {
   id               String   @id @default(cuid())
-  snapshotRAW      String 
-  snapshotNDVI     String 
-  snapshotRG       String 
-  snapshotRGR      String
+  snapshotRAW      String
+  snapshotNDVI     String
+  snapshotRG       String?
+  snapshotRGR      String?
   classification   String   // "sehat" atau "tidak sehat"
-  ndviRAW          Float
-  ndviAI           Float
+  ndviRAW          Float?
+  ndviAI           Float?
+
+  // Hasil tambahan dari analisis MAPIR, null untuk record legacy.
+  filename                       String?
+  modelName                      String?
+  modelStatus                    String?
+  classIndex                     Int?
+  scoreTerserang                 Float?
+  scoreSehat                     Float?
+  predictionScore                Float?
+  scoreCalibrated                Boolean?
+  threshold                      Float?
+  bands                          Json?
+  validPixelPercentage           Float?
+  inputShape                     Json?
+  snapshotThumbnail              String?
+  radiometricMode                String?
+  radiometricValidated           Boolean?
+  physicalCoverageTargetMeters   Float?
+  physicalCoverageValidated      Boolean?
+  automaticSprayingAllowed       Boolean?
   
   // Data Telemetry yang "dibekukan" saat snapshot
   altitudeAI       Float

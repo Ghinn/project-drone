@@ -12,7 +12,7 @@ type PredictionLogData = {
   id: string;
   timestamp: string;
   classification: string;
-  ndviAI: number;
+  ndviAI: number | null;
   latitudeAI: number;
   longitudeAI: number;
 };
@@ -248,7 +248,7 @@ export default function DashboardSection() {
 
                       <td className="px-6 py-4 text-center font-mono font-bold">
                         <span className={!isHealthy ? 'text-[#C84030]' : 'text-[#5F802A]'}>
-                          {d.ndviAI.toFixed(2)}
+                          {d.ndviAI?.toFixed(2) ?? '—'}
                         </span>
                       </td>
 
