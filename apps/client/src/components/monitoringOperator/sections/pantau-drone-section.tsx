@@ -306,7 +306,7 @@ export default function PantauDroneSection() {
 
         const statusResponse = await fetch(
           `/api/mapir/captures/${encodeURIComponent(captureId)}`,
-          { cache: "no-store" },
+          { method: "POST", cache: "no-store" },
         );
         const statusData: unknown = await statusResponse.json();
 
