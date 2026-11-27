@@ -6,14 +6,34 @@ import { initWebRTCSignaling } from './services/webrtc-signaling.service.js';
 
 const port = Number(process.env.PORT ?? 4000);
 
-initMqtt();
+const rehearsal = process.env.DREAMPALM_REHEARSAL === "1";
+
+if (rehearsal) {
+  const db = new URL(process.env.DATABASE_URL ?? "");
+
+  if (
+    db.pathname !== "/dreampalm_prod_rehearsal" ||
+    db.hostname !== "127.0.0.1" ||
+    port !== 4001
+  ) {
+    throw new Error("Unsafe rehearsal configuration");
+  }
+
+  console.log("[REHEARSAL] MQTT and WebRTC disabled");
+} else {
+  initMqtt();
+}
 
 const httpServer = http.createServer(app);
-initWebRTCSignaling(httpServer);
+if (!rehearsal) initWebRTCSignaling(httpServer);
 
-const server = httpServer.listen(port, () => {
-  console.log(`DreamPalm Backend running on http://localhost:${port}`);
-});
+const onListening = () => {
+  console.log(`DreamPalm Backend running on port ${port}`);
+};
+
+const server = rehearsal
+  ? httpServer.listen(port, "127.0.0.1", onListening)
+  : httpServer.listen(port, onListening);
 
 const shutdown = async (signal: string) => {
   console.info(`${signal} received. Closing DreamPalm Backend service...`);
