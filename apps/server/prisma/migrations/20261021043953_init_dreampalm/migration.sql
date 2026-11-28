@@ -153,6 +153,9 @@ CREATE INDEX "VerificationToken_userId_idx" ON "VerificationToken"("userId");
 CREATE INDEX "TelemetryLog_droneId_timestamp_idx" ON "TelemetryLog"("droneId", "timestamp" DESC);
 
 -- CreateIndex
+CREATE INDEX "PredictionAI_classification_idx" ON "PredictionAI"("classification");
+
+-- CreateIndex
 CREATE INDEX "PredictionAI_droneId_timestamp_idx" ON "PredictionAI"("droneId", "timestamp" DESC);
 
 -- CreateIndex

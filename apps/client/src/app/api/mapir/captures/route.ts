@@ -1,37 +1,17 @@
 import { NextResponse } from "next/server";
-import { authorizeMapirRequest } from "@/lib/mapir-auth";
+import { ApiError, assertSameOrigin, triggerCapture } from "@/lib/mapirClient";
+import { assertCameraDrone, createCaptureOwner, mapirError, requireOperator } from "@/lib/production-mapir";
 
+export const runtime = "nodejs";
 export async function POST(request: Request) {
-  const authorizationError = await authorizeMapirRequest(request);
-  if (authorizationError) return authorizationError;
-
-  const apiUrl = process.env.DREAMPALM_API_URL?.replace(/\/+$/, "");
-  const apiKey = process.env.DREAMPALM_API_KEY;
-
-  if (!apiUrl || !apiKey) {
-    return NextResponse.json(
-      { detail: "Konfigurasi DREAMPALM_API_URL atau DREAMPALM_API_KEY belum diatur." },
-      { status: 500 },
-    );
-  }
-
   try {
-    const response = await fetch(`${apiUrl}/captures`, {
-      method: "POST",
-      headers: { "X-DreamPalm-Key": apiKey },
-    });
-    const data: unknown = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error: unknown) {
-    console.error("[MAPIR Capture Error]", error);
-    return NextResponse.json(
-      {
-        detail:
-          error instanceof Error
-            ? error.message
-            : "Gagal menghubungi Capture API.",
-      },
-      { status: 502 },
-    );
-  }
+    assertSameOrigin(request);
+    const droneId = await requireOperator(request);
+    assertCameraDrone(droneId);
+    const capture = await triggerCapture();
+    if (capture.drone_id !== undefined && typeof capture.drone_id !== "string") throw new ApiError(502, "DRONE", "ID drone upstream tidak valid.");
+    assertCameraDrone(droneId, capture.drone_id);
+    await createCaptureOwner(capture.capture_id, droneId);
+    return NextResponse.json({ capture_id: capture.capture_id, status: capture.status || "pending" }, { headers: { "Cache-Control": "no-store" } });
+  } catch (e) { return mapirError(e); }
 }

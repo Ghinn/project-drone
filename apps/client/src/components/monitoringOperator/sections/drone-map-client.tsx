@@ -97,6 +97,12 @@ export default function DroneMapClient({
         layers={layers}
         viewState={viewState}
         onViewStateChange={({ viewState: newViewState }) => {
+          if (
+            !("longitude" in newViewState) ||
+            !("latitude" in newViewState) ||
+            !("zoom" in newViewState)
+          ) return;
+
           setViewState(newViewState);
           if (newViewState.zoom < 15.5 && !isZoomedOut) setIsZoomedOut(true);
           if (newViewState.zoom >= 15.5 && isZoomedOut) setIsZoomedOut(false);
@@ -148,7 +154,7 @@ export default function DroneMapClient({
           <svg 
             width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
             style={{ 
-              transform: `rotate(${-viewState.bearing}deg)`, 
+              transform: `rotate(${-(viewState.bearing ?? 0)}deg)`,
               transition: 'transform 0.1s ease-out' 
             }}
           >

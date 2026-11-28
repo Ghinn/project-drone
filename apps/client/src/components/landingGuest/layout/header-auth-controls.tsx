@@ -1,8 +1,7 @@
 'use client';
 
-import {useState} from 'react';
+import {useRouter} from 'next/navigation';
 import {useTranslations} from 'next-intl';
-import {LoginModal} from '@/components/auth/login-modal';
 import {UserProfileDropdown} from '@/components/landingGuest/layout/user-profile-dropdown';
 import type {AppRole} from '@/lib/auth/roles';
 import {useAuth} from '@/providers/auth-provider';
@@ -21,7 +20,7 @@ export function HeaderAuthControls({
 }: HeaderAuthControlsProps) {
   const t = useTranslations('Header');
   const {user, role, status} = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const router = useRouter();
 
   const hasAuthenticatedState =
     status === 'authenticated' ||
@@ -32,16 +31,13 @@ export function HeaderAuthControls({
       <>
         <button
           className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded text-white transition-opacity hover:opacity-85 bg-[#84994F]"
-          onClick={() => setIsAuthModalOpen(true)}
+          onClick={() => router.push('/login')}
           type="button"
         >
           {t('actions.loginGetStarted')}
         </button>
 
-        <LoginModal
-          open={isAuthModalOpen}
-          onOpenChange={setIsAuthModalOpen}
-        />
+
       </>
     );
   }

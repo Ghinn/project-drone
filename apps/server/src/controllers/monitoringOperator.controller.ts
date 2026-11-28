@@ -162,8 +162,29 @@ export const getHistoriData = async (req: Request, res: Response) => {
 
 export const getAnalisisData = async (req: Request, res: Response) => {
   try {
-    const currentUser = (req as any).currentUser;
-    const droneId = currentUser?.assignedDroneId;
+
+    const currentUser = req.currentUser;
+
+    if (!currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Autentikasi diperlukan"
+      });
+    }
+
+    if (
+      currentUser.role !== "OPERATOR" ||
+      currentUser.status !== "APPROVED" ||
+      !currentUser.assignedDroneId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Akses drone tidak diizinkan"
+      });
+    }
+
+    const droneId = currentUser.assignedDroneId;
+
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
@@ -176,7 +197,7 @@ export const getAnalisisData = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     // Logika Kondisi Pencarian (Where Clause)
-    const baseWhere: any = droneId ? { droneId } : {};
+    const baseWhere = { droneId };
     const filterWhere: any = { ...baseWhere };
 
     if (filterSev !== 'all') {
@@ -228,6 +249,29 @@ export const getAnalisisData = async (req: Request, res: Response) => {
 
 export const getAnalisisDetail = async (req: Request, res: Response) => {
   try {
+
+    const currentUser = req.currentUser;
+
+    if (!currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: "Autentikasi diperlukan"
+      });
+    }
+
+    if (
+      currentUser.role !== "OPERATOR" ||
+      currentUser.status !== "APPROVED" ||
+      !currentUser.assignedDroneId
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Akses drone tidak diizinkan"
+      });
+    }
+
+    const droneId = currentUser.assignedDroneId;
+
     const id = (req.params.id as string)?.trim();
 
     if (!id) {
@@ -235,7 +279,7 @@ export const getAnalisisDetail = async (req: Request, res: Response) => {
     }
 
     const logDetail = await prisma.predictionAI.findFirst({
-      where: { id: id },
+      where: { id: id, droneId },
       include: {
         spray: true 
       }

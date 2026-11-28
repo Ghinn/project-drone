@@ -9,6 +9,7 @@ interface PredictionCardProps {
   title?: string;
   originalJpgUrl?: string | null;
   originalRawUrl?: string | null;
+  showFileActions?: boolean;
 }
 
 export const PredictionCard: React.FC<PredictionCardProps> = ({
@@ -16,6 +17,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
   title = "Hasil Capture Terbaru",
   originalJpgUrl,
   originalRawUrl,
+  showFileActions = false,
 }) => {
   const isSehat = data.classification === "Sehat";
   const confidencePercent = (data.predictionScore * 100).toFixed(1);
@@ -39,6 +41,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
             <span className="text-xs font-semibold text-[#1C1D21] dark:text-gray-100">
               Hasil Capture JPG
             </span>
+            {showFileActions && (
             <div className="flex flex-wrap items-center justify-end gap-3">
               <a
                 href={data.snapshotThumbnail}
@@ -69,6 +72,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
                 </a>
               )}
             </div>
+            )}
           </div>
           <div className="relative aspect-square rounded-xl overflow-hidden border border-[#ECECF2] dark:border-[#2a2a2a] bg-[#0F172A]">
             <Image
@@ -136,7 +140,7 @@ export const PredictionCard: React.FC<PredictionCardProps> = ({
           <h3 className="text-xs font-semibold text-[#1C1D21] dark:text-gray-100">
             Visual NDVI
           </h3>
-          {data.snapshotNDVI && (
+          {showFileActions && data.snapshotNDVI && (
             <a
               href={data.snapshotNDVI}
               download

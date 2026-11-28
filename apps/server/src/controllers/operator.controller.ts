@@ -147,7 +147,7 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
   const currentUser = req.currentUser;
 
   if (req.body?.mapirResult !== undefined) {
-    const { droneId, mapirResult, telemetryAI, originalJpgUrl } = req.body;
+    const { droneId, mapirResult: submittedResult, telemetryAI, originalJpgUrl } = req.body;
 
     if (!currentUser) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -156,7 +156,7 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
     if (
       typeof droneId !== "string" ||
       !droneId ||
-      !isMapirPredictionResult(mapirResult)
+      !isMapirPredictionResult(submittedResult)
     ) {
       return res
         .status(400)
@@ -168,21 +168,72 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
         .json({ error: "Drone tidak ditugaskan ke akun ini" });
     }
 
+    if (currentUser.status !== "APPROVED" ||
+        !["OPERATOR", "ADMIN"].includes(currentUser.role) ||
+        droneId !== process.env.DREAMPALM_CAMERA_DRONE_ID) {
+      return res.status(403).json({ error: "Akses MAPIR tidak diizinkan" });
+    }
+    // Only accept an original image URL belonging to a locally registered capture.
+    const captureMatch = typeof originalJpgUrl === "string"
+      ? /^\/api\/media\/captures\/([A-Za-z0-9_-]{1,128})\/original\.jpg$/.exec(originalJpgUrl)
+      : null;
+    if (!captureMatch) {
+      return res.status(400).json({ error: "URL JPG original tidak valid" });
+    }
+    const captureId = captureMatch[1]!;
+    const rawUrl = `/api/media/captures/${captureId}/original.raw`;
+    if (req.body.snapshotRAW !== rawUrl) {
+      return res.status(400).json({ error: "URL RAW tidak cocok" });
+    }
+    const root = process.env.DREAMPALM_STORAGE_ROOT;
+    if (root !== "/srv/dreampalm-storage/production") {
+      return res.status(503).json({ error: "Storage produksi belum dikonfigurasi" });
+    }
+    let predictionIdForRetry: string | null = null;
+    const matchesExisting = (row: { droneId: string; originalJpgUrl: string | null; snapshotRAW: string; snapshotThumbnail: string | null; snapshotNDVI: string }) =>
+      row.droneId === droneId && row.originalJpgUrl === originalJpgUrl &&
+      row.snapshotRAW === rawUrl &&
+      row.snapshotThumbnail === `/api/media/predictions/${predictionIdForRetry}/processed.jpg` &&
+      row.snapshotNDVI === `/api/media/predictions/${predictionIdForRetry}/ndvi.png`;
+
     const telemetry = isRecord(telemetryAI) ? telemetryAI : {};
     const numberOrZero = (value: unknown) =>
       isFiniteNumber(value) ? value : 0;
 
     try {
+      // Read the authoritative result from VPS, not the browser-supplied scores.
+      const dir = path.join(root, "captures", captureId);
+      const owner: unknown = JSON.parse(await fs.promises.readFile(path.join(dir, "owner.json"), "utf8"));
+      if (!isRecord(owner) || owner.captureId !== captureId || owner.droneId !== droneId) {
+        return res.status(404).json({ error: "Capture tidak ditemukan" });
+      }
+      const result: unknown = JSON.parse(await fs.promises.readFile(path.join(dir, "result.json"), "utf8"));
+      if (!isRecord(result) || typeof result.predictionId !== "string" ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.predictionId)) {
+        return res.status(422).json({ error: "Hasil analisis belum valid" });
+      }
+      const predictionId = result.predictionId;
+      if (!isMapirPredictionResult(result) ||
+          result.snapshotThumbnail !== `/api/media/predictions/${predictionId}/processed.jpg` ||
+          result.snapshotNDVI !== `/api/media/predictions/${predictionId}/ndvi.png` ||
+          submittedResult.snapshotThumbnail !== result.snapshotThumbnail ||
+          submittedResult.snapshotNDVI !== result.snapshotNDVI) {
+        return res.status(422).json({ error: "Hasil analisis tidak cocok" });
+      }
+      const mapirResult = result;
+      predictionIdForRetry = predictionId;
+      const existing = await prisma.predictionAI.findUnique({ where: { id: predictionId } });
+      if (existing) {
+        if (!matchesExisting(existing)) return res.status(409).json({ error: "ID prediksi konflik" });
+        return res.status(200).json({ success: true, data: existing, message: "Prediksi sudah tersimpan" });
+      }
       const [predictionResult] = await prisma.$transaction([
         prisma.predictionAI.create({
           data: {
+            id: predictionId,
             droneId,
-            snapshotRAW:
-              typeof req.body.snapshotRAW === "string"
-                ? req.body.snapshotRAW
-                : mapirResult.snapshotThumbnail,
-            originalJpgUrl:
-              typeof originalJpgUrl === "string" ? originalJpgUrl : null,
+            snapshotRAW: rawUrl,
+            originalJpgUrl,
             snapshotNDVI: mapirResult.snapshotNDVI,
             snapshotRG: null,
             snapshotRGR: null,
@@ -234,7 +285,19 @@ export const savePredictionSnapshot = asyncHandler(async (req, res) => {
         message: "Hasil prediksi MAPIR berhasil disimpan",
       });
     } catch (error) {
-      console.error("[Prediction AI] Gagal menyimpan hasil MAPIR:", error);
+      // A concurrent retry can hit the same primary key; the failed transaction
+      // rolls back its SysLog too. Return the already committed record if it matches.
+      if (isRecord(error) && error.code === "P2002" && predictionIdForRetry) {
+        const existing = await prisma.predictionAI.findUnique({ where: { id: predictionIdForRetry } }).catch(() => null);
+        if (existing && matchesExisting(existing)) {
+          return res.status(200).json({ success: true, data: existing, message: "Prediksi sudah tersimpan" });
+        }
+        return res.status(409).json({ error: "ID prediksi konflik" });
+      }
+      if (isRecord(error) && error.code === "ENOENT") {
+        return res.status(404).json({ error: "Capture atau hasil analisis tidak ditemukan" });
+      }
+      console.error("[Prediction AI] Gagal menyimpan hasil MAPIR:", error instanceof Error ? error.name : "unknown");
       return res
         .status(500)
         .json({ error: "Gagal menyimpan hasil prediksi MAPIR" });

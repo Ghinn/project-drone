@@ -43,6 +43,7 @@ type PredictionLogData = {
   id: string;
   timestamp: string;
   snapshotRAW: string;
+  originalJpgUrl?: string | null;
   snapshotThumbnail: string | null;
   classification: string;
   mapirResult: NDVIPredictionResult | null;
@@ -391,7 +392,9 @@ function LogDetailView({
       {mapirResult ? (
         <PredictionCard
           data={mapirResult}
+          showFileActions={true}
           title="Hasil Prediksi AI"
+          originalJpgUrl={log.originalJpgUrl}
           originalRawUrl={log.snapshotRAW}
         />
       ) : (
